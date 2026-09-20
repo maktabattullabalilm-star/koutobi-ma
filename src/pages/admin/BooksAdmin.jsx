@@ -5,6 +5,7 @@ import { adminDeleteBookWithImages, adminGetBooks, adminUpdateBook } from '../..
 import { formatPrice } from '../../lib/format';
 import { useToast } from '../../components/Toast';
 import { IconCart, IconClose, IconEdit, IconMinus, IconPlus } from '../../components/icons';
+import BookCover from '../../components/BookCover';
 import PageHeader from './PageHeader';
 
 const LOW_STOCK_AT = 5;
@@ -210,7 +211,7 @@ export default function BooksAdmin() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
-                        <img src={b.cover_image} alt="" className="h-14 w-11 object-cover" />
+                        <BookCover src={b.cover_image} alt="" className="h-14 w-11" imgClassName="h-full w-full object-cover" />
                         {soldOut(b) && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[9px] font-bold text-white">نفد</span>
                         )}
@@ -274,7 +275,7 @@ export default function BooksAdmin() {
             <article key={b.id} className="card border border-line/60 p-3">
               <div className="flex gap-3">
                 <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
-                  <img src={b.cover_image} alt="" className="h-20 w-16 object-cover" />
+                  <BookCover src={b.cover_image} alt="" className="h-20 w-16" imgClassName="h-full w-full object-cover" />
                   {soldOut(b) && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[10px] font-bold text-white">نفد</span>
                   )}

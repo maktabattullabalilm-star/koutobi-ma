@@ -9,6 +9,7 @@ import Checkout from './pages/Checkout';
 import ThankYou from './pages/ThankYou';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminSetup from './pages/admin/AdminSetup';
+import ResetPassword from './pages/admin/ResetPassword';
 import AdminLayout from './pages/admin/AdminLayout';
 import Dashboard from './pages/admin/Dashboard';
 import BooksAdmin from './pages/admin/BooksAdmin';
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/admin" element={<Outlet />}>
           <Route index element={<AdminLogin />} />
           <Route path="setup" element={<AdminSetup />} />
+          <Route path="reset-password" element={<ResetPassword />} />
           <Route element={<AdminLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="books" element={<BooksAdmin />} />

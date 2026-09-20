@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../lib/format';
 import { whatsappLink } from '../lib/config';
+import BookCover from '../components/BookCover';
 import { IconCart, IconClose, IconTruck } from '../components/icons';
 
 export default function Cart() {
@@ -37,7 +38,7 @@ export default function Cart() {
           {items.map((it) => (
             <div key={it.id} className="card flex gap-4 border border-line/60 p-3.5">
               <Link to={`/book/${it.id}`} className="shrink-0 overflow-hidden rounded-md border border-line/50 bg-gray-100">
-                <img src={it.cover} alt={it.title} className="h-28 w-20 object-cover sm:h-32 sm:w-24" />
+                <BookCover src={it.cover} alt={it.title} className="h-28 w-20 sm:h-32 sm:w-24" imgClassName="h-full w-full object-cover" />
               </Link>
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-2">

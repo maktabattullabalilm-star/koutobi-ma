@@ -12,9 +12,13 @@ export default function AnnouncementBar() {
   const timer = useRef(null);
 
   useEffect(() => {
-    timer.current = setInterval(() => setIdx((i) => (i + 1) % MESSAGES.length), 4000);
+    if (!active) return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    timer.current = setInterval(() => {
+      if (!document.hidden) setIdx((i) => (i + 1) % MESSAGES.length);
+    }, 4000);
     return () => clearInterval(timer.current);
-  }, []);
+  }, [active]);
 
   if (!active) return null;
   return (

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, formatPrice, isImagePath, normalizeBook } from './format';
+import { formatDate, formatPrice, isImagePath, isSoldOut, normalizeBook } from './format';
 
 describe('formatPrice', () => {
   it('formats a number with the درهم suffix', () => {
@@ -74,5 +74,28 @@ describe('normalizeBook', () => {
     const b = normalizeBook({ id: '1', title_ar: 'الداء والدواء', price: 70 });
     expect(b.id).toBe('1');
     expect(b.title_ar).toBe('الداء والدواء');
+  });
+});
+
+describe('isSoldOut', () => {
+  it('is sold out on manual flag even with stock', () => {
+    expect(isSoldOut({ is_out_of_stock: true, stock_qty: 10 })).toBe(true);
+  });
+
+  it('is sold out when stock hits zero without the flag', () => {
+    expect(isSoldOut({ is_out_of_stock: false, stock_qty: 0 })).toBe(true);
+  });
+
+  it('is available with stock and no flag', () => {
+    expect(isSoldOut({ is_out_of_stock: false, stock_qty: 5 })).toBe(false);
+  });
+
+  it('treats unknown stock as available (demo/sample rows)', () => {
+    expect(isSoldOut({ is_out_of_stock: false })).toBe(false);
+  });
+
+  it('treats a missing book as sold out', () => {
+    expect(isSoldOut(null)).toBe(true);
+    expect(isSoldOut(undefined)).toBe(true);
   });
 });

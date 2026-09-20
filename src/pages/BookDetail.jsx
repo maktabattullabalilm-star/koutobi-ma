@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBook, getRelatedBooks } from '../lib/api';
 import { getAppSetting } from '../lib/admin';
-import { formatPrice } from '../lib/format';
+import { formatPrice, isSoldOut } from '../lib/format';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../components/Toast';
 import ProductCard from '../components/ProductCard';
+import BookCover from '../components/BookCover';
 import { IconBook, IconCart, IconHeadset } from '../components/icons';
 
 function Spec({ label, value }) {
@@ -81,6 +82,7 @@ export default function BookDetail() {
   const discountPct = discounted ? Math.round(((book.old_price - book.price) / book.old_price) * 100) : 0;
   const gallery = book.images && book.images.length ? book.images : [{ url: book.cover_image }];
   const current = gallery[Math.min(activeImg, gallery.length - 1)];
+  const soldOut = isSoldOut(book);
 
   /** Resolve whether to show quantity for this book. */
   const resolveShowQty = () => {
@@ -110,7 +112,7 @@ export default function BookDetail() {
         {/* gallery */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <div className="relative mx-auto max-w-md overflow-hidden rounded-card border border-line/60 shadow-card">
-            <img src={current.url} alt={book.title_ar} className="aspect-[680/960] w-full object-cover" />
+            <BookCover src={current.url} alt={book.title_ar} eager className="aspect-[680/960] w-full" imgClassName="h-full w-full object-cover" />
             {discounted && (
               <span className="absolute right-3 top-3 rounded-md bg-danger px-2.5 py-1 text-sm font-bold text-white">
                 خصم {discountPct}٪
@@ -121,7 +123,7 @@ export default function BookDetail() {
                 جديد
               </span>
             )}
-            {book.is_out_of_stock && (
+            {soldOut && (
               <span className="absolute inset-x-0 bottom-0 bg-black/70 py-2 text-center text-sm font-bold text-white">
                 نفدت الكمية حالياً
               </span>
@@ -141,7 +143,7 @@ export default function BookDetail() {
                       : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={g.url} alt="" className="h-16 w-12 object-cover" />
+                  <BookCover src={g.url} alt="" className="h-16 w-12" imgClassName="h-full w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -179,15 +181,15 @@ export default function BookDetail() {
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <button
               onClick={() => { add(book); show('تمت الإضافة إلى السلة ✓'); }}
-              disabled={book.is_out_of_stock}
+              disabled={soldOut}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-brand px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
             >
               <IconCart width={18} height={18} />
-              {book.is_out_of_stock ? 'غير متوفر' : 'أضف للسلة'}
+              {soldOut ? 'غير متوفر' : 'أضف للسلة'}
             </button>
             <button
               onClick={() => { add(book); navigate('/checkout'); }}
-              disabled={book.is_out_of_stock}
+              disabled={soldOut}
               className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               ⚡ اطلب الآن

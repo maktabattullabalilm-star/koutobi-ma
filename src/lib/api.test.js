@@ -15,6 +15,7 @@ function builder(table) {
     eq(...a) { return b._push('eq', a); },
     order(...a) { return b._push('order', a); },
     ilike(...a) { return b._push('ilike', a); },
+    or(...a) { return b._push('or', a); },
     in(...a) { return b._push('in', a); },
     insert(...a) { return b._push('insert', a); },
     maybeSingle() {
@@ -32,6 +33,10 @@ function builder(table) {
 
 const mockClient = {
   from: (table) => builder(table),
+  rpc: (...a) => {
+    state.calls.push(['rpc', 'rpc', a]);
+    return Promise.resolve({ data: 0, error: null });
+  },
 };
 
 vi.mock('./supabase', () => ({
@@ -42,8 +47,8 @@ vi.mock('./supabase', () => ({
 const { createOrder, getBook, getBooks, getCategories, getRelatedBooks } = await import('./api');
 
 const ROWS = [
-  { id: '1', title_ar: 'الداء والدواء', category: 'الرقائق والأخلاق', price: '70.00', old_price: '85.00', is_active: true, created_at: '2026-01-02' },
-  { id: '2', title_ar: 'حصن المسلم', category: 'الأذكار والأدعية', price: '15.00', old_price: null, is_active: true, created_at: '2026-01-03' },
+  { id: '1', title_ar: 'الداء والدواء', category: 'الرقائق والأخلاق', price: '70.00', old_price: '85.00', stock_qty: 10, is_active: true, created_at: '2026-01-02' },
+  { id: '2', title_ar: 'حصن المسلم', category: 'الأذكار والأدعية', price: '15.00', old_price: null, stock_qty: 10, is_active: true, created_at: '2026-01-03' },
 ];
 
 beforeEach(() => {
@@ -78,9 +83,10 @@ describe('getBooks (live)', () => {
     expect(callsFor('books', 'eq')).not.toContainEqual(['category', 'all']);
   });
 
-  it('applies trimmed title search', async () => {
+  it('searches title OR author with a trimmed needle', async () => {
     await getBooks({ q: '  حصن  ' });
-    expect(callsFor('books', 'ilike')).toContainEqual(['title_ar', '%حصن%']);
+    expect(callsFor('books', 'or')).toContainEqual(['title_ar.ilike.%حصن%,author_ar.ilike.%حصن%']);
+    expect(callsFor('books', 'ilike')).toHaveLength(0);
   });
 
   it('throws when Supabase errors', async () => {
@@ -104,10 +110,10 @@ describe('getBook (live)', () => {
 });
 
 describe('getCategories (live)', () => {
-  it('returns categories from the categories table ordered by sort', async () => {
+  it('returns categories from the categories table with live book counts', async () => {
     const cats = await getCategories();
-    expect(cats).toContainEqual({ name: 'الرقائق والأخلاق', count: 0 });
-    expect(cats).toContainEqual({ name: 'الأذكار والأدعية', count: 0 });
+    expect(cats).toContainEqual({ name: 'الرقائق والأخلاق', count: 1 });
+    expect(cats).toContainEqual({ name: 'الأذكار والأدعية', count: 1 });
   });
 
   it('returns [] on error instead of throwing', async () => {
@@ -165,5 +171,39 @@ describe('createOrder (live)', () => {
   it('throws when the items insert fails', async () => {
     state.tables.order_items = new Error('fk violation');
     await expect(createOrder(payload)).rejects.toThrow('fk violation');
+  });
+
+  it('refuses items with zero fresh stock and names the book', async () => {
+    state.tables.books = [{ ...ROWS[0], stock_qty: 0 }];
+    await expect(createOrder(payload)).rejects.toThrow('نفدت كمية');
+    await expect(createOrder(payload)).rejects.toThrow('الداء والدواء');
+    expect(callsFor('orders', 'insert')).toHaveLength(0);
+  });
+
+  it('clamps quantity to fresh stock and reports the adjustment', async () => {
+    state.tables.books = [{ ...ROWS[0], stock_qty: 1 }];
+    const res = await createOrder(payload);
+    expect(res.total).toBe(70);
+    expect(res.adjusted).toEqual([{ title: 'الداء والدواء', asked: 2, given: 1 }]);
+    expect(callsFor('order_items', 'insert')[0][0]).toEqual([
+      { order_id: res.id, book_id: '1', title_ar: 'الداء والدواء', price: 70, quantity: 1 },
+    ]);
+  });
+
+  it('decrements stock per ordered item via RPC', async () => {
+    state.calls = [];
+    const res = await createOrder(payload);
+    const rpcCalls = state.calls.filter(([t, o]) => t === 'rpc');
+    expect(rpcCalls).toContainEqual(['rpc', 'rpc', ['decrement_stock', { p_book_id: '1', p_qty: 2 }]]);
+    expect(res.id).toBeTruthy();
+  });
+
+  it('fails open when the stock read errors', async () => {
+    state.tables.books = new Error('db down');
+    // stock read throws → attachImages... no: createOrder catches read errors
+    // but the books select error surfaces via `error` field? mock returns error
+    // object → stockById stays empty → trusts cart.
+    const res = await createOrder(payload);
+    expect(res.total).toBe(140);
   });
 });

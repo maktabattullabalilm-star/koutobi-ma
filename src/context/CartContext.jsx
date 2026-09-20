@@ -23,7 +23,8 @@ export function CartProvider({ children }) {
 
   const add = useCallback((book, qty = 1) => {
     const stock = book.stock_qty ?? 99;
-    const maxQty = Math.min(stock, 99);
+    const maxQty = Math.min(Math.max(stock, 0), 99);
+    if (maxQty < 1 || qty < 1) return false;
     setItems((prev) => {
       const found = prev.find((i) => i.id === book.id);
       if (found) {
@@ -42,6 +43,7 @@ export function CartProvider({ children }) {
         },
       ];
     });
+    return true;
   }, []);
 
   const remove = useCallback((id) => setItems((prev) => prev.filter((i) => i.id !== id)), []);

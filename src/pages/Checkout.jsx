@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { createOrder } from '../lib/api';
 import { formatPrice } from '../lib/format';
 import { whatsappLink } from '../lib/config';
+import BookCover from '../components/BookCover';
 import { useToast } from '../components/Toast';
 import { IconCart, IconCash, IconHeadset } from '../components/icons';
 
@@ -47,7 +48,11 @@ export default function Checkout() {
         JSON.stringify({ id: res.id, total: res.total, name: form.name.trim(), phone: form.phone.trim(), demo: !!res.demo })
       );
       clear();
-      show('تم استلام طلبك بنجاح 🎉');
+      if (res.adjusted?.length) {
+        show(`تم تعديل الكمية حسب المتوفر: ${res.adjusted.map((a) => `«${a.title}» أصبحت ${a.given}`).join('، ')}`);
+      } else {
+        show('تم استلام طلبك بنجاح 🎉');
+      }
       navigate('/thank-you', { replace: true });
     } catch (err) {
       show(`تعذّر إرسال الطلب: ${err.message}`, 'error');
@@ -133,7 +138,7 @@ export default function Checkout() {
                 const clamped = stock < it.qty;
                 return (
                   <li key={it.id} className="flex items-center gap-3 text-sm">
-                    <img src={it.cover} alt={it.title} className="h-12 w-9 rounded border border-line object-cover" />
+                    <BookCover src={it.cover} alt={it.title} className="h-12 w-9 rounded border border-line" imgClassName="h-full w-full rounded object-cover" />
                     <span className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
                     <span className="shrink-0 text-xs text-soft">×{it.qty}</span>
                     {clamped && (

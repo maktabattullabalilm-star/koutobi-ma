@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { getCategories } from '../lib/api';
-import { PHONE_DISPLAY, whatsappLink } from '../lib/config';
+import { PHONE_DISPLAY, WHATSAPP_NUMBER, whatsappLink } from '../lib/config';
 import { IconWhatsApp, IconPhone, IconPaperPlane } from './icons';
 
 export default function Footer() {
@@ -25,7 +25,7 @@ export default function Footer() {
             <a href={whatsappLink('السلام عليكم، أريد الاستفسار عن الطلب 🛒')} target="_blank" rel="noreferrer" className="btn-primary !bg-brand">
               <IconWhatsApp /> واتساب
             </a>
-            <a href="tel:+212600000000" className="btn-ghost">
+            <a href={`tel:+${WHATSAPP_NUMBER}`} className="btn-ghost">
               <IconPhone /> {PHONE_DISPLAY}
             </a>
           </div>
@@ -76,7 +76,7 @@ export default function Footer() {
           <h4 className="mb-3 text-sm font-bold text-ink">تواصل معنا</h4>
           <ul className="space-y-2.5 text-sm text-soft">
             <li><a href={whatsappLink()} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-brand"><IconWhatsApp width={16} height={16} /> واتساب</a></li>
-            <li><a href="tel:+212600000000" className="flex items-center gap-2 hover:text-brand"><IconPhone width={16} height={16} /> {PHONE_DISPLAY}</a></li>
+            <li><a href={`tel:+${WHATSAPP_NUMBER}`} className="flex items-center gap-2 hover:text-brand"><IconPhone width={16} height={16} /> {PHONE_DISPLAY}</a></li>
             <li><a href="mailto:salam@koutobi.ma" className="flex items-center gap-2 hover:text-brand"><IconPaperPlane width={16} height={16} /> salam@koutobi.ma</a></li>
           </ul>
           <div className="mt-4 flex gap-2">

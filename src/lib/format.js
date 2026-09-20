@@ -21,3 +21,15 @@ export function normalizeBook(row) {
     images: Array.isArray(row.images) ? row.images : [],
   };
 }
+
+/**
+ * Single source of truth for availability. A book is sold out when the admin
+ * flagged it manually OR its stock ran out. Unknown stock (demo/sample rows
+ * without stock_qty) never counts as sold out.
+ */
+export function isSoldOut(book) {
+  if (!book) return true;
+  if (book.is_out_of_stock) return true;
+  if (book.stock_qty == null) return false;
+  return Number(book.stock_qty) <= 0;
+}

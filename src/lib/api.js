@@ -45,7 +45,10 @@ export async function getBooks({ category, q } = {}) {
     .order('created_at', { ascending: false });
 
   if (category && category !== 'all') query = query.eq('category', category);
-  if (q && q.trim()) query = query.ilike('title_ar', `%${q.trim()}%`);
+  if (q && q.trim()) {
+    const needle = q.trim().replace(/[%_,]/g, '');
+    query = query.or(`title_ar.ilike.%${needle}%,author_ar.ilike.%${needle}%`);
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -71,12 +74,18 @@ export async function getCategories() {
     return Object.entries(counts).map(([name, count]) => ({ name, count }));
   }
   try {
-    const { data, error } = await sb
-      .from('categories')
-      .select('name_ar')
-      .order('sort', { ascending: true });
-    if (error || !data) return [];
-    return data.map((c) => ({ name: c.name_ar, count: 0 }));
+    const [{ data: cats, error: catsErr }, { data: books, error: booksErr }] = await Promise.all([
+      sb.from('categories').select('name_ar').order('sort', { ascending: true }),
+      sb.from('books').select('category').eq('is_active', true),
+    ]);
+    if (catsErr || !cats) return [];
+    const counts = {};
+    if (!booksErr && books) {
+      books.forEach((b) => {
+        if (b.category) counts[b.category] = (counts[b.category] || 0) + 1;
+      });
+    }
+    return cats.map((c) => ({ name: c.name_ar, count: counts[c.name_ar] || 0 }));
   } catch {
     return [];
   }
@@ -91,12 +100,43 @@ export async function getRelatedBooks(book, limit = 4) {
 
 // ---------- Orders (cash on delivery) ----------
 export async function createOrder({ name, phone, address, city, notes, items }) {
-  const total = items.reduce((s, it) => s + Number(it.price) * it.qty, 0);
-
   if (!supabase) {
     // Demo mode — simulate success so the flow can be tested locally.
+    const total = items.reduce((s, it) => s + Number(it.price) * it.qty, 0);
     return { id: `local-${Date.now()}`, total, demo: true };
   }
+
+  // 1. Fresh stock re-check (cart snapshots go stale). Public SELECT on
+  //    books is allowed; a failed read fails OPEN (COD must keep flowing).
+  let stockById = null;
+  try {
+    const ids = [...new Set(items.map((it) => it.id))];
+    const { data, error } = await supabase.from('books').select('id, stock_qty, title_ar').in('id', ids);
+    if (!error && data) {
+      stockById = {};
+      data.forEach((b) => {
+        stockById[b.id] = { stock: b.stock_qty ?? 0, title: b.title_ar };
+      });
+    }
+  } catch {
+    stockById = null;
+  }
+
+  const adjusted = [];
+  const finalItems = items.map((it) => {
+    const snap = stockById?.[it.id];
+    if (!snap) return it; // unknown → trust the cart
+    if (snap.stock <= 0) {
+      throw new Error(`نفدت كمية «${it.title}» — أزلها من السلة وأعد المحاولة`);
+    }
+    if (it.qty > snap.stock) {
+      adjusted.push({ title: it.title, asked: it.qty, given: snap.stock });
+      return { ...it, qty: snap.stock };
+    }
+    return it;
+  });
+
+  const total = finalItems.reduce((s, it) => s + Number(it.price) * it.qty, 0);
 
   // NOTE: the id is generated client-side. Guests have INSERT but no
   // SELECT on orders (RLS), so `.select()` after insert would fail —
@@ -110,7 +150,7 @@ export async function createOrder({ name, phone, address, city, notes, items }) 
     .insert({ id: orderId, customer_name: name, phone, address, city, notes, total });
   if (orderErr) throw new Error(orderErr.message);
 
-  const rows = items.map((it) => ({
+  const rows = finalItems.map((it) => ({
     order_id: orderId,
     book_id: it.id,
     title_ar: it.title,
@@ -122,7 +162,7 @@ export async function createOrder({ name, phone, address, city, notes, items }) 
 
   // Decrement stock for each ordered item (SECURITY DEFINER RPC allows anon).
   try {
-    for (const it of items) {
+    for (const it of finalItems) {
       await supabase.rpc('decrement_stock', { p_book_id: it.id, p_qty: it.qty });
     }
   } catch {
@@ -130,5 +170,5 @@ export async function createOrder({ name, phone, address, city, notes, items }) 
     console.warn('decrement_stock failed for order', orderId);
   }
 
-  return { id: orderId, total };
+  return { id: orderId, total, adjusted };
 }

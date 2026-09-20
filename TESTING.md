@@ -26,15 +26,23 @@ then open **http://localhost:8888** — same site, plus the
 
 ## Storefront checklist (shop like a customer)
 
-- [ ] Homepage loads: hero, categories, new releases, bestsellers, how-it-works
+- [ ] Homepage loads: hero, categories (with real counts, not 0), new releases, bestsellers, how-it-works
 - [ ] Catalog (`/catalog`): all 5 books show with real covers and prices
-- [ ] Search: type part of a title, results filter
+- [ ] Search: type part of a title AND an author's name — both filter
 - [ ] Category chips filter the grid; sorting changes the order
 - [ ] Book page: open a book — cover, price, discount, description, specs table, related books
+- [ ] A zero-stock book shows غير متوفر and its buttons are disabled (no qty-0 orders)
 - [ ] Add to cart → cart badge count goes up → `/cart` shows the item
 - [ ] Change quantity, remove item — totals update
 - [ ] Checkout: fill **TEST-DATA ONLY** (see below) → confirm → thank-you page shows order number
-- [ ] WhatsApp buttons point to **+212 624-182004**
+- [ ] WhatsApp buttons point to **+212 624-182004**; footer tel: link dials the same number
+- [ ] A book without a cover shows a placeholder block, never a broken-image icon
+
+## Oversell check (stock truth)
+
+- [ ] In admin, set a TEST book's stock to 1 → order 1 copy as a customer → stock becomes 0 and the book shows غير متوفر
+- [ ] Try ordering it again → checkout refuses with نفدت كمية «…»
+- [ ] Restore the stock afterwards
 
 ## Verify the order actually saved
 
@@ -48,7 +56,10 @@ your TEST order row must be there, with its items in `order_items`.
 - [ ] Books table lists the 5 books → edit one (change something small) → check it on the storefront
 - [ ] Upload a cover image on a book → save → check the new image on the storefront
       (uploads go to your R2 bucket — verify in Cloudflare Dashboard → R2 → `koutobi-ma`)
-- [ ] Change-password field in the dashboard works (log out, log back in with the new password)
+- [ ] Settings page: change password works (log out, log back in with the new password)
+- [ ] Login → نسيت كلمة المرور؟ → email → click the email link → set a new password → log in
+- [ ] Log in with a non-admin account → dead-end screen now has a working تسجيل الخروج button
+      (then delete that test account in Supabase Dashboard → Authentication → Users)
 
 ## Import panel (`/admin/books/new` → استيراد 📥)
 
@@ -70,7 +81,7 @@ your TEST order row must be there, with its items in `order_items`.
 - [ ] الإعدادات → تفعيل → QR appears → scan with Google Authenticator → enter code → success
 - [ ] Log out → log in with password → code screen appears → correct code enters,
       wrong code shows an error
-- [ ] Dashboard → إلغاء التفعيل → next login is password-only again
+- [ ] الإعدادات → إلغاء التفعيل → next login is password-only again
 - [ ] Recovery (if you lose your phone): Supabase Dashboard → Authentication →
       Users → your user → delete the MFA factor, then log in password-only
 
@@ -104,5 +115,5 @@ to Netlify on your explicit approval.
 
 ---
 *Note for developers: an automated vitest suite also exists
-(`npm test`, 86 tests, mocked Supabase). It guards the code but never
+(`npm test`, 99 tests, mocked Supabase). It guards the code but never
 replaces the hand-testing above.*

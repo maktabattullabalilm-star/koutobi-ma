@@ -12,10 +12,11 @@ export default function AdminLogin() {
   const { show } = useToast();
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState('login');
+  const [mode, setMode] = useState('login'); // login | signup | forgot
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   // MFA challenge state: null | { factorId, challengeId, code }
   const [mfa, setMfa] = useState(null);
 
@@ -24,7 +25,16 @@ export default function AdminLogin() {
     setError('');
     setBusy(true);
     try {
-      if (mode === 'login') {
+      if (mode === 'forgot') {
+        const email = form.email.trim();
+        if (!email) throw new Error('أدخل بريدك الإلكتروني أولاً');
+        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/admin/reset-password`,
+        });
+        if (resetErr) throw resetErr;
+        setResetSent(true);
+        show('أُرسل رابط الاستعادة إلى بريدك ✓');
+      } else if (mode === 'login') {
         await signIn(form.email.trim(), form.password);
         // Password OK — is a second factor enrolled? (fails open: no factor → plain login)
         try {
@@ -94,9 +104,6 @@ export default function AdminLogin() {
     );
   }
 
-  if (session) {
-    if (isAdmin) navigate('/admin/dashboard', { replace: true });
-    else
   if (mfa) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
@@ -136,19 +143,33 @@ export default function AdminLogin() {
     );
   }
 
-  return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-          <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
-            <h1 className="text-lg font-bold text-ink">مرحباً بك 👋</h1>
-            <p className="mt-2 text-sm leading-7 text-soft">
-              حسابك مسجّل لكنه ليس حساب مدير.
-              <br />
-              تواصل مع صاحب المتجر لمنحك صلاحية الإدارة.
-            </p>
-            <button onClick={() => navigate('/')} className="btn-primary mt-5">العودة إلى المتجر</button>
+  if (session) {
+    if (isAdmin) navigate('/admin/dashboard', { replace: true });
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
+          <h1 className="text-lg font-bold text-ink">مرحباً بك 👋</h1>
+          <p className="mt-2 text-sm leading-7 text-soft">
+            حسابك مسجّل لكنه ليس حساب مدير.
+            <br />
+            تواصل مع صاحب المتجر لمنحك صلاحية الإدارة.
+          </p>
+          <div className="mt-5 flex flex-col gap-2">
+            <button onClick={() => navigate('/')} className="btn-primary">العودة إلى المتجر</button>
+            <button
+              onClick={async () => {
+                await signOut();
+                show('تم تسجيل الخروج');
+                navigate('/admin', { replace: true });
+              }}
+              className="btn-ghost"
+            >
+              تسجيل الخروج
+            </button>
           </div>
         </div>
-      );
+      </div>
+    );
   }
 
   return (
@@ -166,8 +187,15 @@ export default function AdminLogin() {
         </div>
 
         <form onSubmit={submit} className="rounded-card border border-line bg-white p-6 shadow-card">
-          <h1 className="text-lg font-bold text-ink">{mode === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب'}</h1>
+          <h1 className="text-lg font-bold text-ink">
+            {mode === 'login' ? 'تسجيل الدخول' : mode === 'signup' ? 'إنشاء حساب' : 'استعادة كلمة المرور'}
+          </h1>
           {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
+          {mode === 'forgot' && resetSent && (
+            <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-700">
+              أُرسل الرابط — تحقق من بريدك (ومجلد الرسائل غير المرغوبة) ثم اتبع الرابط لتعيين كلمة مرور جديدة.
+            </div>
+          )}
 
           <label className="mt-4 block text-sm font-medium text-ink" htmlFor="email">البريد الإلكتروني</label>
           <input
@@ -181,29 +209,54 @@ export default function AdminLogin() {
             className="input mt-1.5 !text-right"
           />
 
-          <label className="mt-4 block text-sm font-medium text-ink" htmlFor="password">كلمة المرور</label>
-          <input
-            id="password"
-            type="password"
-            required
-            dir="ltr"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            placeholder="••••••••"
-            className="input mt-1.5 !text-right"
-          />
+          {mode !== 'forgot' && (
+            <>
+              <div className="mt-4 flex items-center justify-between">
+                <label className="block text-sm font-medium text-ink" htmlFor="password">كلمة المرور</label>
+                {mode === 'login' && (
+                  <button
+                    type="button"
+                    onClick={() => { setMode('forgot'); setError(''); setResetSent(false); }}
+                    className="text-xs font-medium text-brand hover:text-brand-dark"
+                  >
+                    نسيت كلمة المرور؟
+                  </button>
+                )}
+              </div>
+              <input
+                id="password"
+                type="password"
+                required
+                dir="ltr"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="••••••••"
+                className="input mt-1.5 !text-right"
+              />
+            </>
+          )}
 
           <button type="submit" disabled={busy} className="btn-primary mt-6 w-full !py-3">
-            {busy ? '…' : mode === 'login' ? 'دخول' : 'إنشاء الحساب'}
+            {busy ? '…' : mode === 'login' ? 'دخول' : mode === 'signup' ? 'إنشاء الحساب' : 'إرسال رابط الاستعادة'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-            className="mt-3 w-full text-center text-sm font-medium text-brand hover:text-brand-dark"
-          >
-            {mode === 'login' ? 'ليس لديك حساب؟ أنشئ حساباً' : 'لديك حساب؟ سجّل الدخول'}
-          </button>
+          {mode === 'forgot' ? (
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(''); }}
+              className="mt-3 w-full text-center text-sm font-medium text-brand hover:text-brand-dark"
+            >
+              العودة لتسجيل الدخول
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
+              className="mt-3 w-full text-center text-sm font-medium text-brand hover:text-brand-dark"
+            >
+              {mode === 'login' ? 'ليس لديك حساب؟ أنشئ حساباً' : 'لديك حساب؟ سجّل الدخول'}
+            </button>
+          )}
         </form>
 
         <p className="mt-4 text-center text-xs text-gray-400">

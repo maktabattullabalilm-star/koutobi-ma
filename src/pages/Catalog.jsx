@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getBooks, getCategories } from '../lib/api';
 import { formatPrice } from '../lib/format';
+import { whatsappLink } from '../lib/config';
 import ProductCard from '../components/ProductCard';
 import { IconChevronDown, IconSearch } from '../components/icons';
 
@@ -127,7 +128,7 @@ export default function Catalog() {
           <IconSearch className="mx-auto text-gray-300" width={40} height={40} />
           <h3 className="mt-3 text-lg font-bold text-ink">لا توجد كتب مطابقة</h3>
           <p className="mt-1 text-sm text-soft">جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.</p>
-          <a href={`https://wa.me/212600000000?text=${encodeURIComponent('السلام عليكم، أبحث عن كتاب معيّن 📚')}`} target="_blank" rel="noreferrer" className="btn-primary mt-5">
+          <a href={whatsappLink('السلام عليكم، أبحث عن كتاب معيّن 📚')} target="_blank" rel="noreferrer" className="btn-primary mt-5">
             اطلب الكتاب عبر واتساب
           </a>
         </div>
