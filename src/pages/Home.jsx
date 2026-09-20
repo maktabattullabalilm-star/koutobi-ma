@@ -42,7 +42,7 @@ export default function Home() {
   return (
     <div>
       {/* ================= HERO ================= */}
-      <section className="bg-gradient-to-bl from-brand-dark via-brand to-brand-dark text-white">
+      <section className="bg-linear-to-bl from-brand-dark via-brand to-brand-dark text-white">
         <div className="container-x grid gap-8 py-12 sm:py-16 lg:grid-cols-2 lg:items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
@@ -59,7 +59,7 @@ export default function Home() {
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/catalog" className="inline-flex items-center gap-2 rounded-md bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark shadow transition hover:bg-amber-300">
+              <Link to="/catalog" className="inline-flex items-center gap-2 rounded-md bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark shadow-sm transition hover:bg-amber-300">
                 تسوّق الكتب <span aria-hidden>←</span>
               </Link>
               <Link to="/#how" className="inline-flex items-center gap-2 rounded-md border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
@@ -85,7 +85,7 @@ export default function Home() {
           <div className="hidden lg:grid grid-cols-3 gap-4">
             {books.slice(0, 3).map((b) => (
               <Link key={b.id} to={`/book/${b.id}`} className={`overflow-hidden rounded-card shadow-xl ring-1 ring-white/20 transition hover:-translate-y-1 ${b.is_out_of_stock ? 'opacity-95' : ''}`}>
-                <img src={b.cover_image} alt={b.title_ar} className="aspect-[680/960] w-full object-cover" />
+                <img src={b.cover_image} alt={b.title_ar} className="aspect-680/960 w-full object-cover" />
               </Link>
             ))}
           </div>
@@ -98,7 +98,7 @@ export default function Home() {
       <section className="container-x py-12">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h2 className="section-title !mb-1">تصنيفات شائعة</h2>
+            <h2 className="section-title mb-1!">تصنيفات شائعة</h2>
             <p className="text-sm text-soft">اختر تصنيفك المفضّل لاستكشاف الكتب</p>
           </div>
           <Link to="/catalog" className="hidden text-sm font-semibold text-brand hover:text-brand-dark sm:block">
@@ -132,7 +132,7 @@ export default function Home() {
         <div className="container-x">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="section-title !mb-1">أحدث الإصدارات 📖</h2>
+              <h2 className="section-title mb-1!">أحدث الإصدارات 📖</h2>
               <p className="text-sm text-soft">جديدنا الذي وصل حديثاً إلى المكتبة</p>
             </div>
             <Link to="/catalog" className="text-sm font-semibold text-brand hover:text-brand-dark">
@@ -151,7 +151,7 @@ export default function Home() {
       <section className="container-x py-12">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h2 className="section-title !mb-1">الكتب الأكثر مبيعاً ⭐</h2>
+            <h2 className="section-title mb-1!">الكتب الأكثر مبيعاً ⭐</h2>
             <p className="text-sm text-soft">تشكيلة مميّزة يفضّلها طلاب العلم</p>
           </div>
           <Link to="/catalog" className="text-sm font-semibold text-brand hover:text-brand-dark">
@@ -245,7 +245,7 @@ export default function Home() {
 
       {/* ================= BOTTOM CTA ================= */}
       <section className="container-x py-14">
-        <div className="rounded-2xl bg-gradient-to-bl from-brand-dark to-brand p-8 text-center text-white sm:p-12">
+        <div className="rounded-2xl bg-linear-to-bl from-brand-dark to-brand p-8 text-center text-white sm:p-12">
           <h2 className="text-2xl font-bold sm:text-3xl">جاهز لاقتناء كتابك المفضّل؟ 📚</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/85">
             تصفّح المكتبة، اختر كتبك، وأرسل بياناتك — وسنتواصل معك لتأكيد الطلب.

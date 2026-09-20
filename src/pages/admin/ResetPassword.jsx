@@ -75,7 +75,7 @@ export default function ResetPassword() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="8 أحرف على الأقل"
-                className="input mt-1.5 !text-right"
+                className="input mt-1.5 text-right!"
               />
               <label className="mt-4 block text-sm font-medium text-ink" htmlFor="confirm-password">تأكيد كلمة المرور</label>
               <input
@@ -86,9 +86,9 @@ export default function ResetPassword() {
                 value={form.confirm}
                 onChange={(e) => setForm({ ...form, confirm: e.target.value })}
                 placeholder="أعد كتابتها"
-                className="input mt-1.5 !text-right"
+                className="input mt-1.5 text-right!"
               />
-              <button type="submit" disabled={busy} className="btn-primary mt-6 w-full !py-3">
+              <button type="submit" disabled={busy} className="btn-primary mt-6 w-full py-3!">
                 {busy ? 'جارٍ الحفظ…' : 'تعيين كلمة المرور'}
               </button>
             </>

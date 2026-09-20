@@ -109,8 +109,8 @@ function AttributeManager({ type, items, onReload }) {
             <span className="text-sm font-medium text-ink">{a.value_ar}</span>
             <div className="flex items-center gap-1">
               <span className="text-[11px] text-soft">ترتيب: {a.sort}</span>
-              <button onClick={() => startEdit(a)} className="rounded p-1.5 text-gray-400 hover:text-brand" title="تعديل" aria-label="تعديل"><IconEdit width={14} height={14} /></button>
-              <button onClick={() => remove(a)} className="rounded p-1.5 text-gray-400 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
+              <button onClick={() => startEdit(a)} className="rounded-sm p-1.5 text-gray-400 hover:text-brand" title="تعديل" aria-label="تعديل"><IconEdit width={14} height={14} /></button>
+              <button onClick={() => remove(a)} className="rounded-sm p-1.5 text-gray-400 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
             </div>
           </li>
         ))}
@@ -254,8 +254,8 @@ export default function CatalogData() {
               <span className="text-sm font-medium text-ink">{c.name_ar}</span>
               <div className="flex items-center gap-1">
                 <span className="text-[11px] text-soft">ترتيب: {c.sort}</span>
-                <button onClick={() => catStartEdit(c)} className="rounded p-1.5 text-gray-400 hover:text-brand" title="تعديل"><IconEdit width={14} height={14} /></button>
-                <button onClick={() => catDelete(c)} className="rounded p-1.5 text-gray-400 hover:text-danger" title="حذف"><IconTrash width={14} height={14} /></button>
+                <button onClick={() => catStartEdit(c)} className="rounded-sm p-1.5 text-gray-400 hover:text-brand" title="تعديل"><IconEdit width={14} height={14} /></button>
+                <button onClick={() => catDelete(c)} className="rounded-sm p-1.5 text-gray-400 hover:text-danger" title="حذف"><IconTrash width={14} height={14} /></button>
               </div>
             </li>
           ))}

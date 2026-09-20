@@ -64,7 +64,7 @@ export default function AdminLayout() {
     <div className="border-t border-line p-3">
       <div className="mb-2 truncate px-3 text-xs text-soft">
         {profile?.email}
-        <span className="mt-0.5 block rounded bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">مدير المتجر</span>
+        <span className="mt-0.5 block rounded-sm bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">مدير المتجر</span>
       </div>
       <button
         onClick={doSignOut}

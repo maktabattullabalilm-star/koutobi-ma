@@ -57,7 +57,7 @@ export default function ThankYou() {
           )}
           target="_blank"
           rel="noreferrer"
-          className="btn-primary !bg-[#25D366] sm:flex-1"
+          className="btn-primary bg-[#25D366]! sm:flex-1"
         >
           <IconWhatsApp /> تأكيد أسرع عبر واتساب
         </a>

@@ -15,7 +15,7 @@ export default function ProductCard({ book }) {
   return (
     <div className="group card relative flex flex-col overflow-hidden border border-line/60 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lift">
       {/* cover */}
-      <Link to={`/book/${book.id}`} className="relative block aspect-[680/960] overflow-hidden bg-gray-100">
+      <Link to={`/book/${book.id}`} className="relative block aspect-680/960 overflow-hidden bg-gray-100">
         <BookCover
           src={book.cover_image}
           alt={book.title_ar}

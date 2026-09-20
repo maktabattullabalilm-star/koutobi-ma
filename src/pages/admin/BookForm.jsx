@@ -493,7 +493,7 @@ export default function BookForm() {
   const check = (k, label) => (
     <label className={`flex flex-1 cursor-pointer items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium transition ${form[k] ? 'border-brand bg-brand-light text-brand' : 'border-line bg-white text-soft'}`}>
       <input type="checkbox" checked={form[k]} onChange={toggle(k)} className="sr-only" />
-      <span className={`h-3 w-3 rounded-sm border ${form[k] ? 'border-brand bg-brand' : 'border-gray-300 bg-white'}`} />
+      <span className={`h-3 w-3 rounded-xs border ${form[k] ? 'border-brand bg-brand' : 'border-gray-300 bg-white'}`} />
       {label}
     </label>
   );
@@ -530,7 +530,7 @@ export default function BookForm() {
       />
 
       {/* sticky section tabs */}
-      <nav className="sticky top-0 z-10 -mx-1 mb-5 flex gap-1 overflow-x-auto bg-gray-50/95 px-1 py-2 backdrop-blur" aria-label="أقسام النموذج">
+      <nav className="sticky top-0 z-10 -mx-1 mb-5 flex gap-1 overflow-x-auto bg-gray-50/95 px-1 py-2 backdrop-blur-sm" aria-label="أقسام النموذج">
         {FORM_TABS.map((t) => (
           <a
             key={t.id}
@@ -670,7 +670,7 @@ export default function BookForm() {
                   onChange={(e) => setSifaUrl(e.target.value)}
                   dir="ltr"
                   placeholder="https://www.sifatusafwa.com/…/product.html"
-                  className="input flex-1 !text-right"
+                  className="input flex-1 text-right!"
                   aria-label="رابط sifatusafwa"
                 />
                 <button type="button" onClick={importFromSifaUrl} disabled={importing} className="btn-primary shrink-0">
@@ -688,7 +688,7 @@ export default function BookForm() {
                     rows={4}
                     dir="ltr"
                     placeholder="<html>…"
-                    className="input mt-2 font-mono !text-xs"
+                    className="input mt-2 font-mono text-xs!"
                     aria-label="كود HTML الصفحة"
                   />
                   <button type="button" onClick={importFromSifaHtml} disabled={importing} className="btn-primary mt-2 w-full">
@@ -705,7 +705,7 @@ export default function BookForm() {
                   onChange={(e) => setIsbnInput(e.target.value)}
                   dir="ltr"
                   placeholder="978-…"
-                  className="input flex-1 !text-right"
+                  className="input flex-1 text-right!"
                   aria-label="رقم ISBN"
                 />
                 <button type="button" onClick={importFromIsbn} disabled={importing} className="btn-primary shrink-0">
@@ -743,12 +743,12 @@ export default function BookForm() {
                       </div>
                     )}
                     {img.is_primary && (
-                      <span className="absolute right-1.5 top-1.5 rounded bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      <span className="absolute right-1.5 top-1.5 rounded-sm bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
                         ★ الرئيسية
                       </span>
                     )}
                     {img.blob && (
-                      <span className="absolute left-1.5 top-1.5 rounded bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
+                      <span className="absolute left-1.5 top-1.5 rounded-sm bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
                         ستُرفع عند الحفظ
                       </span>
                     )}
@@ -773,20 +773,20 @@ export default function BookForm() {
                         onClick={() => markPrimary(img.uid)}
                         disabled={img.is_primary}
                         title="اجعلها الصورة الرئيسية"
-                        className={`rounded p-1.5 transition ${img.is_primary ? 'text-brand' : 'text-gray-300 hover:bg-amber-50 hover:text-amber-500'}`}
+                        className={`rounded-sm p-1.5 transition ${img.is_primary ? 'text-brand' : 'text-gray-300 hover:bg-amber-50 hover:text-amber-500'}`}
                         aria-label="صورة رئيسية"
                       >
                         <IconStar filled={img.is_primary} width={16} height={16} />
                       </button>
                       <div className="flex items-center gap-0.5" dir="ltr">
-                        <button type="button" onClick={() => moveImage(img.uid, -1)} disabled={ix === 0} className="rounded p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تقديم">‹</button>
-                        <button type="button" onClick={() => moveImage(img.uid, 1)} disabled={ix === images.length - 1} className="rounded p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تأخير">›</button>
+                        <button type="button" onClick={() => moveImage(img.uid, -1)} disabled={ix === 0} className="rounded-sm p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تقديم">‹</button>
+                        <button type="button" onClick={() => moveImage(img.uid, 1)} disabled={ix === images.length - 1} className="rounded-sm p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تأخير">›</button>
                       </div>
                       <button
                         type="button"
                         onClick={() => removeImage(img.uid)}
                         title="حذف الصورة"
-                        className="rounded p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-danger"
+                        className="rounded-sm p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-danger"
                         aria-label="حذف الصورة"
                       >
                         <IconTrash width={16} height={16} />
@@ -821,7 +821,7 @@ export default function BookForm() {
                 onChange={(e) => setUrlInput(e.target.value)}
                 dir="ltr"
                 placeholder="https://…/cover.jpg"
-                className="input flex-1 !text-right"
+                className="input flex-1 text-right!"
                 aria-label="رابط صورة"
               />
               <button
@@ -848,14 +848,14 @@ export default function BookForm() {
         </section>
 
         {/* sticky save bar */}
-        <div className="sticky bottom-0 z-10 -mx-1 bg-gray-50/95 px-1 py-3 backdrop-blur">
+        <div className="sticky bottom-0 z-10 -mx-1 bg-gray-50/95 px-1 py-3 backdrop-blur-sm">
           <div className="card flex flex-col-reverse gap-3 border border-line/70 p-3 shadow-lift sm:flex-row sm:items-center sm:justify-between">
             <Link to="/admin/books" className="btn-ghost">إلغاء</Link>
             <div className="flex items-center gap-3">
               {images.length > 0 && (
                 <span className="text-xs text-soft">{images.length} صور · {images.filter((i) => i.blob).length} بانتظار الرفع</span>
               )}
-              <button type="submit" disabled={saving || staging} className="btn-primary flex-1 !px-8 sm:flex-none">
+              <button type="submit" disabled={saving || staging} className="btn-primary flex-1 px-8! sm:flex-none">
                 {saving ? 'جارٍ الحفظ…' : isEdit ? 'حفظ التعديلات' : 'نشر الكتاب'}
               </button>
             </div>

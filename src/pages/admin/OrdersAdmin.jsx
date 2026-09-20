@@ -141,14 +141,14 @@ export default function OrdersAdmin() {
                     )}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn-ghost !bg-[#25D366]/10 !border-[#25D366]/40"
+                    className="btn-ghost bg-[#25D366]/10! border-[#25D366]/40!"
                   >
                     <IconWhatsApp width={16} height={16} /> اتصال واتساب
                   </a>
                   <select
                     value={o.status}
                     onChange={(e) => setStatus(o.id, e.target.value)}
-                    className="rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-ink outline-none focus:border-brand"
+                    className="rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-ink outline-hidden focus:border-brand"
                   >
                     {STATUS.map((s) => (
                       <option key={s.id} value={s.id}>{s.label}</option>

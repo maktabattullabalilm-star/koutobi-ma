@@ -164,9 +164,9 @@ export default function Settings() {
               value={newPass}
               onChange={(e) => setNewPass(e.target.value)}
               placeholder="كلمة مرور جديدة"
-              className="input flex-1 !py-2 !text-right"
+              className="input flex-1 py-2! text-right!"
             />
-            <button type="submit" disabled={passBusy} className="btn-ghost shrink-0 !px-4 !py-2">
+            <button type="submit" disabled={passBusy} className="btn-ghost shrink-0 px-4! py-2!">
               {passBusy ? '…' : 'حفظ'}
             </button>
           </div>
@@ -189,7 +189,7 @@ export default function Settings() {
           {mfaState === 'off' && (
             <div className="mt-2">
               <p className="text-xs leading-5 text-soft">أضف طبقة حماية: رمز من تطبيق المصادقة (Google Authenticator) عند كل دخول.</p>
-              <button onClick={startEnroll} disabled={mfaBusy} className="btn-ghost mt-2 w-full !py-2 text-xs">
+              <button onClick={startEnroll} disabled={mfaBusy} className="btn-ghost mt-2 w-full py-2! text-xs">
                 {mfaBusy ? '…' : 'تفعيل بخطوتين'}
               </button>
             </div>
@@ -204,7 +204,7 @@ export default function Settings() {
                 />
               )}
               {enroll.secret && (
-                <p className="break-all rounded bg-gray-50 px-2 py-1.5 text-center font-mono text-[11px] text-soft" dir="ltr">
+                <p className="break-all rounded-sm bg-gray-50 px-2 py-1.5 text-center font-mono text-[11px] text-soft" dir="ltr">
                   {enroll.secret}
                 </p>
               )}
@@ -217,9 +217,9 @@ export default function Settings() {
                   autoComplete="one-time-code"
                   maxLength={8}
                   placeholder="123456"
-                  className="input flex-1 !py-2 text-center font-bold tracking-[0.4em]"
+                  className="input flex-1 py-2! text-center font-bold tracking-[0.4em]"
                 />
-                <button type="submit" disabled={mfaBusy} className="btn-primary shrink-0 !px-4 !py-2 text-xs">
+                <button type="submit" disabled={mfaBusy} className="btn-primary shrink-0 px-4! py-2! text-xs">
                   {mfaBusy ? '…' : 'تأكيد'}
                 </button>
               </div>

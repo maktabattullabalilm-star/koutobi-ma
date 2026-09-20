@@ -125,9 +125,9 @@ export default function AdminLogin() {
               value={mfa.code}
               onChange={(e) => setMfa({ ...mfa, code: e.target.value })}
               placeholder="123456"
-              className="input mt-4 !py-3 text-center !text-2xl font-bold tracking-[0.5em]"
+              className="input mt-4 py-3! text-center text-2xl! font-bold tracking-[0.5em]"
             />
-            <button type="submit" disabled={busy} className="btn-primary mt-4 w-full !py-3">
+            <button type="submit" disabled={busy} className="btn-primary mt-4 w-full py-3!">
               {busy ? 'جارٍ التحقق…' : 'تحقق'}
             </button>
             <button
@@ -206,7 +206,7 @@ export default function AdminLogin() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             placeholder="you@example.com"
-            className="input mt-1.5 !text-right"
+            className="input mt-1.5 text-right!"
           />
 
           {mode !== 'forgot' && (
@@ -231,12 +231,12 @@ export default function AdminLogin() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="••••••••"
-                className="input mt-1.5 !text-right"
+                className="input mt-1.5 text-right!"
               />
             </>
           )}
 
-          <button type="submit" disabled={busy} className="btn-primary mt-6 w-full !py-3">
+          <button type="submit" disabled={busy} className="btn-primary mt-6 w-full py-3!">
             {busy ? '…' : mode === 'login' ? 'دخول' : mode === 'signup' ? 'إنشاء الحساب' : 'إرسال رابط الاستعادة'}
           </button>
 

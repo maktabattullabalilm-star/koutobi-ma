@@ -221,7 +221,7 @@ export default function BooksAdmin() {
       {error && <div className="mb-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>}
 
       {/* sticky filter bar */}
-      <div className="sticky top-0 z-10 -mx-1 bg-gray-50/95 px-1 py-2 backdrop-blur">
+      <div className="sticky top-0 z-10 -mx-1 bg-gray-50/95 px-1 py-2 backdrop-blur-sm">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -232,7 +232,7 @@ export default function BooksAdmin() {
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Segmented options={STATUS_OPTS} value={statusFilter} onChange={setStatusFilter} label="حالة النشر" />
           <Segmented options={STOCK_OPTS} value={stockFilter} onChange={setStockFilter} label="المخزون" />
-          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="input !w-auto !py-2 text-xs" aria-label="التصنيف">
+          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="input w-auto! py-2! text-xs" aria-label="التصنيف">
             <option value="all">كل التصنيفات</option>
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
@@ -279,7 +279,7 @@ export default function BooksAdmin() {
                 <td colSpan={6} className="px-4 py-12 text-center">
                   <p className="text-sm text-soft">لا توجد نتائج مطابقة.</p>
                   {isFiltered && (
-                    <button onClick={clearFilters} className="btn-ghost mt-3 !py-2 text-xs">مسح الفلاتر</button>
+                    <button onClick={clearFilters} className="btn-ghost mt-3 py-2! text-xs">مسح الفلاتر</button>
                   )}
                 </td>
               </tr>
@@ -288,7 +288,7 @@ export default function BooksAdmin() {
                 <tr key={b.id} className="border-b border-line/60 last:border-0 hover:bg-gray-50/60">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
-                      <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
+                      <span className={`relative shrink-0 overflow-hidden rounded-sm border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
                         <BookCover src={b.cover_image} alt="" className="h-12 w-9" imgClassName="h-full w-full object-cover" />
                         {soldOut(b) && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[9px] font-bold text-white">نفد</span>
@@ -341,14 +341,14 @@ export default function BooksAdmin() {
           <div className="card border border-line/60 p-10 text-center">
             <p className="text-sm text-soft">لا توجد نتائج مطابقة.</p>
             {isFiltered && (
-              <button onClick={clearFilters} className="btn-ghost mt-3 !py-2 text-xs">مسح الفلاتر</button>
+              <button onClick={clearFilters} className="btn-ghost mt-3 py-2! text-xs">مسح الفلاتر</button>
             )}
           </div>
         ) : (
           filtered.map((b) => (
             <article key={b.id} className="card border border-line/60 p-4">
               <div className="flex gap-3">
-                <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
+                <span className={`relative shrink-0 overflow-hidden rounded-sm border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
                   <BookCover src={b.cover_image} alt="" className="h-16 w-12" imgClassName="h-full w-full object-cover" />
                   {soldOut(b) && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[10px] font-bold text-white">نفد</span>

@@ -123,7 +123,7 @@ export default function Checkout() {
             </p>
           </section>
 
-          <button type="submit" disabled={submitting} className="btn-primary w-full !py-4 text-base">
+          <button type="submit" disabled={submitting} className="btn-primary w-full py-4! text-base">
             {submitting ? 'جارٍ إرسال الطلب…' : `تأكيد الطلب — ${formatPrice(total)}`}
           </button>
         </form>
@@ -138,11 +138,11 @@ export default function Checkout() {
                 const clamped = stock < it.qty;
                 return (
                   <li key={it.id} className="flex items-center gap-3 text-sm">
-                    <BookCover src={it.cover} alt={it.title} className="h-12 w-9 rounded border border-line" imgClassName="h-full w-full rounded object-cover" />
+                    <BookCover src={it.cover} alt={it.title} className="h-12 w-9 rounded-sm border border-line" imgClassName="h-full w-full rounded-sm object-cover" />
                     <span className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
                     <span className="shrink-0 text-xs text-soft">×{it.qty}</span>
                     {clamped && (
-                      <span className="shrink-0 text-xs text-danger bg-rose-50 px-2 py-0.5 rounded">
+                      <span className="shrink-0 text-xs text-danger bg-rose-50 px-2 py-0.5 rounded-sm">
                         تم تقليص الكمية إلى المخزون ({stock})
                       </span>
                     )}

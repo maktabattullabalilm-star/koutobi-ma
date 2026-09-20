@@ -94,7 +94,7 @@ export default function Cart() {
             <p className="mt-2 flex items-center gap-1.5 text-xs text-soft">
               <IconTruck width={14} height={14} /> الدفع نقداً عند استلام الطلب.
             </p>
-            <Link to="/checkout" className="btn-primary mt-4 w-full !py-3.5">إتمام الطلب ←</Link>
+            <Link to="/checkout" className="btn-primary mt-4 w-full py-3.5!">إتمام الطلب ←</Link>
             <Link to="/catalog" className="btn-ghost mt-2 w-full">متابعة التسوق</Link>
           </div>
         </aside>

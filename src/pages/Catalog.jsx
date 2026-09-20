@@ -103,7 +103,7 @@ export default function Catalog() {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="appearance-none rounded-md border border-line bg-white py-2 pe-8 ps-3 text-sm font-medium text-ink outline-none focus:border-brand"
+              className="appearance-none rounded-md border border-line bg-white py-2 pe-8 ps-3 text-sm font-medium text-ink outline-hidden focus:border-brand"
             >
               {SORTS.map((s) => (
                 <option key={s.id} value={s.id}>{s.label}</option>
@@ -118,7 +118,7 @@ export default function Catalog() {
       {loading ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="card aspect-[4/5] animate-pulse bg-gray-100" />
+            <div key={i} className="card aspect-4/5 animate-pulse bg-gray-100" />
           ))}
         </div>
       ) : error ? (

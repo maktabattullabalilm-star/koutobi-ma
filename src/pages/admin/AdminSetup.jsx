@@ -153,7 +153,7 @@ export default function AdminSetup() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="you@example.com"
-              className="input mt-1.5 !text-right"
+              className="input mt-1.5 text-right!"
             />
 
             <label className="mt-4 block text-sm font-medium text-ink" htmlFor="su-pass">كلمة المرور (8 أحرف على الأقل)</label>
@@ -165,7 +165,7 @@ export default function AdminSetup() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
-              className="input mt-1.5 !text-right"
+              className="input mt-1.5 text-right!"
             />
 
             <label className="mt-4 block text-sm font-medium text-ink" htmlFor="su-confirm">تأكيد كلمة المرور</label>
@@ -177,10 +177,10 @@ export default function AdminSetup() {
               value={form.confirm}
               onChange={(e) => setForm({ ...form, confirm: e.target.value })}
               placeholder="••••••••"
-              className="input mt-1.5 !text-right"
+              className="input mt-1.5 text-right!"
             />
 
-            <button type="submit" disabled={busy} className="btn-primary mt-6 w-full !py-3">
+            <button type="submit" disabled={busy} className="btn-primary mt-6 w-full py-3!">
               {busy ? 'جارٍ التفعيل…' : 'تفعيل حساب المدير'}
             </button>
             <p className="mt-3 text-center text-xs text-gray-400">

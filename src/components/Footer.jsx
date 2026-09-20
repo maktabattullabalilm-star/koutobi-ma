@@ -22,7 +22,7 @@ export default function Footer() {
             <p className="text-sm text-soft">اطلب عبر الموقع وسنتصل بك لتأكيد الطلب والتوصيل.</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <a href={whatsappLink('السلام عليكم، أريد الاستفسار عن الطلب 🛒')} target="_blank" rel="noreferrer" className="btn-primary !bg-brand">
+            <a href={whatsappLink('السلام عليكم، أريد الاستفسار عن الطلب 🛒')} target="_blank" rel="noreferrer" className="btn-primary bg-brand!">
               <IconWhatsApp /> واتساب
             </a>
             <a href={`tel:+${WHATSAPP_NUMBER}`} className="btn-ghost">

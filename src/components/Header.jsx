@@ -32,7 +32,7 @@ export default function Header() {
     `whitespace-nowrap px-3 py-2 text-[13px] font-medium transition ${isActive ? 'text-brand font-semibold' : 'text-ink hover:text-brand'}`;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-line/70 bg-white/95 backdrop-blur-sm">
       <div className="container-x">
         {/* top row */}
         <div className="flex h-16 items-center gap-3">
@@ -55,7 +55,7 @@ export default function Header() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="ابحث عن كتاب، مؤلف، تصنيف…"
-                className="w-full bg-transparent py-2.5 text-sm text-ink outline-none placeholder:text-gray-400"
+                className="w-full bg-transparent py-2.5 text-sm text-ink outline-hidden placeholder:text-gray-400"
               />
             </div>
           </form>
@@ -114,10 +114,10 @@ export default function Header() {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="ابحث…"
-                  className="w-full bg-transparent py-2 text-sm outline-none"
+                  className="w-full bg-transparent py-2 text-sm outline-hidden"
                 />
               </div>
-              <button type="submit" className="btn-primary !px-4 !py-2">ذهب</button>
+              <button type="submit" className="btn-primary px-4! py-2!">ذهب</button>
             </form>
 
             <nav className="flex-1 overflow-y-auto px-2 py-3">
