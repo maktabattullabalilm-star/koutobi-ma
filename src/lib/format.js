@@ -14,5 +14,10 @@ export function isImagePath(v) {
 }
 
 export function normalizeBook(row) {
-  return { ...row, price: Number(row.price || 0), old_price: row.old_price ? Number(row.old_price) : null };
+  return {
+    ...row,
+    price: Number(row.price || 0),
+    old_price: row.old_price ? Number(row.old_price) : null,
+    images: Array.isArray(row.images) ? row.images : [],
+  };
 }

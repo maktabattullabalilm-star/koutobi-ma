@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
-import { IconBook, IconInbox, IconLogout, IconWrench } from '../../components/icons';
+import { IconBook, IconInbox, IconLogout, IconWrench, IconGrid } from '../../components/icons';
 
 export default function AdminLayout() {
   const { session, profile, loading, isAdmin, signOut } = useAuth();
@@ -47,6 +47,9 @@ export default function AdminLayout() {
           </NavLink>
           <NavLink to="/admin/books" className={active}>
             <IconBook width={18} height={18} /> الكتب
+          </NavLink>
+          <NavLink to="/admin/catalog" className={active}>
+            <IconGrid width={18} height={18} /> بيانات الكتالوج
           </NavLink>
           <NavLink to="/admin/orders" className={active}>
             <IconWrench width={18} height={18} /> الطلبات

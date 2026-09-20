@@ -1,6 +1,6 @@
 # 2. Editable categories & attributes
 
-- **Status:** planned
+- **Status:** **done**
 - **Size:** M
 - **Depends on:** nothing (after image system v2 by build order)
 
@@ -13,18 +13,18 @@ arrays in code.
 
 ## Spec / acceptance criteria
 
-- [ ] New admin page (under `/admin`, e.g. `/admin/catalog-data`) with two
+- [x] New admin page (under `/admin`, e.g. `/admin/catalog-data`) with two
   managers: categories list + attribute lists grouped by type.
-- [ ] Categories: name_ar (unique), sort order, book count shown,
+- [x] Categories: name_ar (unique), sort order, book count shown,
   delete blocked (or reassign prompt) when books still use it.
-- [ ] Attribute types ship seeded with current values:
+- [x] Attribute types ship seeded with current values:
   التجليد (فني/عادي)، المقاس (17×24، 14×20، 12×17، 24×17 سم)،
   الورق (شامواه/أبيض). New types addable (e.g. اللغة).
-- [ ] BookForm category/binding/size/paper selects read from DB with
+- [x] BookForm category/binding/size/paper selects read from DB with
   loading fallback to today's hardcoded values if the fetch fails.
-- [ ] Storefront category chips/nav read from the same source
+- [x] Storefront category chips/nav read from the same source
   (cached, fallback to `config.js` list on error).
-- [ ] Deleting a category in use: admin must pick a replacement category
+- [x] Deleting a category in use: admin must pick a replacement category
   for affected books first (no silent orphans).
 
 ## Schema

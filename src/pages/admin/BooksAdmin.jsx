@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { adminDeleteBook, adminGetBooks, adminUpdateBook } from '../../lib/admin';
+import { useAuth } from '../../context/AuthContext';
+import { adminDeleteBookWithImages, adminGetBooks, adminUpdateBook, adminDecrementStock } from '../../lib/admin';
 import { formatPrice } from '../../lib/format';
 import { useToast } from '../../components/Toast';
-import { IconCart, IconClose, IconEdit } from '../../components/icons';
+import { IconCart, IconClose, IconEdit, IconMinus, IconPlus } from '../../components/icons';
 
 export default function BooksAdmin() {
+  const { session } = useAuth();
   const [books, setBooks] = useState(null);
   const [query, setQuery] = useState('');
   const [busy, setBusy] = useState('');
@@ -45,11 +47,25 @@ export default function BooksAdmin() {
   };
 
   const remove = async (b) => {
-    if (!window.confirm(`حذف كتاب «${b.title_ar}» نهائياً؟`)) return;
+    if (!window.confirm(`حذف كتاب «${b.title_ar}» نهائياً مع صوره من التخزين؟`)) return;
     setBusy(b.id);
     try {
-      await adminDeleteBook(b.id);
-      show('تم حذف الكتاب');
+      await adminDeleteBookWithImages(b.id, session?.access_token);
+      show('تم حذف الكتاب وصوره');
+      load();
+    } catch (e) {
+      show(e.message, 'error');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const adjustStock = async (b, delta) => {
+    const newQty = Math.max(0, (b.stock_qty || 0) + delta);
+    setBusy(b.id);
+    try {
+      await adminUpdateBook(b.id, { stock_qty: newQty, is_out_of_stock: newQty === 0 });
+      show(`تم تحديث المخزون إلى ${newQty}`);
       load();
     } catch (e) {
       show(e.message, 'error');
@@ -84,6 +100,7 @@ export default function BooksAdmin() {
               <th className="px-4 py-3 text-start font-semibold">الكتاب</th>
               <th className="px-4 py-3 text-start font-semibold">التصنيف</th>
               <th className="px-4 py-3 text-start font-semibold">السعر</th>
+              <th className="px-4 py-3 text-center font-semibold">المخزون</th>
               <th className="px-4 py-3 text-center font-semibold">الحالة</th>
               <th className="px-4 py-3 text-center font-semibold">مميز</th>
               <th className="px-4 py-3 text-center font-semibold">إجراءات</th>
@@ -117,6 +134,29 @@ export default function BooksAdmin() {
                     {b.old_price != null && b.old_price > b.price && (
                       <span className="ms-1.5 text-xs text-soft line-through">{formatPrice(b.old_price)}</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => adjustStock(b, -1)}
+                        disabled={busy === b.id || (b.stock_qty || 0) <= 0}
+                        className="rounded p-1.5 text-gray-400 transition hover:bg-rose-50 hover:text-danger disabled:opacity-30"
+                        title="نقص"
+                      >
+                        <IconMinus width={14} height={14} />
+                      </button>
+                      <span className={`font-bold ${(b.stock_qty || 0) <= 5 ? 'text-danger' : 'text-brand'}`}>
+                        {b.stock_qty ?? 0}
+                      </span>
+                      <button
+                        onClick={() => adjustStock(b, 1)}
+                        disabled={busy === b.id}
+                        className="rounded p-1.5 text-gray-400 transition hover:bg-brand-light hover:text-brand disabled:opacity-30"
+                        title="زيادة"
+                      >
+                        <IconPlus width={14} height={14} />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <button

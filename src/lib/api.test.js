@@ -15,6 +15,7 @@ function builder(table) {
     eq(...a) { return b._push('eq', a); },
     order(...a) { return b._push('order', a); },
     ilike(...a) { return b._push('ilike', a); },
+    in(...a) { return b._push('in', a); },
     insert(...a) { return b._push('insert', a); },
     maybeSingle() {
       const rows = state.tables[table] || [];
@@ -46,7 +47,13 @@ const ROWS = [
 ];
 
 beforeEach(() => {
-  state.tables = { books: [...ROWS], orders: [], order_items: [] };
+  state.tables = {
+    books: [...ROWS],
+    orders: [],
+    order_items: [],
+    categories: [{ name_ar: 'الرقائق والأخلاق' }, { name_ar: 'الأذكار والأدعية' }],
+    book_images: [],
+  };
   state.calls = [];
 });
 
@@ -97,14 +104,14 @@ describe('getBook (live)', () => {
 });
 
 describe('getCategories (live)', () => {
-  it('aggregates counts per category', async () => {
+  it('returns categories from the categories table ordered by sort', async () => {
     const cats = await getCategories();
-    expect(cats).toContainEqual({ name: 'الرقائق والأخلاق', count: 1 });
-    expect(cats).toContainEqual({ name: 'الأذكار والأدعية', count: 1 });
+    expect(cats).toContainEqual({ name: 'الرقائق والأخلاق', count: 0 });
+    expect(cats).toContainEqual({ name: 'الأذكار والأدعية', count: 0 });
   });
 
   it('returns [] on error instead of throwing', async () => {
-    state.tables.books = new Error('db down');
+    state.tables.categories = new Error('db down');
     await expect(getCategories()).resolves.toEqual([]);
   });
 });

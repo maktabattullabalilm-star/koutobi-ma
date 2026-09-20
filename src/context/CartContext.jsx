@@ -22,10 +22,12 @@ export function CartProvider({ children }) {
   }, [items]);
 
   const add = useCallback((book, qty = 1) => {
+    const stock = book.stock_qty ?? 99;
+    const maxQty = Math.min(stock, 99);
     setItems((prev) => {
       const found = prev.find((i) => i.id === book.id);
       if (found) {
-        return prev.map((i) => (i.id === book.id ? { ...i, qty: Math.min(i.qty + qty, 99) } : i));
+        return prev.map((i) => (i.id === book.id ? { ...i, qty: Math.min(i.qty + qty, maxQty) } : i));
       }
       return [
         ...prev,
@@ -35,7 +37,8 @@ export function CartProvider({ children }) {
           author: book.author_ar,
           price: Number(book.price || 0),
           cover: book.cover_image,
-          qty: Math.min(Math.max(qty, 1), 99),
+          stock: stock,
+          qty: Math.min(Math.max(qty, 1), maxQty),
         },
       ];
     });
@@ -45,7 +48,13 @@ export function CartProvider({ children }) {
 
   const setQty = useCallback((id, qty) => {
     if (qty < 1) return;
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: Math.min(qty, 99) } : i)));
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const maxQty = Math.min(i.stock ?? 99, 99);
+        return { ...i, qty: Math.min(qty, maxQty) };
+      })
+    );
   }, []);
 
   const clear = useCallback(() => setItems([]), []);

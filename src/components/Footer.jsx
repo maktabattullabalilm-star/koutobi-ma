@@ -1,8 +1,17 @@
 import { Link } from 'react-router-dom';
-import { CATEGORIES, PHONE_DISPLAY, whatsappLink } from '../lib/config';
+import { useEffect, useState } from 'react';
+import { getCategories } from '../lib/api';
+import { PHONE_DISPLAY, whatsappLink } from '../lib/config';
 import { IconWhatsApp, IconPhone, IconPaperPlane } from './icons';
 
 export default function Footer() {
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, []);
   return (
     <footer className="mt-16 border-t border-line bg-gray-50">
       {/* contact strip */}
@@ -43,7 +52,7 @@ export default function Footer() {
         <div>
           <h4 className="mb-3 text-sm font-bold text-ink">التصنيفات</h4>
           <ul className="space-y-2 text-sm text-soft">
-            {CATEGORIES.map((c) => (
+            {categories.map((c) => (
               <li key={c.slug}>
                 <Link to={`/catalog?category=${encodeURIComponent(c.slug)}`} className="hover:text-brand">
                   {c.name}

@@ -128,14 +128,23 @@ export default function Checkout() {
           <div className="card border border-line/60 bg-white p-5">
             <h2 className="text-base font-bold text-ink">طلبك ({count})</h2>
             <ul className="mt-3 space-y-2.5 border-b border-line pb-4">
-              {items.map((it) => (
-                <li key={it.id} className="flex items-center gap-3 text-sm">
-                  <img src={it.cover} alt={it.title} className="h-12 w-9 rounded border border-line object-cover" />
-                  <span className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
-                  <span className="shrink-0 text-xs text-soft">×{it.qty}</span>
-                  <span className="shrink-0 font-semibold text-brand">{formatPrice(it.price * it.qty)}</span>
-                </li>
-              ))}
+              {items.map((it) => {
+                const stock = it.stock ?? 99;
+                const clamped = stock < it.qty;
+                return (
+                  <li key={it.id} className="flex items-center gap-3 text-sm">
+                    <img src={it.cover} alt={it.title} className="h-12 w-9 rounded border border-line object-cover" />
+                    <span className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
+                    <span className="shrink-0 text-xs text-soft">×{it.qty}</span>
+                    {clamped && (
+                      <span className="shrink-0 text-xs text-danger bg-rose-50 px-2 py-0.5 rounded">
+                        تم تقليص الكمية إلى المخزون ({stock})
+                      </span>
+                    )}
+                    <span className="shrink-0 font-semibold text-brand">{formatPrice(it.price * it.qty)}</span>
+                  </li>
+                );
+              })}
             </ul>
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="font-bold text-ink">الإجمالي</span>

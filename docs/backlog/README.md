@@ -6,9 +6,9 @@ Planned work, one file per task. Status legend: `planned` → `in_progress` → 
 
 | # | Task file | Status | Size |
 |---|-----------|--------|------|
-| 1 | [Image system v2](./01-image-system-v2.md) | planned | L |
-| 2 | [Editable categories & attributes](./02-categories-attributes.md) | planned | M |
-| 3 | [Stock basics + quantity visibility](./03-stock-quantity.md) | planned | M |
+| 1 | [Image system v2](./01-image-system-v2.md) | **done** | L |
+| 2 | [Editable categories & attributes](./02-categories-attributes.md) | **done** | M |
+| 3 | [Stock basics + quantity visibility](./03-stock-quantity.md) | **done** | M |
 | 4 | [Import from sifatusafwa URL](./04-sifatusafwa-import.md) | planned | M |
 | 5 | [Import by ISBN](./05-isbn-import.md) | planned | S–M |
 | 6 | [Full responsiveness pass](./06-responsiveness.md) | planned | M |

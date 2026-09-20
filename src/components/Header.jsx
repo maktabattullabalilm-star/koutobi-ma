@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { CATEGORIES } from '../lib/config';
+import { getCategories } from '../lib/api';
 import { IconCart, IconClose, IconMenu, IconSearch, IconWrench } from './icons';
 
 export default function Header() {
   const { count } = useCart();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
+  const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -75,8 +82,8 @@ export default function Header() {
           <NavLink to="/catalog" className={navLink} end>
             كل الكتب
           </NavLink>
-          {CATEGORIES.map((c) => (
-            <NavLink key={c.slug} to={`/catalog?category=${encodeURIComponent(c.slug)}`} className={navLink}>
+          {categories.map((c) => (
+            <NavLink key={c.name} to={`/catalog?category=${encodeURIComponent(c.name)}`} className={navLink}>
               {c.name}
             </NavLink>
           ))}
@@ -114,7 +121,7 @@ export default function Header() {
             </form>
 
             <nav className="flex-1 overflow-y-auto px-2 py-3">
-              {[{ name: 'كل الكتب', slug: null }, ...CATEGORIES].map((c) => (
+              {[{ name: 'كل الكتب', slug: null }, ...categories].map((c) => (
                 <Link
                   key={c.slug || 'all'}
                   to={c.slug ? `/catalog?category=${encodeURIComponent(c.slug)}` : '/catalog'}

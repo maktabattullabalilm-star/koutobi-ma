@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getBook, getRelatedBooks } from '../lib/api';
+import { getAppSetting } from '../lib/admin';
 import { formatPrice } from '../lib/format';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../components/Toast';
@@ -23,13 +24,20 @@ export default function BookDetail() {
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeImg, setActiveImg] = useState(0);
+  const [showQtyDefault, setShowQtyDefault] = useState('hide');
   const { add } = useCart();
   const { show } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
+    getAppSetting('show_quantity_default').then(setShowQtyDefault).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     setLoading(true);
     setBook(null);
+    setActiveImg(0);
     getBook(id)
       .then(async (b) => {
         if (!b) {
@@ -71,6 +79,17 @@ export default function BookDetail() {
 
   const discounted = book.old_price != null && book.old_price > book.price;
   const discountPct = discounted ? Math.round(((book.old_price - book.price) / book.old_price) * 100) : 0;
+  const gallery = book.images && book.images.length ? book.images : [{ url: book.cover_image }];
+  const current = gallery[Math.min(activeImg, gallery.length - 1)];
+
+  /** Resolve whether to show quantity for this book. */
+  const resolveShowQty = () => {
+    if (book.show_quantity === 'show') return true;
+    if (book.show_quantity === 'hide') return false;
+    return showQtyDefault === 'show';
+  };
+  const showQty = resolveShowQty();
+  const inStock = (book.stock_qty ?? 0) > 0;
 
   return (
     <div className="container-x py-8">
@@ -88,10 +107,10 @@ export default function BookDetail() {
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* image */}
+        {/* gallery */}
         <div className="lg:sticky lg:top-24 lg:self-start">
           <div className="relative mx-auto max-w-md overflow-hidden rounded-card border border-line/60 shadow-card">
-            <img src={book.cover_image} alt={book.title_ar} className="aspect-[680/960] w-full object-cover" />
+            <img src={current.url} alt={book.title_ar} className="aspect-[680/960] w-full object-cover" />
             {discounted && (
               <span className="absolute right-3 top-3 rounded-md bg-danger px-2.5 py-1 text-sm font-bold text-white">
                 خصم {discountPct}٪
@@ -108,6 +127,25 @@ export default function BookDetail() {
               </span>
             )}
           </div>
+          {gallery.length > 1 && (
+            <div className="mx-auto mt-3 flex max-w-md justify-center gap-2">
+              {gallery.map((g, ix) => (
+                <button
+                  key={g.id || ix}
+                  type="button"
+                  onClick={() => setActiveImg(ix)}
+                  aria-label={`صورة ${ix + 1}`}
+                  className={`overflow-hidden rounded-md border-2 transition ${
+                    ix === Math.min(activeImg, gallery.length - 1)
+                      ? 'border-brand'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={g.url} alt="" className="h-16 w-12 object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* info */}
@@ -124,6 +162,16 @@ export default function BookDetail() {
             {discounted && <span className="text-base text-soft line-through">{formatPrice(book.old_price)}</span>}
             <span className="ms-auto rounded-full bg-brand-light px-3 py-1 text-xs font-bold text-brand">الدفع عند الاستلام</span>
           </div>
+
+          {/* stock visibility */}
+          {showQty && (
+            <p className="mt-2 text-sm font-medium flex items-center gap-2"
+              style={{ color: inStock ? (book.stock_qty <= 5 ? '#dc2626' : '#35724E') : '#dc2626' }}>
+              {inStock
+                ? `المتوفر: ${book.stock_qty} ${book.stock_qty <= 5 ? '⚠️ بقي قليل' : ''}`
+                : 'غير متوفر حالياً'}
+            </p>
+          )}
 
           <p className="mt-3 text-xs text-soft">الضريبة مضمنة في السعر · التوصيل يُحسب عند تأكيد الطلب هاتفياً.</p>
 

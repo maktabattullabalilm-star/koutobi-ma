@@ -1,6 +1,6 @@
 # 1. Image system v2 — multi-image, client resize, R2 delete, better UX
 
-- **Status:** planned
+- **Status:** **done**
 - **Size:** L
 - **Depends on:** nothing (build first)
 
@@ -13,24 +13,24 @@ also deletes it from R2 — no orphaned files, no wasted space.
 
 ## Spec / acceptance criteria
 
-- [ ] BookForm cover section rebuilt as a thumbnail grid (max 5 slots):
+- [x] BookForm cover section rebuilt as a thumbnail grid (max 5 slots):
   drag-to-reorder, per-image delete button, primary-image picker
   (primary = storefront card + detail main image).
-- [ ] Every thumbnail shows its full R2 URL with click-to-copy.
-- [ ] Client-side resize before upload: max dimension 1600px, JPEG quality
+- [x] Every thumbnail shows its full R2 URL with click-to-copy.
+- [x] Client-side resize before upload: max dimension 1600px, JPEG quality
   step-down 0.90 → 0.60 until ≤ 180 KB (floor 0.60, then accept whatever
   size results); original format preserved when sensible (JPEG/PNG/WebP).
-- [ ] Upload still goes through `POST /api/upload-image` (admin JWT + RLS
+- [x] Upload still goes through `POST /api/upload-image` (admin JWT + RLS
   check unchanged); function accepts the pre-resized file as today.
-- [ ] New endpoint `DELETE /api/delete-image` `{ key }`: verifies admin
+- [x] New endpoint `DELETE /api/delete-image` `{ key }`: verifies admin
   (same RLS check), rejects any key not starting with `covers/`,
   deletes the R2 object, returns ok.
-- [ ] Removing an image in the form calls the delete endpoint.
-- [ ] Deleting a book deletes **all** its R2 images first, then the row.
-- [ ] Replacing the primary cover deletes the old object (no orphans).
-- [ ] Storefront: detail page gallery with thumbnails; cards keep using
+- [x] Removing an image in the form calls the delete endpoint.
+- [x] Deleting a book deletes **all** its R2 images first, then the row.
+- [x] Replacing the primary cover deletes the old object (no orphans).
+- [x] Storefront: detail page gallery with thumbnails; cards keep using
   the primary image.
-- [ ] Old single `cover_image` column: migrated — primary image URL is
+- [x] Old single `cover_image` column: migrated — primary image URL is
   mirrored into `cover_image` so existing queries keep working.
 
 ## Schema

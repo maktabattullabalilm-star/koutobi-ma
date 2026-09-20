@@ -155,3 +155,33 @@ grant select on public.profiles to authenticated;
 --  After creating your admin account in the dashboard, promote it:
 --    update public.profiles set role = 'admin' where email = 'you@email.com';
 -- ============================================================
+
+-- ============================================================
+--  Migration 2026-09: book_images (multi-image gallery, backlog 01)
+--  Applied live via migration; kept here for fresh installs.
+-- ============================================================
+create table if not exists public.book_images (
+  id uuid primary key default gen_random_uuid(),
+  book_id uuid not null references public.books(id) on delete cascade,
+  url text not null,
+  r2_key text,
+  position int not null default 0,
+  is_primary boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists book_images_book_id_idx on public.book_images (book_id, position);
+
+alter table public.book_images enable row level security;
+
+drop policy if exists "book_images_public_read" on public.book_images;
+create policy "book_images_public_read"
+  on public.book_images for select
+  using (true);
+
+drop policy if exists "book_images_admin_write" on public.book_images;
+create policy "book_images_admin_write"
+  on public.book_images for all
+  using (public.is_admin())
+  with check (public.is_admin());
+
+grant select on public.book_images to anon, authenticated;

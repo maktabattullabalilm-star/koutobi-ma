@@ -12,6 +12,28 @@ async function query() {
 }
 
 // ---------- Catalog (customer side) ----------
+
+/** Attach ordered gallery rows to books. Fails open: covers keep working. */
+async function attachImages(books) {
+  const sb = supabase;
+  if (!sb || !books.length) return books;
+  try {
+    const { data, error } = await sb
+      .from('book_images')
+      .select('*')
+      .in('book_id', books.map((b) => b.id))
+      .order('position', { ascending: true });
+    if (error || !data) return books;
+    const byBook = {};
+    data.forEach((img) => {
+      (byBook[img.book_id] = byBook[img.book_id] || []).push(img);
+    });
+    return books.map((b) => ({ ...b, images: byBook[b.id] || [] }));
+  } catch {
+    return books;
+  }
+}
+
 export async function getBooks({ category, q } = {}) {
   const sb = supabase;
   if (!sb) return [...SAMPLE_BOOKS].map(normalizeBook);
@@ -27,7 +49,7 @@ export async function getBooks({ category, q } = {}) {
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data || []).map(normalizeBook);
+  return attachImages((data || []).map(normalizeBook));
 }
 
 export async function getBook(id) {
@@ -36,7 +58,9 @@ export async function getBook(id) {
 
   const { data, error } = await sb.from('books').select('*').eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
-  return data ? normalizeBook(data) : null;
+  if (!data) return null;
+  const [withImages] = await attachImages([normalizeBook(data)]);
+  return withImages;
 }
 
 export async function getCategories() {
@@ -46,13 +70,16 @@ export async function getCategories() {
     SAMPLE_BOOKS.forEach((b) => (counts[b.category] = (counts[b.category] || 0) + 1));
     return Object.entries(counts).map(([name, count]) => ({ name, count }));
   }
-  const { data, error } = await sb.from('books').select('category, price').eq('is_active', true);
-  if (error) return [];
-  const counts = {};
-  data.forEach((b) => {
-    if (b.category) counts[b.category] = (counts[b.category] || 0) + 1;
-  });
-  return Object.entries(counts).map(([name, count]) => ({ name, count }));
+  try {
+    const { data, error } = await sb
+      .from('categories')
+      .select('name_ar')
+      .order('sort', { ascending: true });
+    if (error || !data) return [];
+    return data.map((c) => ({ name: c.name_ar, count: 0 }));
+  } catch {
+    return [];
+  }
 }
 
 export async function getRelatedBooks(book, limit = 4) {
@@ -92,6 +119,16 @@ export async function createOrder({ name, phone, address, city, notes, items }) 
   }));
   const { error: itemsErr } = await supabase.from('order_items').insert(rows);
   if (itemsErr) throw new Error(itemsErr.message);
+
+  // Decrement stock for each ordered item (SECURITY DEFINER RPC allows anon).
+  try {
+    for (const it of items) {
+      await supabase.rpc('decrement_stock', { p_book_id: it.id, p_qty: it.qty });
+    }
+  } catch {
+    // Best-effort: stock mismatch can be corrected manually in admin.
+    console.warn('decrement_stock failed for order', orderId);
+  }
 
   return { id: orderId, total };
 }
