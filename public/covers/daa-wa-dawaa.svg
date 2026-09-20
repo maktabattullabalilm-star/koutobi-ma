@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="960" viewBox="0 0 680 960">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf6ea"/>
+      <stop offset="1" stop-color="#efe7d2"/>
+    </linearGradient>
+    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#35724E"/>
+      <stop offset="1" stop-color="#35724E"/>
+    </linearGradient>
+  </defs>
+  <rect width="680" height="960" fill="url(#bg)"/>
+  <rect x="0" y="0" width="680" height="90" fill="url(#band)"/>
+  <text x="340" y="58" text-anchor="middle" font-family="serif" font-size="34" fill="#ffffff" font-weight="bold">مكتبة كُتُبِي</text>
+  <rect x="40" y="0" width="8" height="960" fill="#35724E"/>
+  <rect x="632" y="0" width="8" height="960" fill="#35724E"/>
+  <line x1="120" y1="220" x2="560" y2="220" stroke="#35724E" stroke-width="3" opacity="0.7"/>
+  <line x1="120" y1="230" x2="560" y2="230" stroke="#35724E" stroke-width="1.5" opacity="0.5"/>
+  <text x="340" y="360" text-anchor="middle" font-family="serif" font-size="78" fill="#35724E" font-weight="bold">الداء والدواء</text>
+  <text x="340" y="430" text-anchor="middle" font-family="serif" font-size="30" fill="#6b5d3e">الجواب الكافي لمن سأل عن الدواء الشافي</text>
+  <line x1="120" y1="720" x2="560" y2="720" stroke="#35724E" stroke-width="1.5" opacity="0.5"/>
+  <line x1="120" y1="730" x2="560" y2="730" stroke="#35724E" stroke-width="3" opacity="0.7"/>
+  <text x="340" y="800" text-anchor="middle" font-family="serif" font-size="34" fill="#3a342b" font-weight="bold">الإمام ابن قيم الجوزية</text>
+  <text x="340" y="880" text-anchor="middle" font-family="sans-serif" font-size="22" fill="#8b7f63">كُتُبِي.ما — الدفع عند الاستلام</text>
+</svg>

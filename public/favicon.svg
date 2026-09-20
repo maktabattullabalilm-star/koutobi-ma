@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#35724E"/>
+  <path d="M32 14l16 4v18c0 9-7 13-16 17-9-4-16-8-16-17V18l16-4z" fill="#faf6ea"/>
+  <text x="32" y="38" text-anchor="middle" font-family="serif" font-size="20" font-weight="bold" fill="#35724E">ك</text>
+</svg>
