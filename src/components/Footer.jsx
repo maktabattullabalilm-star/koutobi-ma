@@ -53,8 +53,8 @@ export default function Footer() {
           <h4 className="mb-3 text-sm font-bold text-ink">التصنيفات</h4>
           <ul className="space-y-2 text-sm text-soft">
             {categories.map((c) => (
-              <li key={c.slug}>
-                <Link to={`/catalog?category=${encodeURIComponent(c.slug)}`} className="hover:text-brand">
+              <li key={c.name}>
+                <Link to={`/catalog?category=${encodeURIComponent(c.name)}`} className="hover:text-brand">
                   {c.name}
                 </Link>
               </li>
