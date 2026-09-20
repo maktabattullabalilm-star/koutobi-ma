@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminStats, adminGetOrders } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
+import {
+  challengeFactor,
+  enrollTotpFactor,
+  getVerifiedTotpFactor,
+  unenrollFactor,
+  verifyFactorCode,
+} from '../../lib/mfa';
 import { useToast } from '../../components/Toast';
 import { formatPrice, formatDate } from '../../lib/format';
 import { IconBook, IconCart, IconInbox, IconCash } from '../../components/icons';
@@ -21,6 +28,81 @@ export default function AdminDashboard() {
   const [passMsg, setPassMsg] = useState('');
   const [passBusy, setPassBusy] = useState(false);
   const { show } = useToast();
+  // 2FA state: 'unknown' | 'off' | 'on' | 'enrolling'
+  const [mfaState, setMfaState] = useState('unknown');
+  const [mfaFactorId, setMfaFactorId] = useState(null);
+  const [enroll, setEnroll] = useState(null); // { factorId, qr_code, secret }
+  const [enrollCode, setEnrollCode] = useState('');
+  const [mfaBusy, setMfaBusy] = useState(false);
+  const [mfaMsg, setMfaMsg] = useState('');
+
+  const refreshMfa = async () => {
+    try {
+      const factor = await getVerifiedTotpFactor(supabase);
+      if (factor) {
+        setMfaState('on');
+        setMfaFactorId(factor.id);
+      } else {
+        setMfaState('off');
+        setMfaFactorId(null);
+      }
+    } catch {
+      setMfaState('off');
+    }
+  };
+
+  useEffect(() => {
+    refreshMfa();
+  }, []);
+
+  const startEnroll = async () => {
+    setMfaMsg('');
+    setMfaBusy(true);
+    try {
+      const data = await enrollTotpFactor(supabase);
+      setEnroll({ factorId: data.id, qr_code: data.totp?.qr_code || '', secret: data.totp?.secret || '' });
+      setEnrollCode('');
+      setMfaState('enrolling');
+    } catch (err) {
+      setMfaMsg(err?.message || 'تعذّر بدء التفعيل');
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  const confirmEnroll = async (e) => {
+    e.preventDefault();
+    setMfaMsg('');
+    setMfaBusy(true);
+    try {
+      const ch = await challengeFactor(supabase, enroll.factorId);
+      await verifyFactorCode(supabase, { factorId: enroll.factorId, challengeId: ch.id, code: enrollCode });
+      setEnroll(null);
+      setMfaState('on');
+      setMfaFactorId(enroll.factorId);
+      show('تم تفعيل التحقق بخطوتين ✓');
+    } catch (err) {
+      setMfaMsg(err?.message || 'رمز غير صالح — حاول مجدداً');
+    } finally {
+      setMfaBusy(false);
+    }
+  };
+
+  const disableMfa = async () => {
+    if (!mfaFactorId) return;
+    if (!window.confirm('إلغاء التحقق بخطوتين؟ ستصبح كلمة المرور وسيلة الدخول الوحيدة.')) return;
+    setMfaBusy(true);
+    try {
+      await unenrollFactor(supabase, mfaFactorId);
+      setMfaState('off');
+      setMfaFactorId(null);
+      show('تم إلغاء التحقق بخطوتين');
+    } catch (err) {
+      setMfaMsg(err?.message || 'تعذّر الإلغاء');
+    } finally {
+      setMfaBusy(false);
+    }
+  };
 
   const changePassword = async (e) => {
     e.preventDefault();
@@ -68,6 +150,15 @@ export default function AdminDashboard() {
       <p className="mt-1 text-sm text-soft">ملخص أداء مكتبتك وطلبات «الدفع عند الاستلام».</p>
 
       {error && <div className="mt-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>}
+
+      {mfaState === 'off' && (
+        <button
+          onClick={() => document.getElementById('mfa-security')?.scrollIntoView({ behavior: 'smooth' })}
+          className="mt-4 block w-full rounded-md bg-amber-50 px-4 py-3 text-start text-xs leading-6 text-amber-700 ring-1 ring-inset ring-amber-200 hover:bg-amber-100"
+        >
+          🔐 حسابك محمي بكلمة المرور فقط — فعّل التحقق بخطوتين من قسم الأمان بالأسفل.
+        </button>
+      )}
 
       <section className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
@@ -145,6 +236,64 @@ export default function AdminDashboard() {
             </div>
             {passMsg && <p className="mt-1.5 text-xs text-soft">{passMsg}</p>}
           </form>
+
+          <div id="mfa-security" className="mt-5 border-t border-line pt-4">
+            <h3 className="text-sm font-bold text-ink">التحقق بخطوتين 🔐</h3>
+            {mfaState === 'unknown' && <p className="mt-2 text-xs text-soft">جارٍ التحقق…</p>}
+            {mfaState === 'on' && (
+              <div className="mt-2">
+                <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                  مفعّل ✓ — الدخول يتطلب رمز المصادقة
+                </p>
+                <button onClick={disableMfa} disabled={mfaBusy} className="mt-2 text-xs font-medium text-danger hover:underline">
+                  {mfaBusy ? '…' : 'إلغاء التفعيل'}
+                </button>
+              </div>
+            )}
+            {mfaState === 'off' && (
+              <div className="mt-2">
+                <p className="text-xs leading-5 text-soft">أضف طبقة حماية: رمز من تطبيق المصادقة (Google Authenticator) عند كل دخول.</p>
+                <button onClick={startEnroll} disabled={mfaBusy} className="btn-ghost mt-2 w-full !py-2 text-xs">
+                  {mfaBusy ? '…' : 'تفعيل بخطوتين'}
+                </button>
+              </div>
+            )}
+            {mfaState === 'enrolling' && enroll && (
+              <form onSubmit={confirmEnroll} className="mt-2 space-y-2">
+                <p className="text-xs leading-5 text-soft">امسح الرمز بتطبيق المصادقة، ثم أدخل الرمز الظاهر فيه:</p>
+                {enroll.qr_code && (
+                  <div
+                    className="mx-auto w-fit rounded-md border border-line bg-white p-2 [&>svg]:block [&>svg]:h-40 [&>svg]:w-40"
+                    dangerouslySetInnerHTML={{ __html: enroll.qr_code }}
+                  />
+                )}
+                {enroll.secret && (
+                  <p className="break-all rounded bg-gray-50 px-2 py-1.5 text-center font-mono text-[11px] text-soft" dir="ltr">
+                    {enroll.secret}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    value={enrollCode}
+                    onChange={(e) => setEnrollCode(e.target.value)}
+                    dir="ltr"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={8}
+                    placeholder="123456"
+                    className="input flex-1 !py-2 text-center font-bold tracking-[0.4em]"
+                  />
+                  <button type="submit" disabled={mfaBusy} className="btn-primary shrink-0 !px-4 !py-2 text-xs">
+                    {mfaBusy ? '…' : 'تأكيد'}
+                  </button>
+                </div>
+                <button type="button" onClick={() => { setEnroll(null); setMfaState('off'); }} className="w-full text-center text-xs text-soft hover:text-danger">
+                  إلغاء
+                </button>
+              </form>
+            )}
+            {mfaMsg && <p className="mt-1.5 text-xs text-danger">{mfaMsg}</p>}
+          </div>
         </div>
       </section>
     </div>

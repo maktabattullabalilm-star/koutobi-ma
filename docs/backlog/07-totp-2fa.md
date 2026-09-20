@@ -1,6 +1,6 @@
 # 7. Admin TOTP two-factor authentication
 
-- **Status:** planned
+- **Status:** **done**
 - **Size:** M
 - **Depends on:** nothing (build last by order; independent)
 
@@ -12,20 +12,20 @@ shown once. Customer side untouched (no accounts there).
 
 ## Spec / acceptance criteria
 
-- [ ] Uses **Supabase Auth native MFA** — no external service:
+- [x] Uses **Supabase Auth native MFA** — no external service:
   `auth.mfa.enroll({ factorType: 'totp' })` returns `qr_code` (SVG data)
   + secret; `auth.mfa.challenge()` + `auth.mfa.verify()` at login.
-- [ ] Dashboard "الأمان" section: enroll button → QR + manual secret →
+- [x] Dashboard "الأمان" section: enroll button → QR + manual secret →
   confirm-with-code step → enrolled. List/unenroll existing factors.
-- [ ] AdminLogin flow: after password success, if the account has an
+- [x] AdminLogin flow: after password success, if the account has an
   enrolled TOTP factor, show the code screen instead of entering;
   verify → dashboard. Clear error states for wrong/expired codes.
-- [ ] First-run behavior: 2FA is **optional but prompted** — dashboard
+- [x] First-run behavior: 2FA is **optional but prompted** — dashboard
   shows a persistent "فعّل التحقق بخطوتين" nudge until enrolled.
-- [ ] Recovery documented for the owner: if the authenticator is lost,
+- [x] Recovery documented for the owner: if the authenticator is lost,
   unenroll via Supabase Dashboard → Authentication → Users → MFA
   (owner-only procedure, written in this file when implemented).
-- [ ] `AdminSetup` (one-time link) unchanged — new admins enroll from
+- [x] `AdminSetup` (one-time link) unchanged — new admins enroll from
   the dashboard afterwards.
 
 ## Touches

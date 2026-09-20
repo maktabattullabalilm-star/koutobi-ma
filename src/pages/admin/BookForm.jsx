@@ -16,12 +16,13 @@ import {
   getCategoriesForForm,
   uploadR2File,
 } from '../../lib/admin';
-import { CATEGORIES, R2_PUBLIC_URL, UPLOAD_ENDPOINT } from '../../lib/config';
+import { CATEGORIES, IMPORT_ISBN_ENDPOINT, IMPORT_SIFATUSAFWA_ENDPOINT } from '../../lib/config';
 import {
   blobToBase64,
   IMAGE_MAX_COUNT,
   resizeImageToLimit,
 } from '../../lib/images';
+import { isValidIsbn } from '../../lib/importers';
 import { useToast } from '../../components/Toast';
 import { IconBook, IconCheck, IconStar, IconTrash } from '../../components/icons';
 
@@ -80,6 +81,13 @@ export default function BookForm() {
   const [paperOpts, setPaperOpts] = useState([]);
   const [bindingOpts, setBindingOpts] = useState([]);
   const [sizeOpts, setSizeOpts] = useState([]);
+  // Import panel state
+  const [importTab, setImportTab] = useState('sifa'); // sifa | isbn
+  const [sifaUrl, setSifaUrl] = useState('');
+  const [sifaHtml, setSifaHtml] = useState('');
+  const [showHtmlFallback, setShowHtmlFallback] = useState(false);
+  const [isbnInput, setIsbnInput] = useState('');
+  const [importing, setImporting] = useState(false);
 
   // Revoke local preview URLs on unmount.
   const imagesRef = useRef(images);
@@ -242,6 +250,108 @@ export default function BookForm() {
       },
     ]);
     setUrlInput('');
+  };
+
+  /** Merge imported fields into the form (only non-empty) + attach cover. Review = this form. */
+  const applyImport = (fields, cover, sourceLabel, warnings = []) => {
+    setForm((f) => {
+      const next = { ...f };
+      for (const [k, v] of Object.entries(fields || {})) {
+        if (v !== '' && v != null && k in next) next[k] = v;
+      }
+      return next;
+    });
+    if (cover?.url) {
+      setImages((prev) => {
+        if (prev.length >= IMAGE_MAX_COUNT) {
+          show('المعرض ممتلئ — أُضيفت البيانات بدون الغلاف', 'error');
+          return prev;
+        }
+        return [
+          ...prev.map((i) => ({ ...i, is_primary: false })),
+          { uid: nextUid(), url: cover.url, r2_key: cover.r2_key || null, is_primary: true },
+        ];
+      });
+    }
+    if (warnings.length) show(`ملاحظات: ${warnings.join('؛ ')}`, 'error');
+    show(`تم جلب البيانات (${sourceLabel}) — راجعها قبل الحفظ ✓`);
+  };
+
+  const callImportEndpoint = async (endpoint, payload) => {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token || ''}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(json?.error || `فشل الاستيراد (${res.status})`);
+      err.code = json?.code;
+      throw err;
+    }
+    return json;
+  };
+
+  const importFromSifaUrl = async () => {
+    const url = sifaUrl.trim();
+    if (!url) {
+      show('الصق رابط صفحة المنتج أولاً', 'error');
+      return;
+    }
+    setImporting(true);
+    try {
+      const json = await callImportEndpoint(IMPORT_SIFATUSAFWA_ENDPOINT, { url });
+      setShowHtmlFallback(false);
+      applyImport(json.fields, json.cover, 'sifatusafwa', json.warnings);
+    } catch (err) {
+      if (err.code === 'FETCH_BLOCKED') setShowHtmlFallback(true);
+      show(err.message, 'error');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const importFromSifaHtml = async () => {
+    if (!sifaHtml.trim()) {
+      show('الصق كود HTML الصفحة أولاً', 'error');
+      return;
+    }
+    setImporting(true);
+    try {
+      const json = await callImportEndpoint(IMPORT_SIFATUSAFWA_ENDPOINT, {
+        html: sifaHtml,
+        url: sifaUrl.trim() || undefined,
+      });
+      applyImport(json.fields, json.cover, 'sifatusafwa', json.warnings);
+    } catch (err) {
+      show(err.message, 'error');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const importFromIsbn = async () => {
+    const isbn = isbnInput.trim();
+    if (!isbn) {
+      show('أدخل رقم ISBN أولاً', 'error');
+      return;
+    }
+    if (!isValidIsbn(isbn)) {
+      show('رقم ISBN غير صالح — تحقق من الرقم', 'error');
+      return;
+    }
+    setImporting(true);
+    try {
+      const json = await callImportEndpoint(IMPORT_ISBN_ENDPOINT, { isbn });
+      applyImport(json.fields, json.cover, json.source === 'openlibrary' ? 'Open Library' : 'Google Books', json.warnings);
+    } catch (err) {
+      show(err.message, 'error');
+    } finally {
+      setImporting(false);
+    }
   };
 
   const save = async (e) => {
@@ -485,6 +595,88 @@ export default function BookForm() {
               </select>
             </div>
           </div>
+        </section>
+
+        {/* قسم الاستيراد */}
+        <section className="card border border-line/70 p-5">
+          <h2 className="text-base font-bold text-ink">استيراد بيانات الكتاب 📥</h2>
+          <p className="mb-4 mt-1 text-xs leading-5 text-soft">
+            اجلب البيانات من مصدر خارجي ثم راجعها وعدّلها قبل الحفظ — لا يُنشأ أي كتاب تلقائياً، والسعر يُحدَّد يدوياً دائماً (MAD).
+          </p>
+
+          <div className="mb-4 flex gap-2">
+            {[
+              { id: 'sifa', label: 'رابط sifatusafwa' },
+              { id: 'isbn', label: 'رقم ISBN' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setImportTab(t.id)}
+                className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
+                  importTab === t.id ? 'bg-brand text-white' : 'bg-gray-100 text-ink hover:bg-gray-200'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {importTab === 'sifa' ? (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  value={sifaUrl}
+                  onChange={(e) => setSifaUrl(e.target.value)}
+                  dir="ltr"
+                  placeholder="https://www.sifatusafwa.com/…/product.html"
+                  className="input flex-1 !text-right"
+                  aria-label="رابط sifatusafwa"
+                />
+                <button type="button" onClick={importFromSifaUrl} disabled={importing} className="btn-primary shrink-0">
+                  {importing ? 'جارٍ الجلب…' : 'جلب'}
+                </button>
+              </div>
+              {showHtmlFallback && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
+                  <p className="text-xs leading-5 text-amber-800">
+                    الخادم محجوب من حماية الموقع — افتح الصفحة في متصفحك، انسخ كود المصدر (Ctrl+U ثم Ctrl+A/C)، والصقه هنا:
+                  </p>
+                  <textarea
+                    value={sifaHtml}
+                    onChange={(e) => setSifaHtml(e.target.value)}
+                    rows={4}
+                    dir="ltr"
+                    placeholder="<html>…"
+                    className="input mt-2 font-mono !text-xs"
+                    aria-label="كود HTML الصفحة"
+                  />
+                  <button type="button" onClick={importFromSifaHtml} disabled={importing} className="btn-primary mt-2 w-full">
+                    {importing ? 'جارٍ التحليل…' : 'تحليل الكود الملصق'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  value={isbnInput}
+                  onChange={(e) => setIsbnInput(e.target.value)}
+                  dir="ltr"
+                  placeholder="978-…"
+                  className="input flex-1 !text-right"
+                  aria-label="رقم ISBN"
+                />
+                <button type="button" onClick={importFromIsbn} disabled={importing} className="btn-primary shrink-0">
+                  {importing ? 'جارٍ البحث…' : 'بحث'}
+                </button>
+              </div>
+              <p className="text-[11px] leading-5 text-soft">
+                البحث عبر Open Library ثم Google Books — الكتب العربية غالباً غائبة من المصدرين، وستُكمل الإدخال يدوياً عندها.
+              </p>
+            </div>
+          )}
         </section>
 
         {/* قسم الصور */}

@@ -1,6 +1,6 @@
 # 5. Import book by ISBN
 
-- **Status:** planned
+- **Status:** **done**
 - **Size:** S–M
 - **Depends on:** image system v2 (imported covers flow through it);
   pairs naturally with the sifatusafwa importer review screen.
@@ -13,12 +13,12 @@ Cover downloaded to our R2, never hotlinked.
 
 ## Spec / acceptance criteria
 
-- [ ] ISBN input (10/13 digits, hyphens/spaces tolerated, checksum
+- [x] ISBN input (10/13 digits, hyphens/spaces tolerated, checksum
   validated client-side) with lookup button in BookForm.
-- [ ] New endpoint `POST /api/import-isbn` `{ isbn }` (admin JWT + RLS
+- [x] New endpoint `POST /api/import-isbn` `{ isbn }` (admin JWT + RLS
   check): lookup chain **Open Library → Google Books**, first hit wins.
-- [ ] Cover (when present) downloaded to R2 under `covers/imported-*`.
-- [ ] Same mandatory review screen as the sifatusafwa importer
+- [x] Cover (when present) downloaded to R2 under `covers/imported-*`.
+- [x] Same mandatory review screen as the sifatusafwa importer
   (shared component); price is never imported (MAD pricing is ours).
 
 ## Touches

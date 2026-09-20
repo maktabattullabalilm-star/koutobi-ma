@@ -1,6 +1,8 @@
 export const R2_PUBLIC_URL = (import.meta.env.VITE_R2_PUBLIC_URL || '').replace(/\/+$/, '');
 export const UPLOAD_ENDPOINT = '/api/upload-image';
 export const DELETE_IMAGE_ENDPOINT = '/api/delete-image';
+export const IMPORT_SIFATUSAFWA_ENDPOINT = '/api/import-sifatusafwa';
+export const IMPORT_ISBN_ENDPOINT = '/api/import-isbn';
 export const STORE_NAME = 'مكتبة كُتُبِي';
 export const WHATSAPP_NUMBER = '212624182004';
 export const PHONE_DISPLAY = '+212 624-182004';
