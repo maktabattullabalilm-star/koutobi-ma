@@ -35,7 +35,7 @@ export function CartProvider({ children }) {
           author: book.author_ar,
           price: Number(book.price || 0),
           cover: book.cover_image,
-          qty,
+          qty: Math.min(Math.max(qty, 1), 99),
         },
       ];
     });
