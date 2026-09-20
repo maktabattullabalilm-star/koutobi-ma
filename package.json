@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:local": "npm test && npm run build",
     "functions:dev": "netlify functions:invoke --name upload-image"
   },
   "dependencies": {
