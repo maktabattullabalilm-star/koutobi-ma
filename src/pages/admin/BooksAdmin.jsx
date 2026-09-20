@@ -289,7 +289,7 @@ export default function BooksAdmin() {
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
                       <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
-                        <BookCover src={b.cover_image} alt="" className="h-14 w-11" imgClassName="h-full w-full object-cover" />
+                        <BookCover src={b.cover_image} alt="" className="h-12 w-9" imgClassName="h-full w-full object-cover" />
                         {soldOut(b) && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[9px] font-bold text-white">نفد</span>
                         )}
@@ -349,7 +349,7 @@ export default function BooksAdmin() {
             <article key={b.id} className="card border border-line/60 p-4">
               <div className="flex gap-3">
                 <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
-                  <BookCover src={b.cover_image} alt="" className="h-24 w-[68px]" imgClassName="h-full w-full object-cover" />
+                  <BookCover src={b.cover_image} alt="" className="h-16 w-12" imgClassName="h-full w-full object-cover" />
                   {soldOut(b) && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[10px] font-bold text-white">نفد</span>
                   )}
