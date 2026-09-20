@@ -15,6 +15,7 @@ import BooksAdmin from './pages/admin/BooksAdmin';
 import BookForm from './pages/admin/BookForm';
 import OrdersAdmin from './pages/admin/OrdersAdmin';
 import CatalogData from './pages/admin/CatalogData';
+import Settings from './pages/admin/Settings';
 
 function NotFound() {
   return (
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="books/:id/edit" element={<BookForm />} />
             <Route path="orders" element={<OrdersAdmin />} />
             <Route path="catalog" element={<CatalogData />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
       </Routes>

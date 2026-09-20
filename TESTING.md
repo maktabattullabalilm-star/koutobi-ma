@@ -64,10 +64,10 @@ your TEST order row must be there, with its items in `order_items`.
 - [ ] Imported cover lands in R2 under `covers/imported-*` (check R2 dashboard)
 - [ ] Nothing is created until you press نشر/حفظ — review screen IS the form
 
-## Two-factor login (dashboard → التحقق بخطوتين)
+## Two-factor login (admin → الإعدادات → التحقق بخطوتين)
 
-- [ ] Dashboard shows the amber "فعّل التحقق بخطوتين" nudge
-- [ ] تفعيل → QR appears → scan with Google Authenticator → enter code → success
+- [ ] Dashboard shows the amber attention item linking to settings when 2FA is off
+- [ ] الإعدادات → تفعيل → QR appears → scan with Google Authenticator → enter code → success
 - [ ] Log out → log in with password → code screen appears → correct code enters,
       wrong code shows an error
 - [ ] Dashboard → إلغاء التفعيل → next login is password-only again

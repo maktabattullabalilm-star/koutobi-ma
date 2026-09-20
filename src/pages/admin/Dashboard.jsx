@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { adminGetBooks, adminGetOrders, adminStats, adminUpdateAppSetting, getAppSetting } from '../../lib/admin';
+import { adminGetBooks, adminGetOrders, adminStats } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
-import {
-  challengeFactor,
-  enrollTotpFactor,
-  getVerifiedTotpFactor,
-  unenrollFactor,
-  verifyFactorCode,
-} from '../../lib/mfa';
+import { getVerifiedTotpFactor } from '../../lib/mfa';
 import { useToast } from '../../components/Toast';
 import { formatPrice, formatDate } from '../../lib/format';
 import { IconBook, IconCart, IconInbox, IconCash } from '../../components/icons';
@@ -28,131 +22,20 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [lowStock, setLowStock] = useState([]);
   const [error, setError] = useState('');
-  const [newPass, setNewPass] = useState('');
-  const [passMsg, setPassMsg] = useState('');
-  const [passBusy, setPassBusy] = useState(false);
+  const [mfaOff, setMfaOff] = useState(false);
   const { show } = useToast();
 
-  // Quantity-visibility default
-  const [qtyDefault, setQtyDefault] = useState('hide');
-  const [qtyBusy, setQtyBusy] = useState(false);
-
-  // 2FA state: 'unknown' | 'off' | 'on' | 'enrolling'
-  const [mfaState, setMfaState] = useState('unknown');
-  const [mfaFactorId, setMfaFactorId] = useState(null);
-  const [enroll, setEnroll] = useState(null);
-  const [enrollCode, setEnrollCode] = useState('');
-  const [mfaBusy, setMfaBusy] = useState(false);
-  const [mfaMsg, setMfaMsg] = useState('');
-
-  const changePassword = async (e) => {
-    e.preventDefault();
-    setPassMsg('');
-    if (newPass.length < 8) {
-      setPassMsg('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
-      return;
-    }
-    setPassBusy(true);
-    try {
-      const { error: upErr } = await supabase.auth.updateUser({ password: newPass });
-      if (upErr) throw upErr;
-      setNewPass('');
-      setPassMsg('تم تغيير كلمة المرور بنجاح ✓');
-      show('تم تغيير كلمة المرور ✓');
-    } catch (err) {
-      setPassMsg(err?.message || 'تعذّر تغيير كلمة المرور');
-    } finally {
-      setPassBusy(false);
-    }
-  };
-
-  const refreshMfa = async () => {
-    try {
-      const factor = await getVerifiedTotpFactor(supabase);
-      if (factor) {
-        setMfaState('on');
-        setMfaFactorId(factor.id);
-      } else {
-        setMfaState('off');
-        setMfaFactorId(null);
-      }
-    } catch {
-      setMfaState('off');
-    }
-  };
-
-  const startEnroll = async () => {
-    setMfaMsg('');
-    setMfaBusy(true);
-    try {
-      const data = await enrollTotpFactor(supabase);
-      setEnroll({ factorId: data.id, qr_code: data.totp?.qr_code || '', secret: data.totp?.secret || '' });
-      setEnrollCode('');
-      setMfaState('enrolling');
-    } catch (err) {
-      setMfaMsg(err?.message || 'تعذّر بدء التفعيل');
-    } finally {
-      setMfaBusy(false);
-    }
-  };
-
-  const confirmEnroll = async (e) => {
-    e.preventDefault();
-    setMfaMsg('');
-    setMfaBusy(true);
-    try {
-      const ch = await challengeFactor(supabase, enroll.factorId);
-      await verifyFactorCode(supabase, { factorId: enroll.factorId, challengeId: ch.id, code: enrollCode });
-      setEnroll(null);
-      setMfaState('on');
-      setMfaFactorId(enroll.factorId);
-      show('تم تفعيل التحقق بخطوتين ✓');
-    } catch (err) {
-      setMfaMsg(err?.message || 'رمز غير صالح — حاول مجدداً');
-    } finally {
-      setMfaBusy(false);
-    }
-  };
-
-  const disableMfa = async () => {
-    if (!mfaFactorId) return;
-    if (!window.confirm('إلغاء التحقق بخطوتين؟ ستصبح كلمة المرور وسيلة الدخول الوحيدة.')) return;
-    setMfaBusy(true);
-    try {
-      await unenrollFactor(supabase, mfaFactorId);
-      setMfaState('off');
-      setMfaFactorId(null);
-      show('تم إلغاء التحقق بخطوتين');
-    } catch (err) {
-      setMfaMsg(err?.message || 'تعذّر الإلغاء');
-    } finally {
-      setMfaBusy(false);
-    }
-  };
-
-  const saveQtyDefault = async (value) => {
-    setQtyDefault(value);
-    setQtyBusy(true);
-    try {
-      await adminUpdateAppSetting('show_quantity_default', value);
-      show('تم حفظ الإعداد الافتراضي ✓');
-    } catch (err) {
-      show(err.message, 'error');
-    } finally {
-      setQtyBusy(false);
-    }
-  };
-
   useEffect(() => {
-    Promise.all([adminStats(), adminGetOrders(), adminGetBooks(), getAppSetting('show_quantity_default')])
-      .then(([s, list, books, qd]) => {
+    Promise.all([adminStats(), adminGetOrders(), adminGetBooks()])
+      .then(([s, list, books]) => {
         setStats(s);
         setOrders(list.slice(0, 6));
         setLowStock(books.filter((b) => (b.stock_qty ?? 0) <= LOW_STOCK_AT));
-        if (qd === 'show' || qd === 'hide') setQtyDefault(qd);
       })
       .catch((e) => setError(e.message));
-    refreshMfa();
+    getVerifiedTotpFactor(supabase)
+      .then((f) => setMfaOff(!f))
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -165,7 +48,7 @@ export default function AdminDashboard() {
       ]
     : [];
 
-  const attentionCount = (stats?.pending || 0) + lowStock.length + (mfaState === 'off' ? 1 : 0);
+  const attentionCount = (stats?.pending || 0) + lowStock.length + (mfaOff ? 1 : 0);
 
   return (
     <div>
@@ -217,12 +100,12 @@ export default function AdminDashboard() {
               </Link>
             </li>
           ))}
-          {mfaState === 'off' && (
+          {mfaOff && (
             <li>
-              <a href="#mfa-security" className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2.5 text-ink ring-1 ring-inset ring-line hover:bg-gray-100">
-                <span>الحساب محمي بكلمة المرور فقط — فعّل التحقق بخطوتين</span>
+              <Link to="/admin/settings" className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2.5 text-ink ring-1 ring-inset ring-line hover:bg-gray-100">
+                <span>الحساب محمي بكلمة المرور فقط — فعّل التحقق بخطوتين من الإعدادات</span>
                 <span aria-hidden>←</span>
-              </a>
+              </Link>
             </li>
           )}
           {attentionCount === 0 && (
@@ -270,107 +153,8 @@ export default function AdminDashboard() {
             <Link to="/admin/books" className="btn-ghost w-full">إدارة الكتب</Link>
             <Link to="/admin/catalog" className="btn-ghost w-full">بيانات الكتالوج</Link>
             <Link to="/admin/orders" className="btn-ghost w-full">متابعة الطلبات</Link>
+            <Link to="/admin/settings" className="btn-ghost w-full">الإعدادات ⚙️</Link>
             <a href="/" target="_blank" rel="noreferrer" className="btn-ghost w-full">معاينة المتجر ↗</a>
-          </div>
-        </div>
-      </section>
-
-      {/* settings */}
-      <section className="card mt-6 border border-line/60 p-5">
-        <h2 className="admin-section-title">إعدادات المتجر والحساب</h2>
-        <div className="mt-4 grid gap-6 lg:grid-cols-3">
-          {/* quantity default */}
-          <div>
-            <h3 className="text-sm font-bold text-ink">إظهار الكمية (افتراضي) 🔢</h3>
-            <p className="mt-1 text-xs leading-5 text-soft">يُطبَّق على الكتب المضبوطة على «وراثة الإعداد العام».</p>
-            <select
-              value={qtyDefault}
-              onChange={(e) => saveQtyDefault(e.target.value)}
-              disabled={qtyBusy}
-              className="input mt-2"
-            >
-              <option value="hide">إخفاء الكمية</option>
-              <option value="show">إظهار الكمية الدقيقة</option>
-            </select>
-          </div>
-
-          {/* password */}
-          <form onSubmit={changePassword}>
-            <h3 className="text-sm font-bold text-ink">تغيير كلمة المرور 🔒</h3>
-            <p className="mt-1 text-xs leading-5 text-soft">8 أحرف على الأقل.</p>
-            <div className="mt-2 flex gap-2">
-              <input
-                type="password"
-                dir="ltr"
-                value={newPass}
-                onChange={(e) => setNewPass(e.target.value)}
-                placeholder="كلمة مرور جديدة"
-                className="input flex-1 !py-2 !text-right"
-              />
-              <button type="submit" disabled={passBusy} className="btn-ghost shrink-0 !px-4 !py-2">
-                {passBusy ? '…' : 'حفظ'}
-              </button>
-            </div>
-            {passMsg && <p className="mt-1.5 text-xs text-soft">{passMsg}</p>}
-          </form>
-
-          {/* 2FA */}
-          <div id="mfa-security" className="scroll-mt-24">
-            <h3 className="text-sm font-bold text-ink">التحقق بخطوتين 🔐</h3>
-            {mfaState === 'unknown' && <p className="mt-2 text-xs text-soft">جارٍ التحقق…</p>}
-            {mfaState === 'on' && (
-              <div className="mt-2">
-                <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-                  مفعّل ✓ — الدخول يتطلب رمز المصادقة
-                </p>
-                <button onClick={disableMfa} disabled={mfaBusy} className="mt-2 text-xs font-medium text-danger hover:underline">
-                  {mfaBusy ? '…' : 'إلغاء التفعيل'}
-                </button>
-              </div>
-            )}
-            {mfaState === 'off' && (
-              <div className="mt-2">
-                <p className="text-xs leading-5 text-soft">رمز من تطبيق المصادقة عند كل دخول.</p>
-                <button onClick={startEnroll} disabled={mfaBusy} className="btn-ghost mt-2 w-full !py-2 text-xs">
-                  {mfaBusy ? '…' : 'تفعيل بخطوتين'}
-                </button>
-              </div>
-            )}
-            {mfaState === 'enrolling' && enroll && (
-              <form onSubmit={confirmEnroll} className="mt-2 space-y-2">
-                <p className="text-xs leading-5 text-soft">امسح الرمز بتطبيق المصادقة، ثم أدخل الرمز الظاهر فيه:</p>
-                {enroll.qr_code && (
-                  <div
-                    className="mx-auto w-fit rounded-md border border-line bg-white p-2 [&>svg]:block [&>svg]:h-36 [&>svg]:w-36"
-                    dangerouslySetInnerHTML={{ __html: enroll.qr_code }}
-                  />
-                )}
-                {enroll.secret && (
-                  <p className="break-all rounded bg-gray-50 px-2 py-1.5 text-center font-mono text-[11px] text-soft" dir="ltr">
-                    {enroll.secret}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <input
-                    value={enrollCode}
-                    onChange={(e) => setEnrollCode(e.target.value)}
-                    dir="ltr"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={8}
-                    placeholder="123456"
-                    className="input flex-1 !py-2 text-center font-bold tracking-[0.4em]"
-                  />
-                  <button type="submit" disabled={mfaBusy} className="btn-primary shrink-0 !px-4 !py-2 text-xs">
-                    {mfaBusy ? '…' : 'تأكيد'}
-                  </button>
-                </div>
-                <button type="button" onClick={() => { setEnroll(null); setMfaState('off'); }} className="w-full text-center text-xs text-soft hover:text-danger">
-                  إلغاء
-                </button>
-              </form>
-            )}
-            {mfaMsg && <p className="mt-1.5 text-xs text-danger">{mfaMsg}</p>}
           </div>
         </div>
       </section>

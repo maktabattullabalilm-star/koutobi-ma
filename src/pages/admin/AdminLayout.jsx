@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
-import { IconBook, IconClose, IconGrid, IconInbox, IconLogout, IconMenu, IconWrench } from '../../components/icons';
+import { IconBook, IconClose, IconGrid, IconInbox, IconLogout, IconMenu, IconWrench, IconShield } from '../../components/icons';
 
 const LINKS = [
   { to: '/admin/dashboard', label: 'نظرة عامة', Icon: IconInbox, end: true },
   { to: '/admin/books', label: 'الكتب', Icon: IconBook },
   { to: '/admin/catalog', label: 'بيانات الكتالوج', Icon: IconGrid },
   { to: '/admin/orders', label: 'الطلبات', Icon: IconWrench },
+  { to: '/admin/settings', label: 'الإعدادات', Icon: IconShield },
 ];
 
 export default function AdminLayout() {

@@ -66,6 +66,7 @@ vi.mock('../../components/Toast', () => ({
 const { default: Dashboard } = await import('./Dashboard');
 const { default: BooksAdmin } = await import('./BooksAdmin');
 const { default: PageHeader } = await import('./PageHeader');
+const { default: Settings } = await import('./Settings');
 
 afterEach(cleanup);
 
@@ -95,14 +96,26 @@ describe('Dashboard (reorganized)', () => {
     expect(await screen.findByText('يحتاج انتباهك')).toBeTruthy();
     expect(await screen.findByText(/لديك 1 طلب قيد المعالجة/)).toBeTruthy();
     expect(await screen.findByText(/كتاب متوفر/)).toBeTruthy();
-    // quick actions + settings
+    // quick actions (settings lives on its own page now)
     expect(await screen.findByText('إجراءات سريعة')).toBeTruthy();
-    expect(await screen.findByText(/إظهار الكمية \(افتراضي\)/)).toBeTruthy();
-    expect(await screen.findByText(/تغيير كلمة المرور/)).toBeTruthy();
-    // 2FA nudge in attention zone + settings heading
-    expect((await screen.findAllByText(/التحقق بخطوتين/)).length).toBeGreaterThanOrEqual(2);
+    expect(await screen.findByText('الإعدادات ⚙️')).toBeTruthy();
+    // 2FA nudge in attention zone links to settings
+    expect((await screen.findAllByText(/التحقق بخطوتين/)).length).toBeGreaterThanOrEqual(1);
     // recent orders
     expect(await screen.findByText('زبون اختبار')).toBeTruthy();
+  });
+});
+
+describe('Settings (sensitive area, separate page)', () => {
+  it('groups password, 2FA and store settings away from the overview', async () => {
+    render(<Settings />);
+    expect(await screen.findByText('الإعدادات ⚙️')).toBeTruthy();
+    expect(await screen.findByText('أمان الحساب')).toBeTruthy();
+    expect(await screen.findByText(/تغيير كلمة المرور/)).toBeTruthy();
+    expect(await screen.findByText(/إظهار الكمية \(افتراضي\)/)).toBeTruthy();
+    expect(await screen.findByText('إعدادات المتجر')).toBeTruthy();
+    // 2FA enroll CTA (no factor enrolled in mock)
+    expect(await screen.findByText(/تفعيل بخطوتين/)).toBeTruthy();
   });
 });
 
