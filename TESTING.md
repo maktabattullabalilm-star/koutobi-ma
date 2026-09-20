@@ -1,70 +1,75 @@
-# TESTING — local-first workflow
+# TESTING — hand-testing guide (for you, in your browser)
 
-> **Rule: nothing gets pushed to Netlify until explicitly approved.**
-> Every feature is proven locally first, using the loop below.
-> The local app talks to the live Supabase project (`.env`), so local
-> runs are full integration tests — no deploy needed to verify behavior.
+> **Rule: nothing gets pushed to Netlify until you explicitly approve it.**
+> You test everything yourself locally first, using the steps below.
 
-## The loop (per feature, in order)
-
-| # | Command | What it proves |
-|---|---------|----------------|
-| 1 | `npm test` | 46 unit/integration tests green (mocked Supabase, fully offline) |
-| 2 | `npm run dev` → http://localhost:5173 | Click-through: catalog → book → cart → checkout → thank-you → `/admin` (real DB rows, zero deploy) |
-| 3 | `netlify dev` → http://localhost:8888 | Netlify function `/api/upload-image` runs locally with real env (RLS admin check, R2 upload) |
-| 4 | agent-browser on localhost | Scripted E2E catches integration bugs unit tests miss (e.g. the RLS `.select()` checkout failure) |
-| 5 | `npm run build` | Deploy gate — same command Netlify runs. Green here = deploy *would* succeed |
-
-Shortcut for steps 1+5:
+## Start the site locally
 
 ```bash
-npm run test:local   # = npm test && npm run build
+cd /home/ia/Projects/websites/koutobi-ma
+npm run dev
 ```
 
-## Hygiene rules (never pollute the store)
+Open in your browser: **http://localhost:5173**
 
-- **Test orders/customers** always use `TEST-` prefixed names
-  (e.g. customer `TEST-Smoke`, phone `0600000000`).
-- **After each session**, wipe them:
-  ```bash
-  # paste scripts/cleanup-test-data.sql into Supabase → SQL Editor → Run
-  ```
-  (`order_items` are removed automatically via `ON DELETE CASCADE`.)
-- **R2 test uploads** go to the `covers/_test/` prefix only:
-  ```bash
-  rclone ls R2:koutobi-ma/covers/_test/          # verify
-  rclone delete R2:koutobi-ma/covers/_test/      # clean up
-  ```
-  (rclone reads credentials from env vars — see below.)
-- **Test auth users**: reuse throwaway accounts; remove them via
-  Supabase Dashboard → Authentication → Users (SQL cannot delete auth users).
-- **Never** test with the real admin account or the burned one-time setup link.
+(The local site talks to the live Supabase project, so what you see
+and click is real data — no deploy needed.)
 
-## rclone without a config file
+To test cover uploads locally (the Netlify function), run instead:
 
 ```bash
-export RCLONE_CONFIG_R2_TYPE=s3
-export RCLONE_CONFIG_R2_PROVIDER=Cloudflare
-export RCLONE_CONFIG_R2_ACCESS_KEY_ID=<from .env>
-export RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=<from .env>
-export RCLONE_CONFIG_R2_ENDPOINT=https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com
-rclone --config /dev/null ls R2:koutobi-ma/covers/
+netlify dev
 ```
 
-## Coverage map (no gaps, no deploy needed)
+then open **http://localhost:8888** — same site, plus the
+`/api/upload-image` function works.
 
-| Concern | Covered locally by |
-|---|---|
-| UI renders, no JS errors | `dev` + agent-browser |
-| Prices / totals / cart math | vitest + dev click-through |
-| RLS: guests read books, never orders; admins manage | dev + raw REST probes (`curl` with anon key) |
-| Guest order insert (client-UUID, no SELECT) | dev checkout → SQL verify → cleanup script |
-| One-time admin claim link | dev + throwaway account (never the burned prod link) |
-| Cover upload end-to-end | `netlify dev` + R2 `_test/` prefix |
-| Deploy would succeed | `npm run build` |
+## Storefront checklist (shop like a customer)
 
-## What is NOT tested locally
+- [ ] Homepage loads: hero, categories, new releases, bestsellers, how-it-works
+- [ ] Catalog (`/catalog`): all 5 books show with real covers and prices
+- [ ] Search: type part of a title, results filter
+- [ ] Category chips filter the grid; sorting changes the order
+- [ ] Book page: open a book — cover, price, discount, description, specs table, related books
+- [ ] Add to cart → cart badge count goes up → `/cart` shows the item
+- [ ] Change quantity, remove item — totals update
+- [ ] Checkout: fill **TEST-DATA ONLY** (see below) → confirm → thank-you page shows order number
+- [ ] WhatsApp buttons point to **+212 624-182004**
 
-- Netlify edge/CDN behavior and production env vars (verified once per
-  deploy, on explicit approval, via the live URL smoke test).
-- Real customer WhatsApp/phone confirmation (manual, out of scope).
+## Verify the order actually saved
+
+Supabase Dashboard → your project → **Table Editor** → `orders`:
+your TEST order row must be there, with its items in `order_items`.
+
+## Admin checklist (`/admin`)
+
+- [ ] Login with your admin account lands in the dashboard (stats visible)
+- [ ] Orders board shows the TEST order → change its status → confirm it sticks after reload
+- [ ] Books table lists the 5 books → edit one (change something small) → check it on the storefront
+- [ ] Upload a cover image on a book → save → check the new image on the storefront
+      (uploads go to your R2 bucket — verify in Cloudflare Dashboard → R2 → `koutobi-ma`)
+- [ ] Change-password field in the dashboard works (log out, log back in with the new password)
+
+## Test-data rules (keep the store clean)
+
+- Always use obvious fake data: name `TEST-…`, phone `0600000000`,
+  address `TEST address …`.
+- After each session, delete test orders: paste
+  `scripts/cleanup-test-data.sql` into Supabase → SQL Editor → Run.
+  (`order_items` disappear automatically.)
+- Test covers: upload with filenames starting `test-`, then delete them
+  from the R2 dashboard (or ask me and I'll remove them).
+- Test auth accounts: delete in Supabase Dashboard → Authentication → Users.
+  (SQL cannot delete auth users.)
+- Never test with the real admin account's password anywhere except login,
+  and never re-use the burned one-time setup link.
+
+## After everything passes
+
+Tell me it's good — only then do I run `npm run build` and deploy
+to Netlify on your explicit approval.
+
+---
+*Note for developers: an automated vitest suite also exists
+(`npm test`, 46 tests, mocked Supabase). It guards the code but never
+replaces the hand-testing above.*
