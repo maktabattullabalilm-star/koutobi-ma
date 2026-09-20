@@ -101,6 +101,9 @@ function AttributeManager({ type, items, onReload }) {
         {errs.value_ar && <span className="w-full basis-full text-xs text-danger">{errs.value_ar}</span>}
       </form>
       <ul className="divide-y divide-line/60">
+        {(items || []).length === 0 && (
+          <li className="py-4 text-center text-sm text-soft">لا توجد قيم بعد — أضف أول قيمة من الأعلى.</li>
+        )}
         {(items || []).map((a) => (
           <li key={a.id} className="flex items-center justify-between gap-3 py-2">
             <span className="text-sm font-medium text-ink">{a.value_ar}</span>
@@ -243,6 +246,9 @@ export default function CatalogData() {
           {catErrors.name_ar && <span className="w-full basis-full text-xs text-danger">{catErrors.name_ar}</span>}
         </form>
         <ul className="divide-y divide-line/60">
+          {cats.length === 0 && (
+            <li className="py-6 text-center text-sm text-soft">لا توجد تصنيفات بعد — أضف أول تصنيف من الأعلى.</li>
+          )}
           {cats.map((c) => (
             <li key={c.id} className="flex items-center justify-between gap-3 py-2">
               <span className="text-sm font-medium text-ink">{c.name_ar}</span>

@@ -45,6 +45,10 @@
   .admin-section-title {
     @apply font-display text-lg font-bold text-ink;
   }
+  /* Loading placeholder blocks */
+  .skeleton {
+    @apply animate-pulse rounded-md bg-gray-100;
+  }
   /* two-line clamp for product titles */
   .clamp-2 {
     display: -webkit-box;

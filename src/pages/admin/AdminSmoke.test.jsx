@@ -133,6 +133,6 @@ describe('BooksAdmin (responsive + filters)', () => {
     expect(await screen.findAllByLabelText('زيادة المخزون')).not.toHaveLength(0);
     expect(await screen.findAllByLabelText('نقص المخزون')).not.toHaveLength(0);
     // match count line
-    expect(await screen.findByText(/مطابقة للبحث/)).toBeTruthy();
+    expect(await screen.findByText('2 كتاب')).toBeTruthy();
   });
 });

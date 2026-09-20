@@ -7,6 +7,7 @@ import { useToast } from '../../components/Toast';
 import { formatPrice, formatDate } from '../../lib/format';
 import { IconBook, IconCart, IconInbox, IconCash } from '../../components/icons';
 import PageHeader from './PageHeader';
+import StatusPill from './StatusPill';
 
 const STATUS_LABEL = {
   new: 'جديد',
@@ -49,6 +50,9 @@ export default function AdminDashboard() {
     : [];
 
   const attentionCount = (stats?.pending || 0) + lowStock.length + (mfaOff ? 1 : 0);
+  // Triage order: fully out of stock (red) → pending orders → low stock → security nudge.
+  const outOfStock = lowStock.filter((b) => (b.stock_qty ?? 0) <= 0);
+  const runningLow = lowStock.filter((b) => (b.stock_qty ?? 0) > 0);
 
   return (
     <div>
@@ -84,19 +88,27 @@ export default function AdminDashboard() {
           )}
         </div>
         <ul className="mt-3 space-y-2 text-sm">
+          {outOfStock.map((b) => (
+            <li key={b.id}>
+              <Link to={`/admin/books/${b.id}/edit`} className="flex items-center justify-between gap-3 rounded-md bg-rose-50/60 px-3 py-2.5 text-ink ring-1 ring-inset ring-rose-200/60 hover:bg-rose-50">
+                <span className="min-w-0 truncate">«{b.title_ar}» — نفد المخزون</span>
+                <StatusPill tone="red">نفد ←</StatusPill>
+              </Link>
+            </li>
+          ))}
           {stats && stats.pending > 0 && (
             <li>
               <Link to="/admin/orders" className="flex items-center justify-between gap-3 rounded-md bg-amber-50 px-3 py-2.5 text-amber-800 ring-1 ring-inset ring-amber-200 hover:bg-amber-100">
                 <span>لديك {stats.pending} طلب قيد المعالجة — اتصل بالعملاء للتأكيد</span>
-                <span aria-hidden>←</span>
+                <StatusPill tone="amber">طلبات ←</StatusPill>
               </Link>
             </li>
           )}
-          {lowStock.map((b) => (
+          {runningLow.map((b) => (
             <li key={b.id}>
-              <Link to={`/admin/books/${b.id}/edit`} className="flex items-center justify-between gap-3 rounded-md bg-rose-50/60 px-3 py-2.5 text-ink ring-1 ring-inset ring-rose-200/60 hover:bg-rose-50">
+              <Link to={`/admin/books/${b.id}/edit`} className="flex items-center justify-between gap-3 rounded-md bg-amber-50/50 px-3 py-2.5 text-ink ring-1 ring-inset ring-amber-200/60 hover:bg-amber-50">
                 <span className="min-w-0 truncate">«{b.title_ar}» — المخزون {(b.stock_qty ?? 0)}</span>
-                <span className="shrink-0 text-xs font-bold text-danger">نفد / قارب النفاد ←</span>
+                <StatusPill tone="amber">قارب ←</StatusPill>
               </Link>
             </li>
           ))}
@@ -104,7 +116,7 @@ export default function AdminDashboard() {
             <li>
               <Link to="/admin/settings" className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2.5 text-ink ring-1 ring-inset ring-line hover:bg-gray-100">
                 <span>الحساب محمي بكلمة المرور فقط — فعّل التحقق بخطوتين من الإعدادات</span>
-                <span aria-hidden>←</span>
+                <StatusPill tone="gray">أمان ←</StatusPill>
               </Link>
             </li>
           )}

@@ -365,11 +365,12 @@ export default function BookForm() {
 
   const save = async (e) => {
     e.preventDefault();
+    // key → [message, section anchor] so the summary can jump to the field.
     const errs = {};
-    if (!form.title_ar.trim()) errs.title_ar = 'عنوان الكتاب مطلوب';
+    if (!form.title_ar.trim()) errs.title_ar = ['عنوان الكتاب مطلوب', 'sec-info'];
     const price = Number(form.price);
-    if (form.price === '' || Number.isNaN(price) || price < 0) errs.price = 'أدخل سعراً صحيحاً';
-    if (form.old_price && (Number.isNaN(Number(form.old_price)) || Number(form.old_price) <= price)) errs.old_price = 'السعر القديم يجب أن يكون أكبر من السعر الحالي';
+    if (form.price === '' || Number.isNaN(price) || price < 0) errs.price = ['أدخل سعراً صحيحاً', 'sec-info'];
+    if (form.old_price && (Number.isNaN(Number(form.old_price)) || Number(form.old_price) <= price)) errs.old_price = ['السعر القديم يجب أن يكون أكبر من السعر الحالي', 'sec-info'];
     setErrors(errs);
     if (Object.keys(errs).length) {
       show('تحقق من الحقول الناقصة', 'error');
@@ -507,7 +508,7 @@ export default function BookForm() {
         className="input"
         {...extra}
       />
-      {errors[name] && <p className="mt-1 text-xs font-medium text-danger">{errors[name]}</p>}
+      {errors[name] && <p className="mt-1 text-xs font-medium text-danger">{errors[name][0]}</p>}
     </div>
   );
 
@@ -542,6 +543,20 @@ export default function BookForm() {
       </nav>
 
       <form onSubmit={save} className="mt-6 space-y-6" noValidate>
+        {Object.keys(errors).length > 0 && (
+          <div className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3" role="alert">
+            <p className="text-sm font-bold text-danger">تحقق من الحقول الناقصة:</p>
+            <ul className="mt-1.5 space-y-1 text-sm text-danger">
+              {Object.entries(errors).map(([key, [msg, section]]) => (
+                <li key={key}>
+                  <a href={`#${section}`} className="underline decoration-dotted hover:no-underline">
+                    {msg} ←
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {/* قسم البيانات */}
         <section id="sec-info" className="card scroll-mt-24 border border-line/70 p-5">
           <h2 className="admin-section-title mb-4">معلومات الكتاب</h2>

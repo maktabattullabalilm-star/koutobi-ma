@@ -5,12 +5,13 @@ import { whatsappLink } from '../../lib/config';
 import { useToast } from '../../components/Toast';
 import { IconWhatsApp } from '../../components/icons';
 import PageHeader from './PageHeader';
+import StatusPill from './StatusPill';
 
 const STATUS = [
-  { id: 'new', label: 'جديد', color: 'bg-amber-100 text-amber-700' },
-  { id: 'contacted', label: 'تم التواصل', color: 'bg-sky-100 text-sky-700' },
-  { id: 'delivered', label: 'تم التوصيل', color: 'bg-emerald-100 text-emerald-700' },
-  { id: 'cancelled', label: 'ملغى', color: 'bg-gray-100 text-gray-500' },
+  { id: 'new', label: 'جديد', tone: 'amber' },
+  { id: 'contacted', label: 'تم التواصل', tone: 'blue' },
+  { id: 'delivered', label: 'تم التوصيل', tone: 'green' },
+  { id: 'cancelled', label: 'ملغى', tone: 'gray' },
 ];
 
 export default function OrdersAdmin() {
@@ -80,7 +81,10 @@ export default function OrdersAdmin() {
 
       <div className="mt-4 space-y-4">
         {!orders ? (
-          <div className="card border border-line/60 p-10 text-center text-soft">جارٍ تحميل الطلبات…</div>
+          <>
+            <div className="skeleton h-44 w-full" />
+            <div className="skeleton h-44 w-full" />
+          </>
         ) : filtered.length === 0 ? (
           <div className="card border border-line/60 p-10 text-center text-soft">
             لا توجد طلبات في هذه الحالة.
@@ -100,9 +104,9 @@ export default function OrdersAdmin() {
                     <span className="ms-2 text-gray-500" dir="ltr">#{o.id.slice(0, 8)}</span>
                   </div>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-bold ${STATUS.find((s) => s.id === o.status)?.color || 'bg-gray-100 text-gray-500'}`}>
+                <StatusPill tone={STATUS.find((s) => s.id === o.status)?.tone || 'gray'}>
                   {STATUS.find((s) => s.id === o.status)?.label || o.status}
-                </span>
+                </StatusPill>
               </div>
 
               {/* items */}
