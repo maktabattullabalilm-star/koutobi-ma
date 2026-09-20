@@ -23,30 +23,36 @@ export default async function handler(req) {
     }
 
     // ---------- 1. Auth: must be an admin ----------
+    // Uses the anon key + the caller's own JWT. RLS policy
+    // "profiles_select_own" lets a user read their own profile row,
+    // so no service-role key is needed.
     const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
     if (!token) {
       return Response.json({ error: 'غير مصرّح به' }, { status: 401 });
     }
 
     const supabaseUrl = process.env.SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceRoleKey) {
+    const anonKey = process.env.SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) {
       return Response.json(
-        { error: 'Supabase server variables غير مضبوطة (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)' },
+        { error: 'Supabase server variables غير مضبوطة (SUPABASE_URL / SUPABASE_ANON_KEY)' },
         { status: 500 }
       );
     }
 
-    const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const client = createClient(supabaseUrl, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
     const {
       data: { user },
       error: userErr,
-    } = await admin.auth.getUser(token);
+    } = await client.auth.getUser();
     if (userErr || !user) {
       return Response.json({ error: 'جلسة غير صالحة' }, { status: 401 });
     }
 
-    const { data: profile } = await admin
+    const { data: profile } = await client
       .from('profiles')
       .select('id, role')
       .eq('id', user.id)

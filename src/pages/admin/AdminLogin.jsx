@@ -66,12 +66,9 @@ export default function AdminLogin() {
           <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
             <h1 className="text-lg font-bold text-ink">مرحباً بك 👋</h1>
             <p className="mt-2 text-sm leading-7 text-soft">
-              حسابك مسجّل لكنه ليس حساب مدير بعد.
+              حسابك مسجّل لكنه ليس حساب مدير.
               <br />
-              رقِّه من قاعدة البيانات:
-              <code className="mt-2 block rounded-md bg-gray-100 p-3 text-xs text-left" dir="ltr">
-                update public.profiles set role=&apos;admin&apos; where email = &apos;{form.email || 'you@email.com'}&apos;;
-              </code>
+              تواصل مع صاحب المتجر لمنحك صلاحية الإدارة.
             </p>
             <button onClick={() => navigate('/')} className="btn-primary mt-5">العودة إلى المتجر</button>
           </div>

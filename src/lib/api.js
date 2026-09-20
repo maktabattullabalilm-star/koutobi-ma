@@ -71,15 +71,20 @@ export async function createOrder({ name, phone, address, city, notes, items }) 
     return { id: `local-${Date.now()}`, total, demo: true };
   }
 
-  const { data: order, error: orderErr } = await supabase
+  // NOTE: the id is generated client-side. Guests have INSERT but no
+  // SELECT on orders (RLS), so `.select()` after insert would fail —
+  // and that keeps order data private.
+  const orderId = globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : `order-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  const { error: orderErr } = await supabase
     .from('orders')
-    .insert({ customer_name: name, phone, address, city, notes, total })
-    .select('id')
-    .single();
+    .insert({ id: orderId, customer_name: name, phone, address, city, notes, total });
   if (orderErr) throw new Error(orderErr.message);
 
   const rows = items.map((it) => ({
-    order_id: order.id,
+    order_id: orderId,
     book_id: it.id,
     title_ar: it.title,
     price: it.price,
@@ -88,5 +93,5 @@ export async function createOrder({ name, phone, address, city, notes, items }) 
   const { error: itemsErr } = await supabase.from('order_items').insert(rows);
   if (itemsErr) throw new Error(itemsErr.message);
 
-  return { id: order.id, total };
+  return { id: orderId, total };
 }

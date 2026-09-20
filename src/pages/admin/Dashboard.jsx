@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminStats, adminGetOrders } from '../../lib/admin';
+import { supabase } from '../../lib/supabase';
+import { useToast } from '../../components/Toast';
 import { formatPrice, formatDate } from '../../lib/format';
 import { IconBook, IconCart, IconInbox, IconCash } from '../../components/icons';
 
@@ -15,6 +17,31 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState('');
+  const [newPass, setNewPass] = useState('');
+  const [passMsg, setPassMsg] = useState('');
+  const [passBusy, setPassBusy] = useState(false);
+  const { show } = useToast();
+
+  const changePassword = async (e) => {
+    e.preventDefault();
+    setPassMsg('');
+    if (newPass.length < 8) {
+      setPassMsg('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+      return;
+    }
+    setPassBusy(true);
+    try {
+      const { error: upErr } = await supabase.auth.updateUser({ password: newPass });
+      if (upErr) throw upErr;
+      setNewPass('');
+      setPassMsg('تم تغيير كلمة المرور بنجاح ✓');
+      show('تم تغيير كلمة المرور ✓');
+    } catch (err) {
+      setPassMsg(err?.message || 'تعذّر تغيير كلمة المرور');
+    } finally {
+      setPassBusy(false);
+    }
+  };
 
   useEffect(() => {
     adminStats()
@@ -100,6 +127,24 @@ export default function AdminDashboard() {
               لديك {stats.pending} طلب قيد المعالجة. يُنصح بالاتصال بالعملاء وتأكيد الطلبات في أسرع وقت.
             </div>
           )}
+
+          <form onSubmit={changePassword} className="mt-5 border-t border-line pt-4">
+            <h3 className="text-sm font-bold text-ink">تغيير كلمة المرور 🔒</h3>
+            <div className="mt-2 flex gap-2">
+              <input
+                type="password"
+                dir="ltr"
+                value={newPass}
+                onChange={(e) => setNewPass(e.target.value)}
+                placeholder="كلمة مرور جديدة"
+                className="input flex-1 !py-2 !text-right"
+              />
+              <button type="submit" disabled={passBusy} className="btn-ghost shrink-0 !px-4 !py-2">
+                {passBusy ? '…' : 'حفظ'}
+              </button>
+            </div>
+            {passMsg && <p className="mt-1.5 text-xs text-soft">{passMsg}</p>}
+          </form>
         </div>
       </section>
     </div>
