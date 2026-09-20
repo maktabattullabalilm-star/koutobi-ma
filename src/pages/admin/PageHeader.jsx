@@ -1,4 +1,12 @@
 import { Link } from 'react-router-dom';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 /**
  * Consistent admin page header: Amiri title + description + optional actions.
@@ -8,18 +16,24 @@ export default function PageHeader({ title, description, crumbs = [], actions = 
   return (
     <div className="mb-6">
       {crumbs.length > 0 && (
-        <nav className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-soft" aria-label="مسار التنقل">
-          {crumbs.map((c, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-line">/</span>}
-              {c.to ? (
-                <Link to={c.to} className="hover:text-brand">{c.label}</Link>
-              ) : (
-                <span className="font-medium text-ink">{c.label}</span>
-              )}
-            </span>
-          ))}
-        </nav>
+        <Breadcrumb className="mb-2">
+          <BreadcrumbList>
+            {crumbs.map((c, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                {i > 0 && <BreadcrumbSeparator />}
+                <BreadcrumbItem>
+                  {c.to ? (
+                    <BreadcrumbLink asChild>
+                      <Link to={c.to}>{c.label}</Link>
+                    </BreadcrumbLink>
+                  ) : (
+                    <BreadcrumbPage>{c.label}</BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+              </span>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

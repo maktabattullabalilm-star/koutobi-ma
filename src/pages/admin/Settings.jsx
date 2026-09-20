@@ -10,6 +10,16 @@ import {
 } from '../../lib/mfa';
 import { useToast } from '../../components/Toast';
 import PageHeader from './PageHeader';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /**
  * Store + account settings (sensitive area, separate from the overview):
@@ -151,24 +161,24 @@ export default function Settings() {
       />
 
       {/* account security */}
-      <section className="card border border-line/70 p-5">
+      <Card className="border-line/70 p-5">
         <h2 className="admin-section-title">أمان الحساب</h2>
 
         <form onSubmit={changePassword} className="mt-4">
           <h3 className="text-sm font-bold text-ink">تغيير كلمة المرور 🔒</h3>
           <p className="mt-1 text-xs leading-5 text-soft">8 أحرف على الأقل.</p>
           <div className="mt-2 flex gap-2">
-            <input
+            <Input
               type="password"
               dir="ltr"
               value={newPass}
               onChange={(e) => setNewPass(e.target.value)}
               placeholder="كلمة مرور جديدة"
-              className="input flex-1 py-2! text-right!"
+              className="flex-1 py-2 text-right"
             />
-            <button type="submit" disabled={passBusy} className="btn-ghost shrink-0 px-4! py-2!">
+            <Button type="submit" variant="outline" disabled={passBusy} className="shrink-0 px-4 py-2">
               {passBusy ? '…' : 'حفظ'}
-            </button>
+            </Button>
           </div>
           {passMsg && <p className="mt-1.5 text-xs text-soft">{passMsg}</p>}
         </form>
@@ -181,17 +191,17 @@ export default function Settings() {
               <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
                 مفعّل ✓ — الدخول يتطلب رمز المصادقة
               </p>
-              <button onClick={disableMfa} disabled={mfaBusy} className="mt-2 text-xs font-medium text-danger hover:underline">
+              <Button variant="link" onClick={disableMfa} disabled={mfaBusy} className="mt-1 h-auto p-0 text-xs font-medium text-danger">
                 {mfaBusy ? '…' : 'إلغاء التفعيل'}
-              </button>
+              </Button>
             </div>
           )}
           {mfaState === 'off' && (
             <div className="mt-2">
               <p className="text-xs leading-5 text-soft">أضف طبقة حماية: رمز من تطبيق المصادقة (Google Authenticator) عند كل دخول.</p>
-              <button onClick={startEnroll} disabled={mfaBusy} className="btn-ghost mt-2 w-full py-2! text-xs">
+              <Button onClick={startEnroll} variant="outline" disabled={mfaBusy} className="mt-2 w-full py-2 text-xs">
                 {mfaBusy ? '…' : 'تفعيل بخطوتين'}
-              </button>
+              </Button>
             </div>
           )}
           {mfaState === 'enrolling' && enroll && (
@@ -209,7 +219,7 @@ export default function Settings() {
                 </p>
               )}
               <div className="flex gap-2">
-                <input
+                <Input
                   value={enrollCode}
                   onChange={(e) => setEnrollCode(e.target.value)}
                   dir="ltr"
@@ -217,15 +227,15 @@ export default function Settings() {
                   autoComplete="one-time-code"
                   maxLength={8}
                   placeholder="123456"
-                  className="input flex-1 py-2! text-center font-bold tracking-[0.4em]"
+                  className="flex-1 py-2 text-center font-bold tracking-[0.4em]"
                 />
-                <button type="submit" disabled={mfaBusy} className="btn-primary shrink-0 px-4! py-2! text-xs">
+                <Button type="submit" disabled={mfaBusy} className="shrink-0 px-4 py-2 text-xs">
                   {mfaBusy ? '…' : 'تأكيد'}
-                </button>
+                </Button>
               </div>
-              <button type="button" onClick={() => { setEnroll(null); setMfaState('off'); }} className="w-full text-center text-xs text-soft hover:text-danger">
+              <Button type="button" variant="link" onClick={() => { setEnroll(null); setMfaState('off'); }} className="h-auto w-full p-0 text-xs text-soft hover:text-danger">
                 إلغاء
-              </button>
+              </Button>
             </form>
           )}
           {mfaMsg && <p className="mt-1.5 text-xs text-danger">{mfaMsg}</p>}
@@ -233,25 +243,25 @@ export default function Settings() {
             فقدت هاتفك؟ الاستعادة من Supabase Dashboard ← Authentication ← Users ← حذف عامل MFA، ثم الدخول بكلمة المرور.
           </p>
         </div>
-      </section>
+      </Card>
 
       {/* store settings */}
-      <section className="card border border-line/70 p-5">
+      <Card className="border-line/70 p-5">
         <h2 className="admin-section-title">إعدادات المتجر</h2>
         <div className="mt-4">
           <h3 className="text-sm font-bold text-ink">إظهار الكمية (افتراضي) 🔢</h3>
           <p className="mt-1 text-xs leading-5 text-soft">يُطبَّق على الكتب المضبوطة على «وراثة الإعداد العام».</p>
-          <select
-            value={qtyDefault}
-            onChange={(e) => saveQtyDefault(e.target.value)}
-            disabled={qtyBusy}
-            className="input mt-2 max-w-xs"
-          >
-            <option value="hide">إخفاء الكمية</option>
-            <option value="show">إظهار الكمية الدقيقة</option>
-          </select>
+          <Select value={qtyDefault} onValueChange={saveQtyDefault} disabled={qtyBusy}>
+            <SelectTrigger className="mt-2 max-w-xs" aria-label="إظهار الكمية">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hide">إخفاء الكمية</SelectItem>
+              <SelectItem value="show">إظهار الكمية الدقيقة</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

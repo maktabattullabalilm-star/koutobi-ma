@@ -123,7 +123,7 @@ describe('BooksAdmin (responsive + filters)', () => {
   it('renders search, filters, badges and steppers', async () => {
     render(<BooksAdmin />);
     expect(await screen.findByPlaceholderText(/ابحث بالعنوان/)).toBeTruthy();
-    expect(await screen.findByText('قارب النفاد')).toBeTruthy();
+    expect(await screen.findByText('كل التصنيفات')).toBeTruthy();
     expect(await screen.findAllByText('كتاب متوفر')).not.toHaveLength(0);
     expect(await screen.findAllByText('كتاب نافد')).not.toHaveLength(0);
     // low-stock + out-of-stock badges

@@ -3,6 +3,10 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/Toast';
 import { IconWrench } from '../../components/icons';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const ERROR_AR = {
   invalid_token: 'رابط التفعيل غير صالح.',
@@ -131,21 +135,27 @@ export default function AdminSetup() {
         </div>
 
         {needsConfirm ? (
-          <div className="rounded-card border border-line bg-white p-6 text-center shadow-card">
+          <Card className="border-line p-6 text-center shadow-card">
             <h1 className="text-lg font-bold text-ink">تحقق من بريدك 📧</h1>
             <p className="mt-2 text-sm leading-7 text-soft">
               تم إنشاء الحساب. أكّد بريدك الإلكتروني عبر الرابط المرسل إليك،
               ثم <b>أعد فتح رابط الدعوة نفسه</b> لإتمام التفعيل (الرابط ما زال صالحاً).
             </p>
-            <Link to="/admin" className="btn-ghost mt-5">صفحة تسجيل الدخول</Link>
-          </div>
+            <Button asChild variant="outline" className="mt-5">
+              <Link to="/admin">صفحة تسجيل الدخول</Link>
+            </Button>
+          </Card>
         ) : (
-          <form onSubmit={submit} className="rounded-card border border-line bg-white p-6 shadow-card" noValidate>
-            <h1 className="text-lg font-bold text-ink">إنشاء حساب المدير</h1>
+          <Card className="border-line shadow-card">
+            <CardHeader>
+              <CardTitle className="text-lg">إنشاء حساب المدير</CardTitle>
+            </CardHeader>
+            <CardContent>
+          <form onSubmit={submit} noValidate>
             {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
 
-            <label className="mt-4 block text-sm font-medium text-ink" htmlFor="su-email">البريد الإلكتروني</label>
-            <input
+            <Label className="mt-4 block" htmlFor="su-email">البريد الإلكتروني</Label>
+            <Input
               id="su-email"
               type="email"
               required
@@ -153,11 +163,11 @@ export default function AdminSetup() {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               placeholder="you@example.com"
-              className="input mt-1.5 text-right!"
+              className="mt-1.5 text-right"
             />
 
-            <label className="mt-4 block text-sm font-medium text-ink" htmlFor="su-pass">كلمة المرور (8 أحرف على الأقل)</label>
-            <input
+            <Label className="mt-4 block" htmlFor="su-pass">كلمة المرور (8 أحرف على الأقل)</Label>
+            <Input
               id="su-pass"
               type="password"
               required
@@ -165,11 +175,11 @@ export default function AdminSetup() {
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               placeholder="••••••••"
-              className="input mt-1.5 text-right!"
+              className="mt-1.5 text-right"
             />
 
-            <label className="mt-4 block text-sm font-medium text-ink" htmlFor="su-confirm">تأكيد كلمة المرور</label>
-            <input
+            <Label className="mt-4 block" htmlFor="su-confirm">تأكيد كلمة المرور</Label>
+            <Input
               id="su-confirm"
               type="password"
               required
@@ -177,16 +187,18 @@ export default function AdminSetup() {
               value={form.confirm}
               onChange={(e) => setForm({ ...form, confirm: e.target.value })}
               placeholder="••••••••"
-              className="input mt-1.5 text-right!"
+              className="mt-1.5 text-right"
             />
 
-            <button type="submit" disabled={busy} className="btn-primary mt-6 w-full py-3!">
+            <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
               {busy ? 'جارٍ التفعيل…' : 'تفعيل حساب المدير'}
-            </button>
+            </Button>
             <p className="mt-3 text-center text-xs text-gray-400">
               يعمل هذا الرابط مرة واحدة فقط، ويُعطّل نهائياً بعد نجاح التفعيل.
             </p>
           </form>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

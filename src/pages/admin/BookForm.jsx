@@ -24,8 +24,20 @@ import {
 } from '../../lib/images';
 import { isValidIsbn } from '../../lib/importers';
 import { useToast } from '../../components/Toast';
+import { Spinner } from '@/components/ui/spinner';
 import { IconBook, IconCheck, IconStar, IconTrash } from '../../components/icons';
 import PageHeader from './PageHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const EMPTY = {
   title_ar: '',
@@ -499,23 +511,40 @@ export default function BookForm() {
   );
 
   const field = (label, name, extra = {}) => (
-    <div>
-      <label htmlFor={name} className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
-      <input
+    <Field>
+      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <Input
         id={name}
         value={form[name]}
         onChange={set(name)}
-        className="input"
         {...extra}
       />
-      {errors[name] && <p className="mt-1 text-xs font-medium text-danger">{errors[name][0]}</p>}
+      {errors[name] && <FieldError>{errors[name][0]}</FieldError>}
+    </Field>
+  );
+
+  const selectField = (label, name, options) => (
+    <div>
+      <Label htmlFor={name} className="mb-1.5 block">{label}</Label>
+      <Select value={form[name]} onValueChange={(v) => setForm((f) => ({ ...f, [name]: v }))}>
+        <SelectTrigger id={name}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={typeof o === 'string' ? o : o.value} value={typeof o === 'string' ? o : o.value}>
+              {typeof o === 'string' ? o : o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl py-16 text-center">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+        <Spinner className="mx-auto size-10 text-brand" />
         <p className="mt-3 text-sm text-soft">جارٍ تحميل الكتاب…</p>
       </div>
     );
@@ -565,24 +594,17 @@ export default function BookForm() {
             {field('العنوان الفرعي', 'subtitle_ar', { placeholder: 'اختياري' })}
             {field('المؤلف', 'author_ar', { placeholder: 'مثال: ابن القيم الجوزية' })}
             {field('الناشر', 'publisher_ar', { placeholder: 'مثال: دار ابن كثير' })}
-            <div>
-              <label htmlFor="category" className="mb-1.5 block text-sm font-medium text-ink">التصنيف *</label>
-              <select id="category" value={form.category} onChange={set('category')} className="input">
-                {cats.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+            {selectField('التصنيف *', 'category', cats)}
             {field('السعر (درهم) *', 'price', { type: 'number', min: 0, step: '0.01', placeholder: 'مثال: 80' })}
             {field('السعر قبل الخصم (اختياري)', 'old_price', { type: 'number', min: 0, step: '0.01', placeholder: 'اتركه فارغاً إن لم يوجد خصم' })}
             <div className="sm:col-span-2">
-              <label htmlFor="description_ar" className="mb-1.5 block text-sm font-medium text-ink">الوصف</label>
-              <textarea
+              <Label htmlFor="description_ar" className="mb-1.5 block">الوصف</Label>
+              <Textarea
                 id="description_ar"
                 value={form.description_ar}
                 onChange={set('description_ar')}
                 rows={4}
-                className="input resize-y"
+                className="resize-y"
                 placeholder="نبذة عن الكتاب ومحتواه…"
               />
             </div>
@@ -596,44 +618,15 @@ export default function BookForm() {
             {field('عدد الصفحات', 'pages', { type: 'number', min: 0, placeholder: 'مثال: 480' })}
             {field('رقم ISBN', 'isbn', { placeholder: 'مثال: 978-2-7451-...' })}
             {field('الطبعة', 'edition_ar', { placeholder: 'مثال: الطبعة الخامسة' })}
-            <div>
-              <label htmlFor="paper_ar" className="mb-1.5 block text-sm font-medium text-ink">الورق</label>
-              <select id="paper_ar" value={form.paper_ar} onChange={set('paper_ar')} className="input">
-                {paperOpts.map((p) => <option key={p}>{p}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="binding_ar" className="mb-1.5 block text-sm font-medium text-ink">التجليد</label>
-              <select id="binding_ar" value={form.binding_ar} onChange={set('binding_ar')} className="input">
-                {bindingOpts.map((b) => <option key={b}>{b}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="size_ar" className="mb-1.5 block text-sm font-medium text-ink">المقاس</label>
-              <select id="size_ar" value={form.size_ar} onChange={set('size_ar')} className="input">
-                {sizeOpts.map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="stock_qty" className="mb-1.5 block text-sm font-medium text-ink">المخزون (عدد النسخ)</label>
-              <input
-                id="stock_qty"
-                type="number"
-                min="0"
-                value={form.stock_qty}
-                onChange={set('stock_qty')}
-                placeholder="مثال: 50"
-                className="input"
-              />
-            </div>
-            <div>
-              <label htmlFor="show_quantity" className="mb-1.5 block text-sm font-medium text-ink">إظهار الكمية في المتجر</label>
-              <select id="show_quantity" value={form.show_quantity} onChange={set('show_quantity')} className="input">
-                <option value="inherit">وراثة الإعداد العام</option>
-                <option value="show">إظهار الكمية الدقيقة</option>
-                <option value="hide">إخفاء الكمية</option>
-              </select>
-            </div>
+            {selectField('الورق', 'paper_ar', paperOpts)}
+            {selectField('التجليد', 'binding_ar', bindingOpts)}
+            {selectField('المقاس', 'size_ar', sizeOpts)}
+            {field('المخزون (عدد النسخ)', 'stock_qty', { type: 'number', min: 0, placeholder: 'مثال: 50' })}
+            {selectField('إظهار الكمية في المتجر', 'show_quantity', [
+              { value: 'inherit', label: 'وراثة الإعداد العام' },
+              { value: 'show', label: 'إظهار الكمية الدقيقة' },
+              { value: 'hide', label: 'إخفاء الكمية' },
+            ])}
           </div>
         </section>
 
@@ -665,52 +658,52 @@ export default function BookForm() {
           {importTab === 'sifa' ? (
             <div className="space-y-3">
               <div className="flex gap-2">
-                <input
+                <Input
                   value={sifaUrl}
                   onChange={(e) => setSifaUrl(e.target.value)}
                   dir="ltr"
                   placeholder="https://www.sifatusafwa.com/…/product.html"
-                  className="input flex-1 text-right!"
+                  className="flex-1 text-right"
                   aria-label="رابط sifatusafwa"
                 />
-                <button type="button" onClick={importFromSifaUrl} disabled={importing} className="btn-primary shrink-0">
+                <Button type="button" onClick={importFromSifaUrl} disabled={importing} className="shrink-0">
                   {importing ? 'جارٍ الجلب…' : 'جلب'}
-                </button>
+                </Button>
               </div>
               {showHtmlFallback && (
                 <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
                   <p className="text-xs leading-5 text-amber-800">
                     الخادم محجوب من حماية الموقع — افتح الصفحة في متصفحك، انسخ كود المصدر (Ctrl+U ثم Ctrl+A/C)، والصقه هنا:
                   </p>
-                  <textarea
+                  <Textarea
                     value={sifaHtml}
                     onChange={(e) => setSifaHtml(e.target.value)}
                     rows={4}
                     dir="ltr"
                     placeholder="<html>…"
-                    className="input mt-2 font-mono text-xs!"
+                    className="mt-2 bg-white font-mono text-xs"
                     aria-label="كود HTML الصفحة"
                   />
-                  <button type="button" onClick={importFromSifaHtml} disabled={importing} className="btn-primary mt-2 w-full">
+                  <Button type="button" onClick={importFromSifaHtml} disabled={importing} className="mt-2 w-full">
                     {importing ? 'جارٍ التحليل…' : 'تحليل الكود الملصق'}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex gap-2">
-                <input
+                <Input
                   value={isbnInput}
                   onChange={(e) => setIsbnInput(e.target.value)}
                   dir="ltr"
                   placeholder="978-…"
-                  className="input flex-1 text-right!"
+                  className="flex-1 text-right"
                   aria-label="رقم ISBN"
                 />
-                <button type="button" onClick={importFromIsbn} disabled={importing} className="btn-primary shrink-0">
+                <Button type="button" onClick={importFromIsbn} disabled={importing} className="shrink-0">
                   {importing ? 'جارٍ البحث…' : 'بحث'}
-                </button>
+                </Button>
               </div>
               <p className="text-[11px] leading-5 text-soft">
                 البحث عبر Open Library ثم Google Books — الكتب العربية غالباً غائبة من المصدرين، وستُكمل الإدخال يدوياً عندها.
@@ -799,14 +792,14 @@ export default function BookForm() {
           )}
 
           <div className="flex flex-col gap-3">
-            <button
+            <Button
               type="button"
               onClick={() => fileRef.current?.click()}
               disabled={staging || saving || images.length >= IMAGE_MAX_COUNT}
-              className="btn-primary w-full"
+              className="w-full"
             >
               {staging ? 'جارٍ التجهيز…' : images.length >= IMAGE_MAX_COUNT ? `اكتمل العدد (${IMAGE_MAX_COUNT})` : 'اختار صوراً من جهازك'}
-            </button>
+            </Button>
             <input
               ref={fileRef}
               type="file"
@@ -816,22 +809,23 @@ export default function BookForm() {
               className="hidden"
             />
             <div className="flex gap-2">
-              <input
+              <Input
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 dir="ltr"
                 placeholder="https://…/cover.jpg"
-                className="input flex-1 text-right!"
+                className="flex-1 text-right"
                 aria-label="رابط صورة"
               />
-              <button
+              <Button
                 type="button"
                 onClick={addUrlImage}
                 disabled={saving || images.length >= IMAGE_MAX_COUNT}
-                className="btn-ghost shrink-0"
+                variant="outline"
+                className="shrink-0"
               >
                 <IconCheck width={16} height={16} /> إضافة بالرابط
-              </button>
+              </Button>
             </div>
           </div>
         </section>
@@ -850,14 +844,16 @@ export default function BookForm() {
         {/* sticky save bar */}
         <div className="sticky bottom-0 z-10 -mx-1 bg-gray-50/95 px-1 py-3 backdrop-blur-sm">
           <div className="card flex flex-col-reverse gap-3 border border-line/70 p-3 shadow-lift sm:flex-row sm:items-center sm:justify-between">
-            <Link to="/admin/books" className="btn-ghost">إلغاء</Link>
+            <Button asChild variant="outline">
+              <Link to="/admin/books">إلغاء</Link>
+            </Button>
             <div className="flex items-center gap-3">
               {images.length > 0 && (
                 <span className="text-xs text-soft">{images.length} صور · {images.filter((i) => i.blob).length} بانتظار الرفع</span>
               )}
-              <button type="submit" disabled={saving || staging} className="btn-primary flex-1 px-8! sm:flex-none">
+              <Button type="submit" disabled={saving || staging} className="flex-1 px-8 sm:flex-none">
                 {saving ? 'جارٍ الحفظ…' : isEdit ? 'حفظ التعديلات' : 'نشر الكتاب'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

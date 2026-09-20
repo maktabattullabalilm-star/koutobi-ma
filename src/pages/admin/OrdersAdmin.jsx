@@ -6,6 +6,16 @@ import { useToast } from '../../components/Toast';
 import { IconWhatsApp } from '../../components/icons';
 import PageHeader from './PageHeader';
 import StatusPill from './StatusPill';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const STATUS = [
   { id: 'new', label: 'جديد', tone: 'amber' },
@@ -82,8 +92,8 @@ export default function OrdersAdmin() {
       <div className="mt-4 space-y-4">
         {!orders ? (
           <>
-            <div className="skeleton h-44 w-full" />
-            <div className="skeleton h-44 w-full" />
+            <Skeleton className="h-44 w-full" />
+            <Skeleton className="h-44 w-full" />
           </>
         ) : filtered.length === 0 ? (
           <div className="card border border-line/60 p-10 text-center text-soft">
@@ -91,7 +101,7 @@ export default function OrdersAdmin() {
           </div>
         ) : (
           filtered.map((o) => (
-            <div key={o.id} className="card border border-line/60 p-4 sm:p-5">
+            <Card key={o.id} className="border-line/60 p-4 sm:p-5">
               {/* header */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
@@ -135,28 +145,30 @@ export default function OrdersAdmin() {
                   الإجمالي: <span className="text-lg font-bold text-brand">{formatPrice(o.total)}</span>
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
-                  <a
-                    href={whatsappLink(
-                      `السلام عليكم ${o.customer_name} 🌱، بخصوص طلبكم من مكتبة كُتُبِي.ما:\n${(o.order_items || []).map((it) => `• ${it.title_ar} (×${it.quantity})`).join('\n')}\nالإجمالي: ${formatPrice(o.total)}`
-                    )}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-ghost bg-[#25D366]/10! border-[#25D366]/40!"
-                  >
-                    <IconWhatsApp width={16} height={16} /> اتصال واتساب
-                  </a>
-                  <select
-                    value={o.status}
-                    onChange={(e) => setStatus(o.id, e.target.value)}
-                    className="rounded-md border border-line bg-white px-3 py-2 text-sm font-medium text-ink outline-hidden focus:border-brand"
-                  >
-                    {STATUS.map((s) => (
-                      <option key={s.id} value={s.id}>{s.label}</option>
-                    ))}
-                  </select>
+                  <Button asChild variant="outline" className="border-[#25D366]/40 bg-[#25D366]/10 hover:bg-[#25D366]/20">
+                    <a
+                      href={whatsappLink(
+                        `السلام عليكم ${o.customer_name} 🌱، بخصوص طلبكم من مكتبة كُتُبِي.ما:\n${(o.order_items || []).map((it) => `• ${it.title_ar} (×${it.quantity})`).join('\n')}\nالإجمالي: ${formatPrice(o.total)}`
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <IconWhatsApp width={16} height={16} /> اتصال واتساب
+                    </a>
+                  </Button>
+                  <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
+                    <SelectTrigger className="w-auto" aria-label="حالة الطلب">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
+            </Card>
           ))
         )}
       </div>

@@ -11,8 +11,11 @@ import {
   adminUpdateCategory,
 } from '../../lib/admin';
 import { useToast } from '../../components/Toast';
+import { Spinner } from '@/components/ui/spinner';
 import { IconEdit, IconPlus, IconTrash } from '../../components/icons';
 import PageHeader from './PageHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const TYPES = ['binding', 'size', 'paper'];
 const TYPE_LABEL = { binding: 'التجليد', size: 'المقاس', paper: 'الورق' };
@@ -74,29 +77,29 @@ function AttributeManager({ type, items, onReload }) {
     <div className="space-y-3">
       <h3 className="text-sm font-bold text-ink">{TYPE_LABEL[type] || type}</h3>
       <form onSubmit={submit} className="flex flex-wrap gap-2">
-        <input
+        <Input
           value={f.value_ar}
           onChange={(e) => setF({ ...f, value_ar: e.target.value })}
           placeholder={TYPE_PLACEHOLDER[type] || 'قيمة جديدة'}
-          className="input min-w-[160px] flex-1"
+          className="min-w-[160px] flex-1"
           aria-label={`قيمة ${TYPE_LABEL[type] || type}`}
         />
-        <input
+        <Input
           type="number"
           value={f.sort}
           onChange={(e) => setF({ ...f, sort: e.target.value })}
           placeholder="الترتيب"
-          className="input w-20"
+          className="w-20"
           min="0"
           aria-label="الترتيب"
         />
-        <button type="submit" className="btn-primary shrink-0">
+        <Button type="submit" className="shrink-0">
           {editId ? 'حفظ' : <IconPlus width={16} height={16} />}
-        </button>
+        </Button>
         {editId && (
-          <button type="button" onClick={() => { setF({ value_ar: '', sort: '' }); setEditId(null); setErrs({}); }} className="btn-ghost shrink-0">
+          <Button type="button" onClick={() => { setF({ value_ar: '', sort: '' }); setEditId(null); setErrs({}); }} variant="outline" className="shrink-0">
             إلغاء
-          </button>
+          </Button>
         )}
         {errs.value_ar && <span className="w-full basis-full text-xs text-danger">{errs.value_ar}</span>}
       </form>
@@ -203,7 +206,7 @@ export default function CatalogData() {
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl py-16 text-center">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+        <Spinner className="mx-auto size-10 text-brand" />
         <p className="mt-3 text-sm text-soft">جارٍ تحميل بيانات الكتالوج…</p>
       </div>
     );
@@ -221,27 +224,27 @@ export default function CatalogData() {
       <section className="card border border-line/70 p-5">
         <h2 className="admin-section-title mb-4">التصنيفات</h2>
         <form onSubmit={catSubmit} className="mb-4 flex flex-wrap gap-2">
-          <input
+          <Input
             value={catForm.name_ar}
             onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })}
             placeholder="اسم التصنيف بالعربية"
-            className="input min-w-[180px] flex-1"
+            className="min-w-[180px] flex-1"
           />
-          <input
+          <Input
             type="number"
             value={catForm.sort}
             onChange={(e) => setCatForm({ ...catForm, sort: e.target.value })}
             placeholder="الترتيب"
-            className="input w-20"
+            className="w-20"
             min="0"
           />
-          <button type="submit" className="btn-primary shrink-0">
+          <Button type="submit" className="shrink-0">
             {catEditId ? 'حفظ' : <IconPlus width={16} height={16} />}
-          </button>
+          </Button>
           {catEditId && (
-            <button type="button" onClick={() => { setCatForm({ name_ar: '', sort: '' }); setCatEditId(null); setCatErrors({}); }} className="btn-ghost shrink-0">
+            <Button type="button" onClick={() => { setCatForm({ name_ar: '', sort: '' }); setCatEditId(null); setCatErrors({}); }} variant="outline" className="shrink-0">
               إلغاء
-            </button>
+            </Button>
           )}
           {catErrors.name_ar && <span className="w-full basis-full text-xs text-danger">{catErrors.name_ar}</span>}
         </form>

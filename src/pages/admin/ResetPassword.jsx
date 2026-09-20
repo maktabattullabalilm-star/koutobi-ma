@@ -3,6 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/Toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 /**
  * Target of the Supabase recovery email link (/admin/reset-password#access_token=…).
@@ -52,8 +56,12 @@ export default function ResetPassword() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
-        <form onSubmit={submit} className="rounded-card border border-line bg-white p-6 shadow-card">
-          <h1 className="text-lg font-bold text-ink">تعيين كلمة مرور جديدة 🔑</h1>
+        <Card className="border-line shadow-card">
+          <CardHeader>
+            <CardTitle className="text-lg">تعيين كلمة مرور جديدة 🔑</CardTitle>
+          </CardHeader>
+          <CardContent>
+        <form onSubmit={submit} noValidate>
           {!ready || loading ? (
             <p className="mt-4 text-center text-sm text-soft">جارٍ التحقق من رابط الاستعادة…</p>
           ) : !session ? (
@@ -61,13 +69,15 @@ export default function ResetPassword() {
               <div className="rounded-md bg-rose-50 px-3 py-2 text-sm leading-6 text-danger">
                 الرابط غير صالح أو منتهي الصلاحية — اطلب رابط استعادة جديداً من صفحة الدخول.
               </div>
-              <Link to="/admin" className="btn-primary mt-4 w-full">العودة لتسجيل الدخول</Link>
+              <Button asChild className="mt-4 w-full">
+                <Link to="/admin">العودة لتسجيل الدخول</Link>
+              </Button>
             </div>
           ) : (
             <>
               {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
-              <label className="mt-4 block text-sm font-medium text-ink" htmlFor="new-password">كلمة المرور الجديدة</label>
-              <input
+              <Label className="mt-4 block" htmlFor="new-password">كلمة المرور الجديدة</Label>
+              <Input
                 id="new-password"
                 type="password"
                 required
@@ -75,10 +85,10 @@ export default function ResetPassword() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="8 أحرف على الأقل"
-                className="input mt-1.5 text-right!"
+                className="mt-1.5 text-right"
               />
-              <label className="mt-4 block text-sm font-medium text-ink" htmlFor="confirm-password">تأكيد كلمة المرور</label>
-              <input
+              <Label className="mt-4 block" htmlFor="confirm-password">تأكيد كلمة المرور</Label>
+              <Input
                 id="confirm-password"
                 type="password"
                 required
@@ -86,14 +96,16 @@ export default function ResetPassword() {
                 value={form.confirm}
                 onChange={(e) => setForm({ ...form, confirm: e.target.value })}
                 placeholder="أعد كتابتها"
-                className="input mt-1.5 text-right!"
+                className="mt-1.5 text-right"
               />
-              <button type="submit" disabled={busy} className="btn-primary mt-6 w-full py-3!">
+              <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
                 {busy ? 'جارٍ الحفظ…' : 'تعيين كلمة المرور'}
-              </button>
+              </Button>
             </>
           )}
         </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -8,6 +8,15 @@ import { formatPrice, formatDate } from '../../lib/format';
 import { IconBook, IconCart, IconInbox, IconCash } from '../../components/icons';
 import PageHeader from './PageHeader';
 import StatusPill from './StatusPill';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const STATUS_LABEL = {
   new: 'جديد',
@@ -59,7 +68,11 @@ export default function AdminDashboard() {
       <PageHeader
         title="نظرة عامة 👋"
         description="ملخص أداء مكتبتك وطلبات «الدفع عند الاستلام»."
-        actions={<Link to="/admin/books/new" className="btn-primary">＋ إضافة كتاب</Link>}
+        actions={
+          <Button asChild>
+            <Link to="/admin/books/new">＋ إضافة كتاب</Link>
+          </Button>
+        }
       />
 
       {error && <div className="mb-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>}
@@ -67,24 +80,26 @@ export default function AdminDashboard() {
       {/* stats */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
-          <Link key={c.label} to={c.to} className="card border border-line/60 p-5 transition hover:border-brand/40 hover:shadow-lift">
-            <span className={`flex h-11 w-11 items-center justify-center rounded-lg ${c.color}`}>
-              <c.Icon width={22} height={22} />
-            </span>
-            <div className="mt-3 text-xl font-bold text-ink">{c.value}</div>
-            <div className="mt-0.5 text-xs text-soft">{c.label}</div>
+          <Link key={c.label} to={c.to}>
+            <Card className="border-line/60 p-5 transition hover:border-brand/40 hover:shadow-lift">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-lg ${c.color}`}>
+                <c.Icon width={22} height={22} />
+              </span>
+              <div className="mt-3 text-xl font-bold tabular-nums text-ink">{c.value}</div>
+              <div className="mt-0.5 text-xs text-soft">{c.label}</div>
+            </Card>
           </Link>
         ))}
       </section>
 
       {/* needs attention */}
-      <section className="card mt-6 border border-line/60 p-5">
+      <Card className="mt-6 border-line/60 p-5">
         <div className="flex items-center justify-between">
           <h2 className="admin-section-title">يحتاج انتباهك</h2>
           {attentionCount > 0 ? (
-            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700">{attentionCount}</span>
+            <StatusPill tone="amber">{attentionCount}</StatusPill>
           ) : (
-            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">كل شيء تمام ✓</span>
+            <StatusPill tone="green">كل شيء تمام ✓</StatusPill>
           )}
         </div>
         <ul className="mt-3 space-y-2 text-sm">
@@ -124,14 +139,16 @@ export default function AdminDashboard() {
             <li className="rounded-md bg-gray-50 px-3 py-2.5 text-xs text-soft">لا طلبات معلقة، ولا نقص مخزون، والحماية مفعّلة.</li>
           )}
         </ul>
-      </section>
+      </Card>
 
       <section className="mt-6 grid gap-6 lg:grid-cols-3">
         {/* recent orders */}
-        <div className="card border border-line/60 p-5 lg:col-span-2">
+        <Card className="border-line/60 p-5 lg:col-span-2">
           <div className="flex items-center justify-between">
             <h2 className="admin-section-title">أحدث الطلبات</h2>
-            <Link to="/admin/orders" className="text-sm font-semibold text-brand hover:text-brand-dark">عرض الكل ←</Link>
+            <Button variant="link" asChild className="h-auto p-0 text-sm font-semibold text-brand">
+              <Link to="/admin/orders">عرض الكل ←</Link>
+            </Button>
           </div>
           {orders.length === 0 ? (
             <p className="mt-4 rounded-md bg-gray-50 px-4 py-8 text-center text-sm text-soft">
@@ -144,31 +161,43 @@ export default function AdminDashboard() {
                   <span className="h-2.5 w-2.5 rounded-full bg-brand" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-semibold text-ink">{o.customer_name}</div>
-                    <div className="text-xs text-soft" dir="ltr">{o.phone}</div>
+                    <div className="text-xs tabular-nums text-soft" dir="ltr">{o.phone}</div>
                   </div>
                   <span className="text-xs text-soft">{formatDate(o.created_at)}</span>
-                  <span className="text-sm font-bold text-brand">{formatPrice(o.total)}</span>
-                  <span className="rounded-full bg-brand-pale px-2.5 py-1 text-[11px] font-bold text-brand">
+                  <span className="text-sm font-bold tabular-nums text-brand">{formatPrice(o.total)}</span>
+                  <StatusPill tone="blue">
                     {STATUS_LABEL[o.status] || o.status}
-                  </span>
+                  </StatusPill>
                 </li>
               ))}
             </ul>
           )}
-        </div>
+        </Card>
 
         {/* quick actions */}
-        <div className="card border border-line/60 p-5">
+        <Card className="border-line/60 p-5">
           <h2 className="admin-section-title">إجراءات سريعة</h2>
-          <div className="mt-4 space-y-2.5">
-            <Link to="/admin/books/new" className="btn-primary w-full">＋ إضافة كتاب جديد</Link>
-            <Link to="/admin/books" className="btn-ghost w-full">إدارة الكتب</Link>
-            <Link to="/admin/catalog" className="btn-ghost w-full">بيانات الكتالوج</Link>
-            <Link to="/admin/orders" className="btn-ghost w-full">متابعة الطلبات</Link>
-            <Link to="/admin/settings" className="btn-ghost w-full">الإعدادات ⚙️</Link>
-            <a href="/" target="_blank" rel="noreferrer" className="btn-ghost w-full">معاينة المتجر ↗</a>
-          </div>
-        </div>
+          <CardContent className="mt-4 space-y-2.5 p-0">
+            <Button asChild className="w-full">
+              <Link to="/admin/books/new">＋ إضافة كتاب جديد</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/admin/books">إدارة الكتب</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/admin/catalog">بيانات الكتالوج</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/admin/orders">متابعة الطلبات</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/admin/settings">الإعدادات ⚙️</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <a href="/" target="_blank" rel="noreferrer">معاينة المتجر ↗</a>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     </div>
   );

@@ -8,6 +8,41 @@ import { IconCart, IconClose, IconEdit, IconMinus, IconPlus, IconStar } from '..
 import BookCover from '../../components/BookCover';
 import PageHeader from './PageHeader';
 import StatusPill from './StatusPill';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 
 const LOW_STOCK_AT = 5;
 
@@ -52,6 +87,7 @@ export default function BooksAdmin() {
   const [catFilter, setCatFilter] = useState('all');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [pendingDelete, setPendingDelete] = useState(null);
   const { show } = useToast();
 
   const load = () => {
@@ -135,8 +171,10 @@ export default function BooksAdmin() {
     }
   };
 
-  const remove = async (b) => {
-    if (!window.confirm(`حذف كتاب «${b.title_ar}» نهائياً مع صوره من التخزين؟`)) return;
+  const confirmRemove = async () => {
+    const b = pendingDelete;
+    if (!b) return;
+    setPendingDelete(null);
     setBusy(b.id);
     try {
       await adminDeleteBookWithImages(b.id, session?.access_token);
@@ -154,27 +192,31 @@ export default function BooksAdmin() {
 
   const stockCell = (b, compact = false) => (
     <div className={`flex items-center gap-1 ${compact ? '' : 'justify-center'}`} dir="ltr">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => adjustStock(b, -1)}
         disabled={busy === b.id || (b.stock_qty || 0) <= 0}
-        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-rose-50 hover:text-danger disabled:opacity-30"
+        className="text-gray-400 hover:bg-rose-50 hover:text-danger"
         title="نقص"
         aria-label="نقص المخزون"
       >
         <IconMinus width={14} height={14} />
-      </button>
+      </Button>
       <span className={`w-8 text-center text-sm font-bold tabular-nums ${(b.stock_qty ?? 0) <= 0 ? 'text-danger' : lowStock(b) ? 'text-amber-600' : 'text-brand'}`}>
         {b.stock_qty ?? 0}
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => adjustStock(b, 1)}
         disabled={busy === b.id}
-        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-brand-light hover:text-brand disabled:opacity-30"
+        className="text-gray-400 hover:bg-brand-light hover:text-brand"
         title="زيادة"
         aria-label="زيادة المخزون"
       >
         <IconPlus width={14} height={14} />
-      </button>
+      </Button>
     </div>
   );
 
@@ -203,7 +245,7 @@ export default function BooksAdmin() {
       <Link to={`/admin/books/${b.id}/edit`} className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-brand" title="تعديل" aria-label="تعديل">
         <IconEdit width={16} height={16} />
       </Link>
-      <button onClick={() => remove(b)} disabled={busy === b.id} className="rounded-md p-2 text-gray-400 transition hover:bg-rose-50 hover:text-danger" title="حذف" aria-label="حذف">
+      <button onClick={() => setPendingDelete(b)} disabled={busy === b.id} className="rounded-md p-2 text-gray-400 transition hover:bg-rose-50 hover:text-danger" title="حذف" aria-label="حذف">
         <IconClose width={16} height={16} />
       </button>
     </div>
@@ -215,13 +257,17 @@ export default function BooksAdmin() {
         title="الكتب 📚"
         description={books ? `${books.length} كتاب في المكتبة` : 'جارٍ التحميل…'}
         crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'الكتب' }]}
-        actions={<Link to="/admin/books/new" className="btn-primary">＋ إضافة كتاب</Link>}
+        actions={
+          <Button asChild>
+            <Link to="/admin/books/new">＋ إضافة كتاب</Link>
+          </Button>
+        }
       />
 
       {error && <div className="mb-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>}
 
       {/* sticky filter bar */}
-      <div className="sticky top-0 z-10 -mx-1 bg-gray-50/95 px-1 py-2 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 -mx-1 bg-gray-50/95 px-1 py-2 backdrop-blur">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -232,12 +278,17 @@ export default function BooksAdmin() {
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Segmented options={STATUS_OPTS} value={statusFilter} onChange={setStatusFilter} label="حالة النشر" />
           <Segmented options={STOCK_OPTS} value={stockFilter} onChange={setStockFilter} label="المخزون" />
-          <select value={catFilter} onChange={(e) => setCatFilter(e.target.value)} className="input w-auto! py-2! text-xs" aria-label="التصنيف">
-            <option value="all">كل التصنيفات</option>
-            {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
+          <Select value={catFilter} onValueChange={setCatFilter}>
+            <SelectTrigger className="w-auto !py-2 text-xs" aria-label="التصنيف">
+              <SelectValue placeholder="كل التصنيفات" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل التصنيفات</SelectItem>
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -246,49 +297,49 @@ export default function BooksAdmin() {
           {books ? (isFiltered ? `${filtered.length} من ${books.length}` : `${books.length} كتاب`) : '…'}
         </p>
         {isFiltered && (
-          <button onClick={clearFilters} className="text-xs font-bold text-danger hover:underline">
+          <Button variant="link" onClick={clearFilters} className="h-auto p-0 text-xs font-bold text-danger">
             ✕ مسح الفلاتر
-          </button>
+          </Button>
         )}
       </div>
 
       {/* desktop table */}
       <div className="mt-3 hidden overflow-x-auto rounded-card border border-line/70 bg-white md:block">
-        <table className="w-full min-w-[720px] text-sm">
-          <thead className="sticky top-0">
-            <tr className="border-b border-line bg-gray-50 text-start text-xs text-soft">
-              <th className="px-4 py-3 text-start font-semibold">الكتاب</th>
-              <th className="px-4 py-3 text-start font-semibold">التصنيف</th>
-              <th className="px-4 py-3 text-start font-semibold">السعر</th>
-              <th className="px-4 py-3 text-center font-semibold">المخزون</th>
-              <th className="px-4 py-3 text-center font-semibold">الحالة</th>
-              <th className="px-4 py-3 text-center font-semibold">إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
+        <Table className="min-w-[720px]">
+          <TableHeader className="sticky top-0">
+            <TableRow className="border-b border-line bg-gray-50 text-xs text-soft hover:bg-gray-50">
+              <TableHead className="px-4 py-3 text-start font-semibold">الكتاب</TableHead>
+              <TableHead className="px-4 py-3 text-start font-semibold">التصنيف</TableHead>
+              <TableHead className="px-4 py-3 text-start font-semibold">السعر</TableHead>
+              <TableHead className="px-4 py-3 text-center font-semibold">المخزون</TableHead>
+              <TableHead className="px-4 py-3 text-center font-semibold">الحالة</TableHead>
+              <TableHead className="px-4 py-3 text-center font-semibold">إجراءات</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {!books ? (
-              <tr>
-                <td colSpan={6} className="space-y-2 px-4 py-4">
+              <TableRow>
+                <TableCell colSpan={6} className="space-y-2 px-4 py-4">
                   {[0, 1, 2].map((i) => (
-                    <div key={i} className="skeleton h-16 w-full" />
+                    <Skeleton key={i} className="h-16 w-full" />
                   ))}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-12 text-center">
+              <TableRow>
+                <TableCell colSpan={6} className="px-4 py-12 text-center">
                   <p className="text-sm text-soft">لا توجد نتائج مطابقة.</p>
                   {isFiltered && (
-                    <button onClick={clearFilters} className="btn-ghost mt-3 py-2! text-xs">مسح الفلاتر</button>
+                    <Button variant="outline" size="sm" onClick={clearFilters} className="mt-3">مسح الفلاتر</Button>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               filtered.map((b) => (
-                <tr key={b.id} className="border-b border-line/60 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-4 py-2.5">
+                <TableRow key={b.id} className="border-b border-line/60 last:border-0 hover:bg-gray-50/60">
+                  <TableCell className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
-                      <span className={`relative shrink-0 overflow-hidden rounded-sm border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
+                      <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
                         <BookCover src={b.cover_image} alt="" className="h-12 w-9" imgClassName="h-full w-full object-cover" />
                         {soldOut(b) && (
                           <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[9px] font-bold text-white">نفد</span>
@@ -301,15 +352,15 @@ export default function BooksAdmin() {
                         <div className="text-xs text-soft">{b.author_ar || '—'}</div>
                       </div>
                     </div>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-soft">{b.category || '—'}</td>
-                  <td className="whitespace-nowrap px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-2.5 text-soft">{b.category || '—'}</TableCell>
+                  <TableCell className="whitespace-nowrap px-4 py-2.5">
                     <span className="font-bold tabular-nums text-brand">{formatPrice(b.price)}</span>
                     {b.old_price != null && b.old_price > b.price && (
                       <span className="ms-1.5 text-xs tabular-nums text-soft line-through">{formatPrice(b.old_price)}</span>
                     )}
-                  </td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4 py-2.5">
                     <div className="flex items-center justify-center gap-2">
                       {stockCell(b)}
                       {soldOut(b) ? (
@@ -318,37 +369,37 @@ export default function BooksAdmin() {
                         <StatusPill tone="amber">قارب</StatusPill>
                       ) : null}
                     </div>
-                  </td>
-                  <td className="px-4 py-2.5 text-center">{publishToggle(b)}</td>
-                  <td className="px-4 py-2.5">
+                  </TableCell>
+                  <TableCell className="px-4 py-2.5 text-center">{publishToggle(b)}</TableCell>
+                  <TableCell className="px-4 py-2.5">
                     <div className="flex items-center justify-center">{rowActions(b)}</div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* mobile cards */}
       <div className="mt-3 space-y-3 md:hidden">
         {!books ? (
           <>
-            <div className="skeleton h-32 w-full" />
-            <div className="skeleton h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
           </>
         ) : filtered.length === 0 ? (
           <div className="card border border-line/60 p-10 text-center">
             <p className="text-sm text-soft">لا توجد نتائج مطابقة.</p>
             {isFiltered && (
-              <button onClick={clearFilters} className="btn-ghost mt-3 py-2! text-xs">مسح الفلاتر</button>
+              <Button variant="outline" size="sm" onClick={clearFilters} className="mt-3">مسح الفلاتر</Button>
             )}
           </div>
         ) : (
           filtered.map((b) => (
             <article key={b.id} className="card border border-line/60 p-4">
               <div className="flex gap-3">
-                <span className={`relative shrink-0 overflow-hidden rounded-sm border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
+                <span className={`relative shrink-0 overflow-hidden rounded border border-line bg-gray-100 ${soldOut(b) ? 'opacity-60' : ''}`}>
                   <BookCover src={b.cover_image} alt="" className="h-16 w-12" imgClassName="h-full w-full object-cover" />
                   {soldOut(b) && (
                     <span className="absolute inset-0 flex items-center justify-center bg-black/50 text-[10px] font-bold text-white">نفد</span>
@@ -382,13 +433,39 @@ export default function BooksAdmin() {
       </div>
 
       {books && books.length === 0 && (
-        <div className="mt-6 rounded-card border border-dashed border-line px-6 py-12 text-center">
-          <IconCart className="mx-auto text-gray-300" width={40} height={40} />
-          <h3 className="mt-2 font-bold text-ink">المكتبة فارغة</h3>
-          <p className="mt-1 text-sm text-soft">أضف أول كتاب الآن.</p>
-          <Link to="/admin/books/new" className="btn-primary mt-4">＋ إضافة كتاب</Link>
-        </div>
+        <Empty className="mt-6 border border-dashed border-line">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconCart width={20} height={20} />
+            </EmptyMedia>
+            <EmptyTitle>المكتبة فارغة</EmptyTitle>
+            <EmptyDescription>أضف أول كتاب الآن.</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild>
+              <Link to="/admin/books/new">＋ إضافة كتاب</Link>
+            </Button>
+          </EmptyContent>
+        </Empty>
       )}
+
+      {/* delete confirmation */}
+      <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف الكتاب نهائياً؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيُحذف «{pendingDelete?.title_ar}» مع كل صوره من التخزين. لا يمكن التراجع عن هذا الإجراء.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemove} className="bg-danger text-white hover:bg-danger/90">
+              حذف نهائي
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

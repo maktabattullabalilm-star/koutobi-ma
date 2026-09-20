@@ -5,6 +5,7 @@ import { supabase, supabaseErrorHint } from '../../lib/supabase';
 import { challengeFactor, getVerifiedTotpFactor, verifyFactorCode } from '../../lib/mfa';
 import { STORE_NAME } from '../../lib/config';
 import { useToast } from '../../components/Toast';
+import { Spinner } from '@/components/ui/spinner';
 import { IconWrench } from '../../components/icons';
 
 export default function AdminLogin() {
@@ -99,7 +100,7 @@ export default function AdminLogin() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+        <Spinner className="size-10 text-brand" />
       </div>
     );
   }
@@ -108,12 +109,14 @@ export default function AdminLogin() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md">
-          <form onSubmit={submitMfa} className="rounded-card border border-line bg-white p-6 text-center shadow-card">
+          <Card className="border-line text-center shadow-card">
+            <CardContent className="pt-6">
+          <form onSubmit={submitMfa} noValidate>
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-2xl">🔐</span>
             <h1 className="mt-3 text-lg font-bold text-ink">التحقق بخطوتين</h1>
             <p className="mt-1 text-sm text-soft">أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة.</p>
             {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
-            <input
+            <Input
               id="mfa-code"
               type="text"
               required
@@ -125,19 +128,22 @@ export default function AdminLogin() {
               value={mfa.code}
               onChange={(e) => setMfa({ ...mfa, code: e.target.value })}
               placeholder="123456"
-              className="input mt-4 py-3! text-center text-2xl! font-bold tracking-[0.5em]"
+              className="mt-4 py-3 text-center text-2xl font-bold tracking-[0.5em]"
             />
-            <button type="submit" disabled={busy} className="btn-primary mt-4 w-full py-3!">
+            <Button type="submit" disabled={busy} className="mt-4 w-full py-3">
               {busy ? 'جارٍ التحقق…' : 'تحقق'}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="link"
               onClick={cancelMfa}
-              className="mt-3 w-full text-center text-sm font-medium text-soft hover:text-danger"
+              className="mt-3 w-full text-soft hover:text-danger"
             >
               إلغاء وتسجيل الخروج
-            </button>
+            </Button>
           </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -147,7 +153,7 @@ export default function AdminLogin() {
     if (isAdmin) navigate('/admin/dashboard', { replace: true });
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
+        <Card className="w-full max-w-md border-line p-8 text-center shadow-card">
           <h1 className="text-lg font-bold text-ink">مرحباً بك 👋</h1>
           <p className="mt-2 text-sm leading-7 text-soft">
             حسابك مسجّل لكنه ليس حساب مدير.
@@ -155,19 +161,19 @@ export default function AdminLogin() {
             تواصل مع صاحب المتجر لمنحك صلاحية الإدارة.
           </p>
           <div className="mt-5 flex flex-col gap-2">
-            <button onClick={() => navigate('/')} className="btn-primary">العودة إلى المتجر</button>
-            <button
+            <Button onClick={() => navigate('/')}>العودة إلى المتجر</Button>
+            <Button
+              variant="outline"
               onClick={async () => {
                 await signOut();
                 show('تم تسجيل الخروج');
                 navigate('/admin', { replace: true });
               }}
-              className="btn-ghost"
             >
               تسجيل الخروج
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
@@ -186,10 +192,14 @@ export default function AdminLogin() {
           <p className="mt-2 text-sm text-soft">لوحة تحكم {STORE_NAME}</p>
         </div>
 
-        <form onSubmit={submit} className="rounded-card border border-line bg-white p-6 shadow-card">
-          <h1 className="text-lg font-bold text-ink">
-            {mode === 'login' ? 'تسجيل الدخول' : mode === 'signup' ? 'إنشاء حساب' : 'استعادة كلمة المرور'}
-          </h1>
+        <Card className="border-line shadow-card">
+          <CardHeader>
+            <CardTitle className="text-lg">
+              {mode === 'login' ? 'تسجيل الدخول' : mode === 'signup' ? 'إنشاء حساب' : 'استعادة كلمة المرور'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+          <form onSubmit={submit} noValidate>
           {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
           {mode === 'forgot' && resetSent && (
             <div className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-700">
@@ -197,8 +207,8 @@ export default function AdminLogin() {
             </div>
           )}
 
-          <label className="mt-4 block text-sm font-medium text-ink" htmlFor="email">البريد الإلكتروني</label>
-          <input
+          <Label className="mt-4 block" htmlFor="email">البريد الإلكتروني</Label>
+          <Input
             id="email"
             type="email"
             required
@@ -206,24 +216,25 @@ export default function AdminLogin() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             placeholder="you@example.com"
-            className="input mt-1.5 text-right!"
+            className="mt-1.5 text-right"
           />
 
           {mode !== 'forgot' && (
             <>
               <div className="mt-4 flex items-center justify-between">
-                <label className="block text-sm font-medium text-ink" htmlFor="password">كلمة المرور</label>
+                <Label htmlFor="password">كلمة المرور</Label>
                 {mode === 'login' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
                     onClick={() => { setMode('forgot'); setError(''); setResetSent(false); }}
-                    className="text-xs font-medium text-brand hover:text-brand-dark"
+                    className="h-auto p-0 text-xs font-medium"
                   >
                     نسيت كلمة المرور؟
-                  </button>
+                  </Button>
                 )}
               </div>
-              <input
+              <Input
                 id="password"
                 type="password"
                 required
@@ -231,33 +242,37 @@ export default function AdminLogin() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="••••••••"
-                className="input mt-1.5 text-right!"
+                className="mt-1.5 text-right"
               />
             </>
           )}
 
-          <button type="submit" disabled={busy} className="btn-primary mt-6 w-full py-3!">
+          <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
             {busy ? '…' : mode === 'login' ? 'دخول' : mode === 'signup' ? 'إنشاء الحساب' : 'إرسال رابط الاستعادة'}
-          </button>
+          </Button>
 
           {mode === 'forgot' ? (
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={() => { setMode('login'); setError(''); }}
-              className="mt-3 w-full text-center text-sm font-medium text-brand hover:text-brand-dark"
+              className="mt-3 w-full"
             >
               العودة لتسجيل الدخول
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}
-              className="mt-3 w-full text-center text-sm font-medium text-brand hover:text-brand-dark"
+              className="mt-3 w-full"
             >
               {mode === 'login' ? 'ليس لديك حساب؟ أنشئ حساباً' : 'لديك حساب؟ سجّل الدخول'}
-            </button>
+            </Button>
           )}
         </form>
+          </CardContent>
+        </Card>
 
         <p className="mt-4 text-center text-xs text-gray-400">
           نوصي بتفعيل حماية البريد الإلكتروني وإنشاء حساب مدير واحد فقط.
