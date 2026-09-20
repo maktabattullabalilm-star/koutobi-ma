@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/Toast';
 import { IconWrench } from '../../components/icons';
@@ -13,7 +13,6 @@ const ERROR_AR = {
 export default function AdminSetup() {
   const [params] = useSearchParams();
   const token = params.get('t') || '';
-  const navigate = useNavigate();
   const { show } = useToast();
 
   const [form, setForm] = useState({ email: '', password: '', confirm: '' });
@@ -106,7 +105,10 @@ export default function AdminSetup() {
 
       await claim(userId);
       show('تم تفعيل حساب المدير بنجاح 🎉');
-      navigate('/admin/dashboard', { replace: true });
+      // Full reload (not SPA navigate): AuthContext caches the profile row
+      // loaded at login (role='user'), so we must re-read it from the DB
+      // to see the freshly claimed 'admin' role.
+      window.location.href = '/admin/dashboard';
     } catch (err) {
       setError(err?.message || 'حدث خطأ، حاول مجدداً');
     } finally {
