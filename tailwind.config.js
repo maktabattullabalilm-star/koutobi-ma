@@ -20,6 +20,7 @@ export default {
       },
       fontFamily: {
         sans: ['"IBM Plex Sans Arabic"', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['Amiri', '"IBM Plex Sans Arabic"', 'serif'],
       },
       borderRadius: {
         card: '8px',

@@ -104,5 +104,5 @@ to Netlify on your explicit approval.
 
 ---
 *Note for developers: an automated vitest suite also exists
-(`npm test`, 83 tests, mocked Supabase). It guards the code but never
+(`npm test`, 86 tests, mocked Supabase). It guards the code but never
 replaces the hand-testing above.*

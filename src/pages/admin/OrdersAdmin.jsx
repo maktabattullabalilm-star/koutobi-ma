@@ -4,6 +4,7 @@ import { formatPrice, formatDate } from '../../lib/format';
 import { whatsappLink } from '../../lib/config';
 import { useToast } from '../../components/Toast';
 import { IconWhatsApp } from '../../components/icons';
+import PageHeader from './PageHeader';
 
 const STATUS = [
   { id: 'new', label: 'جديد', color: 'bg-amber-100 text-amber-700' },
@@ -64,17 +65,20 @@ export default function OrdersAdmin() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-ink">طلبات الدفع عند الاستلام 📦</h1>
-      <p className="mt-1 text-sm text-soft">تواصل مع العميل هاتفياً وأكّد الطلب قبل الشحن.</p>
+      <PageHeader
+        title="طلبات الدفع عند الاستلام 📦"
+        description="تواصل مع العميل هاتفياً وأكّد الطلب قبل الشحن."
+        crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'الطلبات' }]}
+      />
 
-      {error && <div className="mt-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>}
+      {error && <div className="mb-4 rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>}
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {tab('all', 'الكل')}
         {STATUS.map((s) => tab(s.id, s.label))}
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-4 space-y-4">
         {!orders ? (
           <div className="card border border-line/60 p-10 text-center text-soft">جارٍ تحميل الطلبات…</div>
         ) : filtered.length === 0 ? (

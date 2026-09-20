@@ -35,6 +35,16 @@
   .section-title {
     @apply mb-6 text-xl font-bold text-ink sm:text-2xl;
   }
+  /* Admin console headings — Amiri display face, Plex everywhere else */
+  .admin-title {
+    @apply font-display text-[26px] font-bold leading-snug text-ink sm:text-3xl;
+  }
+  .admin-subtitle {
+    @apply mt-1 text-sm text-soft;
+  }
+  .admin-section-title {
+    @apply font-display text-lg font-bold text-ink;
+  }
   /* two-line clamp for product titles */
   .clamp-2 {
     display: -webkit-box;

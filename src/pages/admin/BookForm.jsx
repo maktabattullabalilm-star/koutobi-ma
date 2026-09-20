@@ -25,6 +25,7 @@ import {
 import { isValidIsbn } from '../../lib/importers';
 import { useToast } from '../../components/Toast';
 import { IconBook, IconCheck, IconStar, IconTrash } from '../../components/icons';
+import PageHeader from './PageHeader';
 
 const EMPTY = {
   title_ar: '',
@@ -54,6 +55,14 @@ const FALLBACK_CATS = CATEGORIES.map((c) => c.name);
 const FALLBACK_PAPER = ['ورق أصفر (شامواه)', 'ورق أبيض'];
 const FALLBACK_BINDING = ['تجليد فني', 'تجليد عادي'];
 const FALLBACK_SIZES = ['17×24 سم', '14×20 سم', '12×17 سم', '24×17 سم'];
+
+const FORM_TABS = [
+  { id: 'sec-info', label: 'المعلومات' },
+  { id: 'sec-edition', label: 'الطبعة والمخزون' },
+  { id: 'sec-import', label: 'استيراد' },
+  { id: 'sec-gallery', label: 'الصور' },
+  { id: 'sec-status', label: 'النشر' },
+];
 
 let uidCounter = 0;
 const nextUid = () => `img-${Date.now()}-${uidCounter++}`;
@@ -513,13 +522,29 @@ export default function BookForm() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-bold text-ink">{isEdit ? 'تعديل الكتاب ✏️' : 'إضافة كتاب جديد 📚'}</h1>
-      <p className="mt-1 text-sm text-soft">املأ بيانات الكتاب وارفعه ليكون جاهزاً للبيع.</p>
+      <PageHeader
+        title={isEdit ? 'تعديل الكتاب ✏️' : 'إضافة كتاب جديد 📚'}
+        description="املأ بيانات الكتاب وارفعه ليكون جاهزاً للبيع."
+        crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'الكتب', to: '/admin/books' }, { label: isEdit ? 'تعديل' : 'جديد' }]}
+      />
+
+      {/* sticky section tabs */}
+      <nav className="sticky top-0 z-10 -mx-1 mb-5 flex gap-1 overflow-x-auto bg-gray-50/95 px-1 py-2 backdrop-blur" aria-label="أقسام النموذج">
+        {FORM_TABS.map((t) => (
+          <a
+            key={t.id}
+            href={`#${t.id}`}
+            className="whitespace-nowrap rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-soft ring-1 ring-inset ring-line transition hover:text-brand hover:ring-brand/40"
+          >
+            {t.label}
+          </a>
+        ))}
+      </nav>
 
       <form onSubmit={save} className="mt-6 space-y-6" noValidate>
         {/* قسم البيانات */}
-        <section className="card border border-line/70 p-5">
-          <h2 className="mb-4 text-base font-bold text-ink">معلومات الكتاب</h2>
+        <section id="sec-info" className="card scroll-mt-24 border border-line/70 p-5">
+          <h2 className="admin-section-title mb-4">معلومات الكتاب</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {field('العنوان *', 'title_ar', { placeholder: 'مثال: الداء والدواء' })}
             {field('العنوان الفرعي', 'subtitle_ar', { placeholder: 'اختياري' })}
@@ -550,8 +575,8 @@ export default function BookForm() {
         </section>
 
         {/* قسم بيانات الطبعة */}
-        <section className="card border border-line/70 p-5">
-          <h2 className="mb-4 text-base font-bold text-ink">بيانات الطبعة</h2>
+        <section id="sec-edition" className="card scroll-mt-24 border border-line/70 p-5">
+          <h2 className="admin-section-title mb-4">بيانات الطبعة والمخزون</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {field('عدد الصفحات', 'pages', { type: 'number', min: 0, placeholder: 'مثال: 480' })}
             {field('رقم ISBN', 'isbn', { placeholder: 'مثال: 978-2-7451-...' })}
@@ -598,8 +623,8 @@ export default function BookForm() {
         </section>
 
         {/* قسم الاستيراد */}
-        <section className="card border border-line/70 p-5">
-          <h2 className="text-base font-bold text-ink">استيراد بيانات الكتاب 📥</h2>
+        <section id="sec-import" className="card scroll-mt-24 border border-line/70 p-5">
+          <h2 className="admin-section-title">استيراد بيانات الكتاب 📥</h2>
           <p className="mb-4 mt-1 text-xs leading-5 text-soft">
             اجلب البيانات من مصدر خارجي ثم راجعها وعدّلها قبل الحفظ — لا يُنشأ أي كتاب تلقائياً، والسعر يُحدَّد يدوياً دائماً (MAD).
           </p>
@@ -680,8 +705,8 @@ export default function BookForm() {
         </section>
 
         {/* قسم الصور */}
-        <section className="card border border-line/70 p-5">
-          <h2 className="text-base font-bold text-ink">صور الكتاب (حتى {IMAGE_MAX_COUNT})</h2>
+        <section id="sec-gallery" className="card scroll-mt-24 border border-line/70 p-5">
+          <h2 className="admin-section-title">صور الكتاب (حتى {IMAGE_MAX_COUNT})</h2>
           <p className="mb-4 mt-1 text-xs leading-5 text-soft">
             الصور المختارة من جهازك تُصغَّر تلقائياً في متصفحك إلى أقل من 180 ك.ب ثم تُرفع إلى Cloudflare R2 عند الحفظ.
             الصورة ★ الرئيسية تظهر في بطاقات المتجر.
@@ -797,8 +822,8 @@ export default function BookForm() {
         </section>
 
         {/* قسم الحالة */}
-        <section className="card border border-line/70 p-5">
-          <h2 className="mb-4 text-base font-bold text-ink">الحالة والعرض</h2>
+        <section id="sec-status" className="card scroll-mt-24 border border-line/70 p-5">
+          <h2 className="admin-section-title mb-4">الحالة والعرض</h2>
           <div className="flex flex-wrap gap-3">
             {check('is_new', 'كتاب جديد')}
             {check('is_featured', '⭐ كتاب مميز')}
@@ -807,11 +832,19 @@ export default function BookForm() {
           </div>
         </section>
 
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-          <Link to="/admin/books" className="btn-ghost">إلغاء</Link>
-          <button type="submit" disabled={saving || staging} className="btn-primary !px-8">
-            {saving ? 'جارٍ الحفظ…' : isEdit ? 'حفظ التعديلات' : 'نشر الكتاب'}
-          </button>
+        {/* sticky save bar */}
+        <div className="sticky bottom-0 z-10 -mx-1 bg-gray-50/95 px-1 py-3 backdrop-blur">
+          <div className="card flex flex-col-reverse gap-3 border border-line/70 p-3 shadow-lift sm:flex-row sm:items-center sm:justify-between">
+            <Link to="/admin/books" className="btn-ghost">إلغاء</Link>
+            <div className="flex items-center gap-3">
+              {images.length > 0 && (
+                <span className="text-xs text-soft">{images.length} صور · {images.filter((i) => i.blob).length} بانتظار الرفع</span>
+              )}
+              <button type="submit" disabled={saving || staging} className="btn-primary flex-1 !px-8 sm:flex-none">
+                {saving ? 'جارٍ الحفظ…' : isEdit ? 'حفظ التعديلات' : 'نشر الكتاب'}
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </div>
