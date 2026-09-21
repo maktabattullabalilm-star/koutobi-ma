@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitDimensions, isDeletableR2Key, IMAGE_MAX_COUNT, IMAGE_MAX_KB } from './images';
+import { extractImageFiles, fitDimensions, isDeletableR2Key, IMAGE_MAX_COUNT, IMAGE_MAX_KB } from './images';
 
 describe('fitDimensions', () => {
   it('never upscales small images', () => {
@@ -42,5 +42,28 @@ describe('isDeletableR2Key', () => {
   it('keeps the gallery limits as specced', () => {
     expect(IMAGE_MAX_COUNT).toBe(5);
     expect(IMAGE_MAX_KB).toBe(180);
+  });
+});
+
+describe('extractImageFiles', () => {
+  const file = (type) => ({ kind: 'file', type, getAsFile: () => ({ name: 'x', type }) });
+  it('keeps image files, drops everything else', () => {
+    const items = [
+      file('image/jpeg'),
+      file('image/png'),
+      file('text/plain'),
+      { kind: 'string', type: 'text/plain' },
+      { kind: 'file', type: 'image/webp', getAsFile: () => null },
+      null,
+    ];
+    const out = extractImageFiles(items);
+    expect(out).toHaveLength(2);
+    expect(out[0].type).toBe('image/jpeg');
+  });
+
+  it('returns [] for empty/missing lists', () => {
+    expect(extractImageFiles([])).toEqual([]);
+    expect(extractImageFiles(null)).toEqual([]);
+    expect(extractImageFiles(undefined)).toEqual([]);
   });
 });

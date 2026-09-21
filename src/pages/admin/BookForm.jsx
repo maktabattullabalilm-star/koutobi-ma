@@ -19,6 +19,7 @@ import {
 import { CATEGORIES, IMPORT_ISBN_ENDPOINT, IMPORT_SIFATUSAFWA_ENDPOINT } from '../../lib/config';
 import {
   blobToBase64,
+  extractImageFiles,
   IMAGE_MAX_COUNT,
   resizeImageToLimit,
 } from '../../lib/images';
@@ -90,6 +91,8 @@ export default function BookForm() {
   const { show } = useToast();
   const navigate = useNavigate();
   const fileRef = useRef(null);
+  const cameraRef = useRef(null);
+  const [dragging, setDragging] = useState(false);
 
   const [form, setForm] = useState(EMPTY);
   // Gallery working set: { uid, id?, url, r2_key?, blob?, ext?, preview?, is_primary }
@@ -216,8 +219,7 @@ export default function BookForm() {
   };
 
   /** Resize selected files in the browser and stage them (upload happens on save). */
-  const stageFiles = async (fileList) => {
-    const files = [...(fileList || [])].filter((f) => f.type?.startsWith('image/'));
+  const stageFiles = async (fileList) => {    const files = [...(fileList || [])].filter((f) => f.type?.startsWith('image/'));
     if (!files.length) return;
     if (images.length + files.length > IMAGE_MAX_COUNT) {
       show(`الحد الأقصى ${IMAGE_MAX_COUNT} صور لكل كتاب`, 'error');
@@ -251,6 +253,24 @@ export default function BookForm() {
     } finally {
       setStaging(false);
       if (fileRef.current) fileRef.current.value = '';
+      if (cameraRef.current) cameraRef.current.value = '';
+    }
+  };
+
+  /** Drop image files onto the gallery zone. */
+  const onDropImages = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const files = extractImageFiles(e.dataTransfer?.items);
+    if (files.length) stageFiles(files);
+  };
+
+  /** Paste a copied image (right-click → copy image, then Ctrl+V here). */
+  const onPasteImages = (e) => {
+    const files = extractImageFiles(e.clipboardData?.items);
+    if (files.length) {
+      e.preventDefault();
+      stageFiles(files);
     }
   };
 
@@ -796,14 +816,40 @@ export default function BookForm() {
           )}
 
           <div className="flex flex-col gap-3">
-            <Button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={staging || saving || images.length >= IMAGE_MAX_COUNT}
-              className="w-full"
+            {/* Dropzone: click, drag-drop, or paste — no links needed */}
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="أضف صوراً: اختر من جهازك، اسحبها هنا، أو الصقها"
+              onClick={() => {
+                if (!staging && !saving && images.length < IMAGE_MAX_COUNT) fileRef.current?.click();
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !staging && !saving && images.length < IMAGE_MAX_COUNT) fileRef.current?.click();
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDropImages}
+              onPaste={onPasteImages}
+              className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed px-4 py-6 text-center transition ${
+                dragging
+                  ? 'border-brand bg-brand-pale'
+                  : 'border-line bg-gray-50 hover:border-brand/50 hover:bg-brand-pale/50'
+              }`}
             >
-              {staging ? 'جارٍ التجهيز…' : images.length >= IMAGE_MAX_COUNT ? `اكتمل العدد (${IMAGE_MAX_COUNT})` : 'اختار صوراً من جهازك'}
-            </Button>
+              <span className="text-2xl" aria-hidden>🖼️</span>
+              <span className="text-sm font-bold text-ink">
+                {staging
+                  ? 'جارٍ التجهيز…'
+                  : images.length >= IMAGE_MAX_COUNT
+                    ? `اكتمل العدد (${IMAGE_MAX_COUNT})`
+                    : 'اسحب الصور إلى هنا، أو الصقها (Ctrl+V)، أو اضغط للاختيار من جهازك'}
+              </span>
+              <span className="text-[11px] text-soft">تُصغَّر تلقائياً إلى أقل من 180 ك.ب — لا حاجة لأي روابط</span>
+            </div>
             <input
               ref={fileRef}
               type="file"
@@ -812,25 +858,47 @@ export default function BookForm() {
               onChange={(e) => stageFiles(e.target.files)}
               className="hidden"
             />
-            <div className="flex gap-2">
-              <Input
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-                dir="ltr"
-                placeholder="https://…/cover.jpg"
-                className="flex-1 text-right"
-                aria-label="رابط صورة"
-              />
-              <Button
-                type="button"
-                onClick={addUrlImage}
-                disabled={saving || images.length >= IMAGE_MAX_COUNT}
-                variant="outline"
-                className="shrink-0"
-              >
-                <IconCheck width={16} height={16} /> إضافة بالرابط
-              </Button>
-            </div>
+            <Button
+              type="button"
+              onClick={() => cameraRef.current?.click()}
+              disabled={staging || saving || images.length >= IMAGE_MAX_COUNT}
+              variant="outline"
+              className="w-full"
+            >
+              📷 التقط صورة بالكاميرا
+            </Button>
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => stageFiles(e.target.files)}
+              className="hidden"
+            />
+            <details className="rounded-md border border-line/70 bg-white px-3 py-2">
+              <summary className="cursor-pointer text-xs font-semibold text-soft hover:text-brand">
+                إضافة برابط صورة (خيار متقدم)
+              </summary>
+              <div className="flex gap-2 pt-2">
+                <Input
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  dir="ltr"
+                  placeholder="https://…/cover.jpg"
+                  className="flex-1 text-right"
+                  aria-label="رابط صورة"
+                />
+                <Button
+                  type="button"
+                  onClick={addUrlImage}
+                  disabled={saving || images.length >= IMAGE_MAX_COUNT}
+                  variant="outline"
+                  className="shrink-0"
+                >
+                  <IconCheck width={16} height={16} /> إضافة
+                </Button>
+              </div>
+            </details>
           </div>
         </section>
 

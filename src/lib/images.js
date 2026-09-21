@@ -26,6 +26,27 @@ export function isDeletableR2Key(key) {
   return typeof key === 'string' && /^covers\/[A-Za-z0-9._-]+$/.test(key);
 }
 
+/**
+ * Pull image Files out of a paste/drop item list (ClipboardEvent /
+ * DragEvent DataTransferItemList). Pure and unit-tested — the components
+ * just forward `e.clipboardData.items` / `e.dataTransfer.items`.
+ * Accepts array-likes of { kind, type, getAsFile }.
+ */
+export function extractImageFiles(items) {
+  const out = [];
+  for (const item of Array.from(items || [])) {
+    if (item?.kind === 'file' && String(item?.type || '').startsWith('image/')) {
+      try {
+        const f = item.getAsFile?.();
+        if (f) out.push(f);
+      } catch {
+        /* unreadable item — skip */
+      }
+    }
+  }
+  return out;
+}
+
 function loadImage(file) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
