@@ -72,7 +72,7 @@ export default function Footer() {
           <ul className="space-y-2 text-sm text-soft">
             <li><Link to="/catalog" className="hover:text-brand">كل الكتب</Link></li>
             <li><Link to="/cart" className="hover:text-brand">سلة التسوق</Link></li>
-            <li><a href="#how" className="hover:text-brand">كيف أطلب؟</a></li>
+            <li><Link to="/#how" className="hover:text-brand">كيف أطلب؟</Link></li>
             <li><Link to="/admin" className="hover:text-brand">لوحة التحكم</Link></li>
           </ul>
         </div>
@@ -84,17 +84,6 @@ export default function Footer() {
             <li><a href={`tel:+${WHATSAPP_NUMBER}`} className="flex items-center gap-2 hover:text-brand"><IconPhone width={16} height={16} /> {PHONE_DISPLAY}</a></li>
             <li><a href="mailto:salam@koutobi.ma" className="flex items-center gap-2 hover:text-brand"><IconPaperPlane width={16} height={16} /> salam@koutobi.ma</a></li>
           </ul>
-          <div className="mt-4 flex gap-2">
-            {[
-              { label: 'فيسبوك', href: '#' },
-              { label: 'إنستغرام', href: '#' },
-              { label: 'تيك توك', href: '#' },
-            ].map((s) => (
-              <a key={s.label} href={s.href} className="rounded-md border border-line bg-white px-3 py-1.5 text-xs text-soft hover:border-brand hover:text-brand">
-                {s.label}
-              </a>
-            ))}
-          </div>
         </div>
       </div>
 

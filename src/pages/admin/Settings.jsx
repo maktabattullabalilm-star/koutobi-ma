@@ -198,7 +198,7 @@ export default function Settings() {
           )}
           {mfaState === 'off' && (
             <div className="mt-2">
-              <p className="text-xs leading-5 text-soft">أضف طبقة حماية: رمز من تطبيق المصادقة (Google Authenticator) عند كل دخول.</p>
+              <p className="text-xs leading-5 text-soft">حماية إضافية لحسابك: رمز متغير من تطبيق في هاتفك عند كل دخول. حمّل تطبيق Google Authenticator من متجر التطبيقات أولاً.</p>
               <Button onClick={startEnroll} variant="outline" disabled={mfaBusy} className="mt-2 w-full py-2 text-xs">
                 {mfaBusy ? '…' : 'تفعيل بخطوتين'}
               </Button>
@@ -206,7 +206,7 @@ export default function Settings() {
           )}
           {mfaState === 'enrolling' && enroll && (
             <form onSubmit={confirmEnroll} className="mt-2 space-y-2">
-              <p className="text-xs leading-5 text-soft">امسح الرمز بتطبيق المصادقة، ثم أدخل الرمز الظاهر فيه:</p>
+              <p className="text-xs leading-5 text-soft">افتح تطبيق المصادقة في هاتفك، امسح رمز المربعات أعلاه، ثم أدخل الأرقام الستة الظاهرة فيه:</p>
               {enroll.qr_code && (
                 <div
                   className="mx-auto w-fit rounded-md border border-line bg-white p-2 [&>svg]:block [&>svg]:h-40 [&>svg]:w-40"
@@ -240,7 +240,7 @@ export default function Settings() {
           )}
           {mfaMsg && <p className="mt-1.5 text-xs text-danger">{mfaMsg}</p>}
           <p className="mt-3 text-[11px] leading-5 text-soft">
-            فقدت هاتفك؟ الاستعادة من Supabase Dashboard ← Authentication ← Users ← حذف عامل MFA، ثم الدخول بكلمة المرور.
+            فقدت هاتفك؟ ادخل إلى لوحة تحكم Supabase ← قسم الدخول (Authentication) ← المستخدمون (Users) ← احذف عامل المصادقة الخاص بحسابك، ثم ادخل بكلمة المرور فقط.
           </p>
         </div>
       </Card>

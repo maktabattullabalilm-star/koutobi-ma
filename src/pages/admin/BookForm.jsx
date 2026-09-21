@@ -361,7 +361,7 @@ export default function BookForm() {
 
   const importFromSifaHtml = async () => {
     if (!sifaHtml.trim()) {
-      show('الصق كود HTML الصفحة أولاً', 'error');
+      show('الصق محتوى الصفحة أولاً', 'error');
       return;
     }
     setImporting(true);
@@ -391,7 +391,7 @@ export default function BookForm() {
     setImporting(true);
     try {
       const json = await callImportEndpoint(IMPORT_ISBN_ENDPOINT, { isbn });
-      applyImport(json.fields, json.cover, json.source === 'openlibrary' ? 'Open Library' : 'Google Books', json.warnings);
+      applyImport(json.fields, json.cover, 'المكتبة العالمية', json.warnings);
     } catch (err) {
       show(err.message, 'error');
     } finally {
@@ -647,7 +647,7 @@ export default function BookForm() {
             {selectField('المقاس', 'size_ar', sizeOpts)}
             {field('المخزون (عدد النسخ)', 'stock_qty', { type: 'number', min: 0, placeholder: 'مثال: 50' })}
             {selectField('إظهار الكمية في المتجر', 'show_quantity', [
-              { value: 'inherit', label: 'وراثة الإعداد العام' },
+              { value: 'inherit', label: 'مثل الإعداد العام للمتجر' },
               { value: 'show', label: 'إظهار الكمية الدقيقة' },
               { value: 'hide', label: 'إخفاء الكمية' },
             ])}
@@ -696,20 +696,26 @@ export default function BookForm() {
               </div>
               {showHtmlFallback && (
                 <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
-                  <p className="text-xs leading-5 text-amber-800">
-                    الخادم محجوب من حماية الموقع — افتح الصفحة في متصفحك، انسخ كود المصدر (Ctrl+U ثم Ctrl+A/C)، والصقه هنا:
+                  <p className="text-xs font-bold leading-5 text-amber-800">
+                    تعذّر الجلب التلقائي — انسخ محتوى الصفحة يدوياً بهذه الخطوات:
                   </p>
+                  <ol className="mt-1.5 list-decimal space-y-1 ps-5 text-xs leading-5 text-amber-800">
+                    <li>افتح صفحة الكتاب في متصفحك (Chrome أو غيره)</li>
+                    <li>اضغط على Ctrl+U لعرض محتوى الصفحة</li>
+                    <li>حدّد الكل بـ Ctrl+A ثم انسخه بـ Ctrl+C</li>
+                    <li>الصق ما نسخته في المربع أسفله ثم اضغط «تحليل»</li>
+                  </ol>
                   <Textarea
                     value={sifaHtml}
                     onChange={(e) => setSifaHtml(e.target.value)}
                     rows={4}
                     dir="ltr"
-                    placeholder="<html>…"
+                    placeholder="الصق محتوى الصفحة هنا…"
                     className="mt-2 bg-white font-mono text-xs"
-                    aria-label="كود HTML الصفحة"
+                    aria-label="محتوى الصفحة المنسوخ"
                   />
                   <Button type="button" onClick={importFromSifaHtml} disabled={importing} className="mt-2 w-full">
-                    {importing ? 'جارٍ التحليل…' : 'تحليل الكود الملصق'}
+                    {importing ? 'جارٍ التحليل…' : 'تحليل المحتوى الملصق'}
                   </Button>
                 </div>
               )}
@@ -730,7 +736,8 @@ export default function BookForm() {
                 </Button>
               </div>
               <p className="text-[11px] leading-5 text-soft">
-                البحث عبر Open Library ثم Google Books — الكتب العربية غالباً غائبة من المصدرين، وستُكمل الإدخال يدوياً عندها.
+                نبحث في مكتبتين عالميتين — الكتب العربية غالباً غائبة منهما، وستُكمل الإدخال يدوياً عندها.
+                ستجد الرقم على الغلاف الخلفي للكتاب بجانب الباركود.
               </p>
             </div>
           )}
@@ -740,7 +747,7 @@ export default function BookForm() {
         <section id="sec-gallery" className="card scroll-mt-24 border border-line/70 p-5">
           <h2 className="admin-section-title">صور الكتاب (حتى {IMAGE_MAX_COUNT})</h2>
           <p className="mb-4 mt-1 text-xs leading-5 text-soft">
-            الصور المختارة من جهازك تُصغَّر تلقائياً في متصفحك إلى أقل من 180 ك.ب ثم تُرفع إلى Cloudflare R2 عند الحفظ.
+            الصور المختارة من جهازك تُصغَّر تلقائياً ثم تُحفظ في تخزين المتجر عند الحفظ.
             الصورة ★ الرئيسية تظهر في بطاقات المتجر.
           </p>
 

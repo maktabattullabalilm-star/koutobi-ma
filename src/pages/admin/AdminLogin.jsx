@@ -120,7 +120,7 @@ export default function AdminLogin() {
           <form onSubmit={submitMfa} noValidate>
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-2xl">🔐</span>
             <h1 className="mt-3 text-lg font-bold text-ink">التحقق بخطوتين</h1>
-            <p className="mt-1 text-sm text-soft">أدخل الرمز المكوّن من 6 أرقام من تطبيق المصادقة.</p>
+            <p className="mt-1 text-sm text-soft">افتح تطبيق المصادقة في هاتفك وأدخل الأرقام الستة الظاهرة فيه.</p>
             {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
             <Input
               id="mfa-code"

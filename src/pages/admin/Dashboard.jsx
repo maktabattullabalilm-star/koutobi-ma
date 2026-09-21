@@ -152,7 +152,7 @@ export default function AdminDashboard() {
           </div>
           {orders.length === 0 ? (
             <p className="mt-4 rounded-md bg-gray-50 px-4 py-8 text-center text-sm text-soft">
-              لا توجد طلبات بعد — شارك رابط المتجر مع عملائك.
+              لا توجد طلبات بعد — شارك عنوان متجرك مع عملائك.
             </p>
           ) : (
             <ul className="mt-4 divide-y divide-line/70">
