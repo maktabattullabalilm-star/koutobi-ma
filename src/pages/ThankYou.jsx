@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { formatPrice } from '../lib/format';
 import { whatsappLink } from '../lib/config';
 import { IconWhatsApp } from '../components/icons';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 export default function ThankYou() {
   const [order, setOrder] = useState(null);
@@ -38,10 +40,10 @@ export default function ThankYou() {
       </p>
 
       {orderId && (
-        <div className="mx-auto mt-6 inline-flex items-center gap-2 rounded-card border border-line/70 bg-gray-50 px-5 py-3 text-sm">
+        <Card className="mx-auto mt-6 inline-flex flex-row items-center gap-2 border-line/70 bg-gray-50 px-5 py-3 text-sm">
           <span className="text-soft">رقم الطلب: </span>
-          <span className="font-bold text-brand" dir="ltr">{orderId}</span>
-        </div>
+          <span className="font-bold tabular-nums text-brand" dir="ltr">{orderId}</span>
+        </Card>
       )}
 
       {order?.total != null && (
@@ -51,19 +53,22 @@ export default function ThankYou() {
       )}
 
       <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-        <a
-          href={whatsappLink(
-            `السلام عليكم، أؤكد طلبي رقم ${orderId || ''} ${order?.name ? `باسم ${order.name}` : ''} ${order?.phone ? `(${order.phone})` : ''}.`
-          )}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-primary bg-[#25D366]! sm:flex-1"
-        >
-          <IconWhatsApp /> تأكيد أسرع عبر واتساب
-        </a>
-        <Link to="/catalog" className="btn-ghost sm:flex-1">
-          متابعة التسوق
-        </Link>
+        <Button asChild className="bg-[#25D366] hover:bg-[#1eb856] sm:flex-1">
+          <a
+            href={whatsappLink(
+              `السلام عليكم، أؤكد طلبي رقم ${orderId || ''} ${order?.name ? `باسم ${order.name}` : ''} ${order?.phone ? `(${order.phone})` : ''}.`
+            )}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <IconWhatsApp /> تأكيد أسرع عبر واتساب
+          </a>
+        </Button>
+        <Button asChild variant="outline" className="sm:flex-1">
+          <Link to="/catalog">
+            متابعة التسوق
+          </Link>
+        </Button>
       </div>
 
       <div className="mx-auto mt-10 grid max-w-lg gap-3 text-start sm:grid-cols-3">
@@ -72,10 +77,10 @@ export default function ThankYou() {
           { t: '🚚 التوصيل', d: 'لكل المدن المغربية' },
           { t: '💵 الدفع عند الاستلام', d: 'بدون بطاقة بنكية' },
         ].map((s) => (
-          <div key={s.t} className="rounded-card border border-line/60 bg-gray-50 p-4">
+          <Card key={s.t} className="border-line/60 bg-gray-50 p-4">
             <div className="text-sm font-bold text-ink">{s.t}</div>
             <div className="mt-0.5 text-xs text-soft">{s.d}</div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

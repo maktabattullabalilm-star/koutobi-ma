@@ -17,6 +17,7 @@ import BookForm from './pages/admin/BookForm';
 import OrdersAdmin from './pages/admin/OrdersAdmin';
 import CatalogData from './pages/admin/CatalogData';
 import Settings from './pages/admin/Settings';
+import { Button } from '@/components/ui/button';
 
 function NotFound() {
   return (
@@ -24,7 +25,9 @@ function NotFound() {
       <div className="text-5xl font-bold text-brand">٤٠٤</div>
       <h1 className="mt-2 text-lg font-bold text-ink">الصفحة غير موجودة</h1>
       <p className="mt-1 text-sm text-soft">يبدو أن هذه الصفحة انتقلت أو حُذفت.</p>
-      <a href="/" className="btn-primary mt-6">العودة للرئيسية</a>
+      <Button asChild className="mt-6">
+        <a href="/">العودة للرئيسية</a>
+      </Button>
     </div>
   );
 }

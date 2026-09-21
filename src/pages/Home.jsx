@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { getBooks, getCategories } from '../lib/api';
 import { whatsappLink } from '../lib/config';
 import ProductCard from '../components/ProductCard';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { IconBook, IconCart, IconCash, IconHeadset, IconHeart, IconShield, IconStar, IconTruck, IconWhatsApp } from '../components/icons';
 
 const CATEGORY_STYLE = {
@@ -59,12 +61,14 @@ export default function Home() {
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/catalog" className="inline-flex items-center gap-2 rounded-md bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark shadow-sm transition hover:bg-amber-300">
-                تسوّق الكتب <span aria-hidden>←</span>
-              </Link>
-              <Link to="/#how" className="inline-flex items-center gap-2 rounded-md border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-                كيف أطلب؟
-              </Link>
+              <Button asChild size="lg" className="bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark shadow-sm hover:bg-amber-300">
+                <Link to="/catalog">
+                  تسوّق الكتب <span aria-hidden>←</span>
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 hover:text-white">
+                <Link to="/#how">كيف أطلب؟</Link>
+              </Button>
             </div>
 
             <div className="mt-8 flex gap-6 text-center">
@@ -114,13 +118,15 @@ export default function Home() {
               <Link
                 key={c.name}
                 to={`/catalog?category=${encodeURIComponent(c.name)}`}
-                className="group card flex flex-col items-center gap-3 border border-line/60 p-5 text-center transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lift"
+                className="group"
               >
-                <span className={`flex h-12 w-12 items-center justify-center rounded-full ${style}`}>
-                  <Icon width={24} height={24} />
-                </span>
-                <span className="text-sm font-semibold text-ink group-hover:text-brand">{c.name}</span>
-                <span className="text-xs text-soft">{c.count} كتب</span>
+                <Card className="flex flex-col items-center gap-3 border-line/60 p-5 text-center transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lift">
+                  <span className={`flex h-12 w-12 items-center justify-center rounded-full ${style}`}>
+                    <Icon width={24} height={24} />
+                  </span>
+                  <span className="text-sm font-semibold text-ink group-hover:text-brand">{c.name}</span>
+                  <span className="text-xs tabular-nums text-soft">{c.count} كتب</span>
+                </Card>
               </Link>
             );
           })}
@@ -180,7 +186,7 @@ export default function Home() {
               { n: '٢', t: 'أدخل بياناتك', d: 'أرسل اسمك، رقم هاتفك، وعنوان التوصيل في صفحة الطلب.', Icon: IconHeadset },
               { n: '٣', t: 'نقوم بالباقي', d: 'سنتصل بك لتأكيد الطلب، وتوصيله إلى باب منزلك — تدفع عند الاستلام.', Icon: IconTruck },
             ].map((s, i) => (
-              <div key={s.n} className="relative rounded-card border border-line bg-white p-6 text-center">
+              <Card key={s.n} className="relative border-line p-6 text-center">
                 {i < 2 && <span className="absolute -left-3 top-1/2 hidden -translate-y-1/2 text-2xl text-line sm:block">←</span>}
                 <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-light text-brand">
                   <s.Icon width={24} height={24} />
@@ -188,7 +194,7 @@ export default function Home() {
                 <span className="mt-3 block text-xs font-bold text-brand">الخطوة {s.n}</span>
                 <h3 className="mt-1 text-lg font-bold text-ink">{s.t}</h3>
                 <p className="mt-1.5 text-sm leading-6 text-soft">{s.d}</p>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
@@ -203,7 +209,7 @@ export default function Home() {
             { Icon: IconHeart, t: 'كتب مختارة', d: 'جودة وأصالة المتحقق' },
             { Icon: IconHeadset, t: 'دعم واتساب', d: 'نجيب على استفساراتك' },
           ].map((f) => (
-            <div key={f.t} className="card flex items-center gap-3 border border-line/60 p-4">
+            <Card key={f.t} className="flex-row items-center gap-3 border-line/60 p-4">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
                 <f.Icon width={24} height={24} />
               </span>
@@ -211,7 +217,7 @@ export default function Home() {
                 <div className="text-sm font-bold text-ink">{f.t}</div>
                 <div className="text-xs text-soft">{f.d}</div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       </section>
@@ -226,10 +232,10 @@ export default function Home() {
               { name: 'محمد — مراكش', txt: 'تجربة ممتازة، تواصلوا معي هاتفياً لتأكيد الطلب كما وعدوا. الكتب أصلية والمصاريف واضحة.', book: 'تيسير الكريم الرحمن' },
               { name: 'أبوعبدالله — فاس', txt: 'أفضل ما يميزهم الردّ السريع على واتساب والأسعار المعقولة. نصحني الأخ أن أخد «الداء والدواء» ولم أندم.', book: 'الداء والدواء' },
             ].map((t) => (
-              <figure key={t.name} className="card flex flex-col border border-line/60 p-5">
-                <div className="flex gap-0.5 text-amber-400">
+              <Card key={t.name} className="border-line/60 p-5">
+                <div className="flex gap-0.5 text-amber-400" aria-label="5 من 5">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <svg key={i} viewBox="0 0 24 24" width={15} height={15} fill="currentColor"><path d="M12 2l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17l-5.8 3 1.1-6.5L2.6 8.8l6.5-.9L12 2z" /></svg>
+                    <IconStar key={i} filled width={15} height={15} />
                   ))}
                 </div>
                 <blockquote className="mt-3 flex-1 text-sm leading-7 text-ink">«{t.txt}»</blockquote>
@@ -237,7 +243,7 @@ export default function Home() {
                   <span className="font-bold text-brand">{t.name}</span>
                   <span className="ms-2 text-xs text-soft">— طلب: {t.book}</span>
                 </figcaption>
-              </figure>
+              </Card>
             ))}
           </div>
         </div>
@@ -251,12 +257,14 @@ export default function Home() {
             تصفّح المكتبة، اختر كتبك، وأرسل بياناتك — وسنتواصل معك لتأكيد الطلب.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/catalog" className="inline-flex items-center gap-2 rounded-md bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark transition hover:bg-amber-300">
-              تصفّح المكتبة
-            </Link>
-            <a href={whatsappLink('السلام عليكم، أريد طلب كتاب من مكتبة كُتُبِي 📚')} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-md border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
-              <IconWhatsApp /> اطلب عبر واتساب
-            </a>
+            <Button asChild size="lg" className="bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark hover:bg-amber-300">
+              <Link to="/catalog">تصفّح المكتبة</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 hover:text-white">
+              <a href={whatsappLink('السلام عليكم، أريد طلب كتاب من مكتبة كُتُبِي 📚')} target="_blank" rel="noreferrer">
+                <IconWhatsApp /> اطلب عبر واتساب
+              </a>
+            </Button>
           </div>
           <p className="mt-5 text-xs text-white/70">أو تواصل معنا مباشرة للاستفسار عن الكتب وتوفرها</p>
         </div>

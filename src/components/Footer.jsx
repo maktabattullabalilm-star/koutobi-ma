@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { getCategories } from '../lib/api';
 import { PHONE_DISPLAY, WHATSAPP_NUMBER, whatsappLink } from '../lib/config';
 import { IconWhatsApp, IconPhone, IconPaperPlane } from './icons';
+import { Button } from '@/components/ui/button';
 
 export default function Footer() {
   const [categories, setCategories] = useState([]);
@@ -22,12 +23,16 @@ export default function Footer() {
             <p className="text-sm text-soft">اطلب عبر الموقع وسنتصل بك لتأكيد الطلب والتوصيل.</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <a href={whatsappLink('السلام عليكم، أريد الاستفسار عن الطلب 🛒')} target="_blank" rel="noreferrer" className="btn-primary bg-brand!">
-              <IconWhatsApp /> واتساب
-            </a>
-            <a href={`tel:+${WHATSAPP_NUMBER}`} className="btn-ghost">
-              <IconPhone /> {PHONE_DISPLAY}
-            </a>
+            <Button asChild className="bg-brand">
+              <a href={whatsappLink('السلام عليكم، أريد الاستفسار عن الطلب 🛒')} target="_blank" rel="noreferrer">
+                <IconWhatsApp /> واتساب
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={`tel:+${WHATSAPP_NUMBER}`}>
+                <IconPhone /> {PHONE_DISPLAY}
+              </a>
+            </Button>
           </div>
         </div>
       </div>

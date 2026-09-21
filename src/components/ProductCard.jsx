@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useToast } from './Toast';
 import { IconCart } from './icons';
 import BookCover from './BookCover';
+import { Button } from '@/components/ui/button';
 
 export default function ProductCard({ book }) {
   const { add } = useCart();
@@ -52,18 +53,18 @@ export default function ProductCard({ book }) {
           {discounted && <span className="text-xs text-soft line-through">{formatPrice(book.old_price)}</span>}
         </div>
 
-        <button
+        <Button
           onClick={() => {
             if (soldOut) return;
             add(book);
             show('تمت الإضافة إلى السلة ✓');
           }}
           disabled={soldOut}
-          className="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-md bg-brand px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-dark active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-1 w-full"
         >
           <IconCart width={16} height={16} />
           {soldOut ? 'غير متوفر' : 'أضف للسلة'}
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -27,11 +27,13 @@ export default function AdminSetup() {
   if (!supabase) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
+        <Card className="w-full max-w-md border-line p-8 text-center shadow-card">
           <h1 className="text-lg font-bold text-ink">الإعداد غير جاهز</h1>
           <p className="mt-2 text-sm text-soft">لم تُضبط بيانات Supabase بعد.</p>
-          <Link to="/" className="btn-primary mt-6">العودة إلى المتجر</Link>
-        </div>
+          <Button asChild className="mt-6">
+            <Link to="/">العودة إلى المتجر</Link>
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -39,7 +41,7 @@ export default function AdminSetup() {
   if (!token) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
+        <Card className="w-full max-w-md border-line p-8 text-center shadow-card">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-danger">
             <IconWrench width={26} height={26} />
           </span>
@@ -47,8 +49,10 @@ export default function AdminSetup() {
           <p className="mt-2 text-sm leading-7 text-soft">
             صفحة إعداد المدير تعمل فقط عبر رابط الدعوة الخاص لمرة واحدة.
           </p>
-          <Link to="/admin" className="btn-primary mt-6">الذهاب لتسجيل الدخول</Link>
-        </div>
+          <Button asChild className="mt-6">
+            <Link to="/admin">الذهاب لتسجيل الدخول</Link>
+          </Button>
+        </Card>
       </div>
     );
   }

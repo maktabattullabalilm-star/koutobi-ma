@@ -85,14 +85,16 @@ export default function AdminLogin() {
   if (!supabaseEnabled) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-card border border-line bg-white p-8 text-center shadow-card">
+        <Card className="w-full max-w-md border-line p-8 text-center shadow-card">
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-brand-light text-brand">
             <IconWrench width={26} height={26} />
           </span>
           <h1 className="mt-4 text-lg font-bold text-ink">لوحة التحكم غير جاهزة</h1>
           <p className="mt-2 text-sm leading-7 text-soft">{supabaseErrorHint()}</p>
-          <Link to="/" className="btn-primary mt-6">العودة إلى المتجر</Link>
-        </div>
+          <Button asChild className="mt-6">
+            <Link to="/">العودة إلى المتجر</Link>
+          </Button>
+        </Card>
       </div>
     );
   }

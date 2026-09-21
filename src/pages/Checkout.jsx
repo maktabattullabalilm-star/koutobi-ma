@@ -4,9 +4,13 @@ import { useCart } from '../context/CartContext';
 import { createOrder } from '../lib/api';
 import { formatPrice } from '../lib/format';
 import { whatsappLink } from '../lib/config';
-import BookCover from '../components/BookCover';
 import { useToast } from '../components/Toast';
 import { IconCart, IconCash, IconHeadset } from '../components/icons';
+import BookCover from '../components/BookCover';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 
 export default function Checkout() {
   const { items, total, count, clear } = useCart();
@@ -62,18 +66,17 @@ export default function Checkout() {
   };
 
   const field = (label, name, placeholder, type = 'text') => (
-    <div>
-      <label htmlFor={name} className="mb-1.5 block text-sm font-medium text-ink">{label}</label>
-      <input
+    <Field>
+      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <Input
         id={name}
         type={type}
         placeholder={placeholder}
         value={form[name]}
         onChange={set(name)}
-        className="input"
       />
-      {errors[name] && <p className="mt-1 text-xs font-medium text-danger">{errors[name]}</p>}
-    </div>
+      {errors[name] && <FieldError>{errors[name]}</FieldError>}
+    </Field>
   );
 
   if (items.length === 0) {
@@ -84,7 +87,9 @@ export default function Checkout() {
         </span>
         <h1 className="mt-4 text-xl font-bold text-ink">لا يوجد ما يمكن تأكيده</h1>
         <p className="mt-1 text-sm text-soft">سلتك فارغة — أضف بعض الكتب أولاً.</p>
-        <Link to="/catalog" className="btn-primary mt-6">اذهب إلى المكتبة</Link>
+        <Button asChild className="mt-6">
+          <Link to="/catalog">اذهب إلى المكتبة</Link>
+        </Button>
       </div>
     );
   }
@@ -97,7 +102,7 @@ export default function Checkout() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* form */}
         <form onSubmit={submit} noValidate className="space-y-4 lg:col-span-2">
-          <section className="card border border-line/60 p-5">
+          <Card className="border-line/60 p-5">
             <h2 className="mb-4 flex items-center gap-2 text-base font-bold text-ink">
               <IconHeadset width={18} height={18} className="text-brand" /> بيانات التوصيل
             </h2>
@@ -112,25 +117,25 @@ export default function Checkout() {
                 {field('ملاحظات (اختياري)', 'notes', 'أي تفاصيل إضافية لمساعدتنا')}
               </div>
             </div>
-          </section>
+          </Card>
 
-          <section className="card border border-line/60 bg-brand-pale p-5">
+          <Card className="border-line/60 bg-brand-pale p-5">
             <h2 className="flex items-center gap-2 text-sm font-bold text-brand-dark">
               <IconCash width={18} height={18} /> الدفع عند الاستلام 💵
             </h2>
             <p className="mt-1.5 text-xs leading-5 text-brand-dark/80">
               لا حاجة لأي بطاقة بنكية. ادفع نقداً عند استلام كتابك من موصل الطلبات.
             </p>
-          </section>
+          </Card>
 
-          <button type="submit" disabled={submitting} className="btn-primary w-full py-4! text-base">
+          <Button type="submit" disabled={submitting} className="w-full py-4 text-base">
             {submitting ? 'جارٍ إرسال الطلب…' : `تأكيد الطلب — ${formatPrice(total)}`}
-          </button>
+          </Button>
         </form>
 
         {/* summary */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="card border border-line/60 bg-white p-5">
+          <Card className="border-line/60 bg-white p-5">
             <h2 className="text-base font-bold text-ink">طلبك ({count})</h2>
             <ul className="mt-3 space-y-2.5 border-b border-line pb-4">
               {items.map((it) => {
@@ -158,9 +163,9 @@ export default function Checkout() {
             <p className="mt-2 text-[11px] leading-5 text-soft">
               سيتم الاتصال بك هاتفياً لتأكيد الطلب وتحديد تكلفة التوصيل قبل الشحن.
             </p>
-          </div>
+          </Card>
 
-          <div className="mt-4 rounded-card border border-line/60 bg-gray-50 p-4 text-center text-sm text-soft">
+          <Card className="mt-4 border-line/60 bg-gray-50 p-4 text-center text-sm text-soft">
             تفضّل الطلب مباشرة؟{' '}
             <a
               href={whatsappLink(
@@ -172,7 +177,7 @@ export default function Checkout() {
             >
               تواصل عبر واتساب
             </a>
-          </div>
+          </Card>
         </aside>
       </div>
     </div>

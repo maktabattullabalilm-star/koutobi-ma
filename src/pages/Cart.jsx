@@ -4,6 +4,8 @@ import { formatPrice } from '../lib/format';
 import { whatsappLink } from '../lib/config';
 import BookCover from '../components/BookCover';
 import { IconCart, IconClose, IconTruck } from '../components/icons';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 export default function Cart() {
   const { items, remove, setQty, count, total } = useCart();
@@ -16,7 +18,9 @@ export default function Cart() {
         </span>
         <h1 className="mt-4 text-xl font-bold text-ink">سلتك فارغة 🛒</h1>
         <p className="mt-1 text-sm text-soft">تصفّح المكتبة وأضف بعض الكتب الرائعة.</p>
-        <Link to="/catalog" className="btn-primary mt-6">تصفّح الكتب</Link>
+        <Button asChild className="mt-6">
+          <Link to="/catalog">تصفّح الكتب</Link>
+        </Button>
         <div className="mt-6 text-sm text-soft">
           أو اطلب مباشرة عبر{' '}
           <a href={whatsappLink('السلام عليكم، أريد طلب كتاب من مكتبة كُتُبِي 📚')} target="_blank" rel="noreferrer" className="font-semibold text-brand hover:text-brand-dark">
@@ -36,7 +40,7 @@ export default function Cart() {
         {/* items */}
         <div className="space-y-3 lg:col-span-2">
           {items.map((it) => (
-            <div key={it.id} className="card flex gap-4 border border-line/60 p-3.5">
+            <Card key={it.id} className="flex-row gap-4 border-line/60 p-3.5">
               <Link to={`/book/${it.id}`} className="shrink-0 overflow-hidden rounded-md border border-line/50 bg-gray-100">
                 <BookCover src={it.cover} alt={it.title} className="h-28 w-20 sm:h-32 sm:w-24" imgClassName="h-full w-full object-cover" />
               </Link>
@@ -65,13 +69,13 @@ export default function Cart() {
                   <span className="text-base font-bold text-brand">{formatPrice(it.price * it.qty)}</span>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
 
         {/* summary */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="card border border-line/60 bg-white p-5">
+          <Card className="border-line/60 bg-white p-5">
             <h2 className="text-lg font-bold text-ink">ملخص الطلب</h2>
             <dl className="mt-4 space-y-2 border-b border-line pb-4 text-sm">
               <div className="flex justify-between">
@@ -94,9 +98,13 @@ export default function Cart() {
             <p className="mt-2 flex items-center gap-1.5 text-xs text-soft">
               <IconTruck width={14} height={14} /> الدفع نقداً عند استلام الطلب.
             </p>
-            <Link to="/checkout" className="btn-primary mt-4 w-full py-3.5!">إتمام الطلب ←</Link>
-            <Link to="/catalog" className="btn-ghost mt-2 w-full">متابعة التسوق</Link>
-          </div>
+            <Button asChild className="mt-4 w-full py-3.5">
+              <Link to="/checkout">إتمام الطلب ←</Link>
+            </Button>
+            <Button asChild variant="outline" className="mt-2 w-full">
+              <Link to="/catalog">متابعة التسوق</Link>
+            </Button>
+          </Card>
         </aside>
       </div>
     </div>

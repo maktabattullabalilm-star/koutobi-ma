@@ -7,6 +7,8 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../components/Toast';
 import ProductCard from '../components/ProductCard';
 import BookCover from '../components/BookCover';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { IconBook, IconCart, IconHeadset } from '../components/icons';
 
 function Spec({ label, value }) {
@@ -73,7 +75,9 @@ export default function BookDetail() {
       <div className="container-x py-16 text-center">
         <IconBook className="mx-auto text-gray-300" width={44} height={44} />
         <h1 className="mt-3 text-lg font-bold text-ink">{error || 'الكتاب غير موجود'}</h1>
-        <Link to="/catalog" className="btn-primary mt-5">العودة إلى المكتبة</Link>
+        <Button asChild className="mt-5">
+          <Link to="/catalog">العودة إلى المكتبة</Link>
+        </Button>
       </div>
     );
   }
@@ -159,11 +163,11 @@ export default function BookDetail() {
           {book.publisher_ar && <p className="mt-1 text-sm text-soft">الناشر: {book.publisher_ar}</p>}
 
           {/* price */}
-          <div className="mt-5 flex items-center gap-3 rounded-card border border-line/70 bg-gray-50 p-4">
-            <span className="text-2xl font-bold text-brand">{formatPrice(book.price)}</span>
-            {discounted && <span className="text-base text-soft line-through">{formatPrice(book.old_price)}</span>}
+          <Card className="mt-5 flex-row items-center gap-3 border-line/70 bg-gray-50 p-4">
+            <span className="text-2xl font-bold tabular-nums text-brand">{formatPrice(book.price)}</span>
+            {discounted && <span className="text-base tabular-nums text-soft line-through">{formatPrice(book.old_price)}</span>}
             <span className="ms-auto rounded-full bg-brand-light px-3 py-1 text-xs font-bold text-brand">الدفع عند الاستلام</span>
-          </div>
+          </Card>
 
           {/* stock visibility */}
           {showQty && (
@@ -179,21 +183,21 @@ export default function BookDetail() {
 
           {/* actions */}
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <button
+            <Button
               onClick={() => { add(book); show('تمت الإضافة إلى السلة ✓'); }}
               disabled={soldOut}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-brand px-6 py-3 text-sm font-bold text-white transition hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex-1 px-6 py-3"
             >
               <IconCart width={18} height={18} />
               {soldOut ? 'غير متوفر' : 'أضف للسلة'}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => { add(book); navigate('/checkout'); }}
               disabled={soldOut}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-md bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex-1 bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark hover:bg-amber-300"
             >
               ⚡ اطلب الآن
-            </button>
+            </Button>
           </div>
 
           <div className="mt-4 flex items-center gap-2 rounded-md bg-brand-pale px-4 py-3 text-sm text-brand-dark">
@@ -205,14 +209,15 @@ export default function BookDetail() {
           {book.description_ar && (
             <section className="mt-7">
               <h2 className="text-lg font-bold text-ink">التفاصيل</h2>
-              <p className="mt-2 rounded-card border border-line/70 bg-white p-4 text-sm leading-7 text-ink">{book.description_ar}</p>
+              <Card className="mt-2 border-line/70 bg-white p-4 text-sm leading-7 text-ink">{book.description_ar}</Card>
             </section>
           )}
 
           {/* specs */}
           <section className="mt-7">
             <h2 className="text-lg font-bold text-ink">بيانات الطبعة 📋</h2>
-            <dl className="mt-3 rounded-card border border-line/70 p-4">
+            <Card className="mt-3 border-line/70 p-4">
+            <dl>
               <Spec label="المؤلف" value={book.author_ar} />
               <Spec label="الناشر" value={book.publisher_ar} />
               <Spec label="الصفحات" value={book.pages ? `${book.pages} صفحة` : null} />
@@ -222,6 +227,7 @@ export default function BookDetail() {
               <Spec label="الطبعة" value={book.edition_ar} />
               <Spec label="الرقم المعياري ISBN" value={book.isbn} />
             </dl>
+            </Card>
           </section>
         </div>
       </div>

@@ -9,6 +9,7 @@ import BookCover from '../../components/BookCover';
 import PageHeader from './PageHeader';
 import StatusPill from './StatusPill';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -268,11 +269,10 @@ export default function BooksAdmin() {
 
       {/* sticky filter bar */}
       <div className="sticky top-0 z-10 -mx-1 bg-gray-50/95 px-1 py-2 backdrop-blur">
-        <input
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="ابحث بالعنوان، المؤلف، التصنيف…"
-          className="input"
           aria-label="بحث"
         />
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">

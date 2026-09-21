@@ -4,7 +4,23 @@ import { getBooks, getCategories } from '../lib/api';
 import { formatPrice } from '../lib/format';
 import { whatsappLink } from '../lib/config';
 import ProductCard from '../components/ProductCard';
-import { IconChevronDown, IconSearch } from '../components/icons';
+import { IconSearch } from '../components/icons';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '@/components/ui/empty';
 
 const SORTS = [
   { id: 'newest', label: 'الأحدث' },
@@ -90,27 +106,22 @@ export default function Catalog() {
       {/* toolbar */}
       <div className="mb-6 flex items-center justify-between gap-3">
         {q ? (
-          <button
-            onClick={() => setParams({}, { replace: true })}
-            className="text-sm font-semibold text-brand hover:text-brand-dark"
-          >
+          <Button variant="link" onClick={() => setParams({}, { replace: true })} className="h-auto p-0 text-sm font-semibold">
             ✕ إلغاء البحث
-          </button>
+          </Button>
         ) : <span className="hidden sm:block" />}
         <label className="relative flex items-center gap-2">
           <span className="text-sm text-soft">ترتيب حسب:</span>
-          <div className="relative">
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              className="appearance-none rounded-md border border-line bg-white py-2 pe-8 ps-3 text-sm font-medium text-ink outline-hidden focus:border-brand"
-            >
+          <Select value={sort} onValueChange={setSort}>
+            <SelectTrigger className="w-auto" aria-label="ترتيب">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
               {SORTS.map((s) => (
-                <option key={s.id} value={s.id}>{s.label}</option>
+                <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
               ))}
-            </select>
-            <IconChevronDown className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-soft" width={14} height={14} />
-          </div>
+            </SelectContent>
+          </Select>
         </label>
       </div>
 
@@ -124,14 +135,22 @@ export default function Catalog() {
       ) : error ? (
         <div className="rounded-md bg-rose-50 px-4 py-3 text-sm text-danger">{error}</div>
       ) : sorted.length === 0 ? (
-        <div className="rounded-card border border-line/70 bg-gray-50 px-6 py-14 text-center">
-          <IconSearch className="mx-auto text-gray-300" width={40} height={40} />
-          <h3 className="mt-3 text-lg font-bold text-ink">لا توجد كتب مطابقة</h3>
-          <p className="mt-1 text-sm text-soft">جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.</p>
-          <a href={whatsappLink('السلام عليكم، أبحث عن كتاب معيّن 📚')} target="_blank" rel="noreferrer" className="btn-primary mt-5">
-            اطلب الكتاب عبر واتساب
-          </a>
-        </div>
+        <Empty className="border border-line/70 bg-gray-50 px-6 py-14">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <IconSearch width={20} height={20} />
+            </EmptyMedia>
+            <EmptyTitle>لا توجد كتب مطابقة</EmptyTitle>
+            <EmptyDescription>جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button asChild>
+              <a href={whatsappLink('السلام عليكم، أبحث عن كتاب معيّن 📚')} target="_blank" rel="noreferrer">
+                اطلب الكتاب عبر واتساب
+              </a>
+            </Button>
+          </EmptyContent>
+        </Empty>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {sorted.map((b) => (

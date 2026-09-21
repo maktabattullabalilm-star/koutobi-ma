@@ -3,6 +3,14 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getCategories } from '../lib/api';
 import { IconCart, IconClose, IconMenu, IconSearch, IconWrench } from './icons';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 export default function Header() {
   const { count } = useCart();
@@ -16,11 +24,6 @@ export default function Header() {
       .then(setCategories)
       .catch(() => setCategories([]));
   }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
-    return () => (document.body.style.overflow = '');
-  }, [open]);
 
   const submitSearch = (e) => {
     e.preventDefault();
@@ -36,9 +39,9 @@ export default function Header() {
       <div className="container-x">
         {/* top row */}
         <div className="flex h-16 items-center gap-3">
-          <button className="rounded-md p-2 text-ink hover:bg-gray-100 lg:hidden" onClick={() => setOpen(true)} aria-label="القائمة">
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="القائمة">
             <IconMenu />
-          </button>
+          </Button>
 
           <Link to="/" className="flex shrink-0 items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-white">ك</span>
@@ -94,56 +97,55 @@ export default function Header() {
       </nav>
 
       {/* mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 right-0 flex w-80 max-w-[85vw] flex-col bg-white shadow-lift">
-            <div className="flex items-center justify-between border-b border-line px-4 py-4">
-              <span className="text-lg font-bold">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="right" className="flex w-80 max-w-[85vw] flex-col p-0 lg:hidden">
+          <SheetHeader className="border-b border-line px-4 py-4 text-start">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-lg font-bold">
                 <span className="text-brand">كُتُبِي</span>.ما
-              </span>
-              <button onClick={() => setOpen(false)} className="rounded-md p-2 text-ink hover:bg-gray-100" aria-label="إغلاق">
+              </SheetTitle>
+              <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="إغلاق">
                 <IconClose />
-              </button>
+              </Button>
             </div>
+          </SheetHeader>
 
-            <form onSubmit={submitSearch} className="flex items-center gap-2 border-b border-line px-4 py-3">
-              <div className="flex flex-1 items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line">
-                <IconSearch className="text-soft" width={18} height={18} />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="ابحث…"
-                  className="w-full bg-transparent py-2 text-sm outline-hidden"
-                />
-              </div>
-              <button type="submit" className="btn-primary px-4! py-2!">ذهب</button>
-            </form>
-
-            <nav className="flex-1 overflow-y-auto px-2 py-3">
-              {[{ name: 'كل الكتب', slug: null }, ...categories].map((c) => (
-                <Link
-                  key={c.slug || 'all'}
-                  to={c.slug ? `/catalog?category=${encodeURIComponent(c.slug)}` : '/catalog'}
-                  onClick={() => setOpen(false)}
-                  className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-brand-pale hover:text-brand"
-                >
-                  {c.name}
-                </Link>
-              ))}
-              <Link to="/#how" onClick={() => setOpen(false)} className="block rounded-md px-3 py-3 text-sm font-semibold text-brand hover:bg-brand-pale">
-                كيف أطلب؟ 💬
-              </Link>
-            </nav>
-
-            <div className="border-t border-line p-4">
-              <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 text-sm text-soft hover:text-brand">
-                <IconWrench width={16} height={16} /> لوحة التحكم
-              </Link>
+          <form onSubmit={submitSearch} className="flex items-center gap-2 border-b border-line px-4 py-3">
+            <div className="flex flex-1 items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line">
+              <IconSearch className="text-soft" width={18} height={18} />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="ابحث…"
+                className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+              />
             </div>
+            <Button type="submit" className="px-4 py-2">بحث</Button>
+          </form>
+
+          <nav className="flex-1 overflow-y-auto px-2 py-3">
+            {[{ name: 'كل الكتب' }, ...categories].map((c) => (
+              <Link
+                key={c.name}
+                to={c.name === 'كل الكتب' ? '/catalog' : `/catalog?category=${encodeURIComponent(c.name)}`}
+                onClick={() => setOpen(false)}
+                className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-brand-pale hover:text-brand"
+              >
+                {c.name}
+              </Link>
+            ))}
+            <Link to="/#how" onClick={() => setOpen(false)} className="block rounded-md px-3 py-3 text-sm font-semibold text-brand hover:bg-brand-pale">
+              كيف أطلب؟ 💬
+            </Link>
+          </nav>
+
+          <div className="border-t border-line p-4">
+            <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 text-sm text-soft hover:text-brand">
+              <IconWrench width={16} height={16} /> لوحة التحكم
+            </Link>
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </header>
   );
 }
