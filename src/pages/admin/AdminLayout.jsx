@@ -15,7 +15,7 @@ import { IconBook, IconClose, IconGrid, IconInbox, IconLogout, IconMenu, IconWre
 const LINKS = [
   { to: '/admin/dashboard', label: 'نظرة عامة', Icon: IconInbox, end: true },
   { to: '/admin/books', label: 'الكتب', Icon: IconBook },
-  { to: '/admin/catalog', label: 'بيانات الكتالوج', Icon: IconGrid },
+  { to: '/admin/catalog', label: 'التصنيفات والخيارات', Icon: IconGrid },
   { to: '/admin/orders', label: 'الطلبات', Icon: IconWrench },
   { to: '/admin/settings', label: 'الإعدادات', Icon: IconShield },
 ];

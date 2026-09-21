@@ -1,122 +1,236 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import {
   adminCreateAttributeOption,
   adminCreateCategory,
   adminDeleteAttributeOption,
   adminDeleteCategory,
   adminGetAttributeOptions,
+  adminGetBooks,
   adminGetCategories,
+  adminPropagateRename,
+  adminReassignBooks,
+  adminReorderRows,
   adminUpdateAttributeOption,
   adminUpdateCategory,
 } from '../../lib/admin';
+import { ATTRIBUTE_COLUMNS, countByColumn, nextSort, reorderList } from '../../lib/catalog';
 import { useToast } from '../../components/Toast';
-import { Spinner } from '@/components/ui/spinner';
 import { IconEdit, IconPlus, IconTrash } from '../../components/icons';
 import PageHeader from './PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const TYPES = ['binding', 'size', 'paper'];
 const TYPE_LABEL = { binding: 'التجليد', size: 'المقاس', paper: 'الورق' };
 const TYPE_PLACEHOLDER = { binding: 'مثال: تجليد فني', size: 'مثال: 17 × 24 سم', paper: 'مثال: شامواه' };
 
-function AttributeManager({ type, items, onReload }) {
+const booksWord = (n) => (n === 1 ? 'كتاب واحد' : n === 2 ? 'كتابان' : `${n} كتب`);
+
+function MoveButtons({ onUp, onDown, upDisabled, downDisabled }) {
+  return (
+    <div className="flex items-center gap-0.5" dir="ltr">
+      <button type="button" onClick={onUp} disabled={upDisabled} title="تحريك لأعلى" aria-label="تحريك لأعلى" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30">↑</button>
+      <button type="button" onClick={onDown} disabled={downDisabled} title="تحريك لأسفل" aria-label="تحريك لأسفل" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30">↓</button>
+    </div>
+  );
+}
+
+/**
+ * Guarded delete panel: shown when the value is used by books.
+ * Forces picking a replacement first — nothing gets orphaned.
+ */
+function ReassignDelete({ itemLabel, usage, options, onConfirm, onCancel, busy }) {
+  const [to, setTo] = useState('');
+  return (
+    <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3">
+      <p className="text-xs font-bold leading-5 text-amber-800">
+        «{itemLabel}» مستعمل في {booksWord(usage)} — اختر تصنيفاً بديلاً لنقل كتبه إليه قبل الحذف.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Select value={to} onValueChange={setTo}>
+          <SelectTrigger className="min-w-[180px] flex-1 bg-white" aria-label="البديل">
+            <SelectValue placeholder="اختر البديل…" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((o) => (
+              <SelectItem key={o} value={o}>{o}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button disabled={!to || busy} onClick={() => onConfirm(to)} className="shrink-0">
+          {busy ? '…' : 'نقل الكتب وحذف'}
+        </Button>
+        <Button type="button" variant="ghost" onClick={onCancel} className="shrink-0">
+          إلغاء
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AttributeManager({ type, items, usage, onReload }) {
   const { show } = useToast();
-  const [f, setF] = useState({ value_ar: '', sort: '' });
+  const [value, setValue] = useState('');
   const [editId, setEditId] = useState(null);
-  const [errs, setErrs] = useState({});
+  const [draft, setDraft] = useState('');
+  const [deletingId, setDeletingId] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const column = ATTRIBUTE_COLUMNS[type];
 
-  const validate = (v) => {
-    const e = {};
-    if (!v.trim()) e.value_ar = 'القيمة مطلوبة';
-    const dup = items?.some((a) => a.value_ar === v.trim() && a.id !== editId);
-    if (dup) e.value_ar = 'هذه القيمة موجودة بالفعل لهذا النوع';
-    return e;
+  const add = async (e) => {
+    e.preventDefault();
+    const v = value.trim();
+    if (!v) return;
+    if (items.some((a) => a.value_ar === v)) {
+      show('هذه القيمة موجودة بالفعل', 'error');
+      return;
+    }
+    try {
+      await adminCreateAttributeOption({ type, value_ar: v, sort: nextSort(items) });
+      setValue('');
+      show('تمت الإضافة ✓');
+      onReload();
+    } catch (err) {
+      show(err.message, 'error');
+    }
   };
 
-  const submit = async (ev) => {
-    ev.preventDefault();
-    const e = validate(f.value_ar);
-    setErrs(e);
-    if (Object.keys(e).length) return;
+  const move = async (id, dir) => {
+    const reordered = reorderList([...items].sort((a, b) => a.sort - b.sort), id, dir);
+    if (!reordered) return;
+    setBusy(true);
     try {
-      if (editId) {
-        await adminUpdateAttributeOption(editId, { value_ar: f.value_ar.trim(), sort: Number(f.sort) || 0 });
-        show('تم التحديث ✓');
-      } else {
-        await adminCreateAttributeOption({ type, value_ar: f.value_ar.trim(), sort: Number(f.sort) || 0 });
-        show('تمت الإضافة ✓');
-      }
-      setF({ value_ar: '', sort: '' });
+      await adminReorderRows('attribute_options', reordered.map((r) => r.id));
+      onReload();
+    } catch (err) {
+      show(err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveRename = async (item) => {
+    const v = draft.trim();
+    if (!v) return;
+    if (v === item.value_ar) {
       setEditId(null);
-      onReload();
-    } catch (err) {
-      show(err.message, 'error');
+      return;
     }
-  };
-
-  const startEdit = (a) => {
-    setF({ value_ar: a.value_ar, sort: String(a.sort) });
-    setEditId(a.id);
-    setErrs({});
-  };
-
-  const remove = async (a) => {
-    if (!window.confirm(`حذف «${a.value_ar}»؟`)) return;
+    if (items.some((a) => a.value_ar === v)) {
+      show('هذه القيمة موجودة بالفعل', 'error');
+      return;
+    }
+    const n = usage[item.value_ar] || 0;
+    if (n > 0 && !window.confirm(`«${item.value_ar}» مستعملة في ${booksWord(n)} — سيتم تحديثها إلى «${v}». متابعة؟`)) return;
     try {
-      await adminDeleteAttributeOption(a.id);
-      show('تم الحذف');
+      await adminUpdateAttributeOption(item.id, { value_ar: v });
+      if (n > 0) await adminPropagateRename(column, item.value_ar, v);
+      setEditId(null);
+      show('تمت إعادة التسمية وتحديث الكتب ✓');
       onReload();
     } catch (err) {
       show(err.message, 'error');
     }
   };
+
+  const remove = async (item, replacement) => {
+    setBusy(true);
+    try {
+      if (replacement) await adminReassignBooks(column, item.value_ar, replacement);
+      await adminDeleteAttributeOption(item.id);
+      setDeletingId(null);
+      show(replacement ? 'تم نقل الكتب والحذف ✓' : 'تم الحذف');
+      onReload();
+    } catch (err) {
+      show(err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const askDelete = (item) => {
+    const n = usage[item.value_ar] || 0;
+    if (n === 0) {
+      if (!window.confirm(`حذف «${item.value_ar}»؟`)) return;
+      remove(item, null);
+    } else {
+      setDeletingId(item.id);
+    }
+  };
+
+  const ordered = [...items].sort((a, b) => a.sort - b.sort);
 
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-bold text-ink">{TYPE_LABEL[type] || type}</h3>
-      <form onSubmit={submit} className="flex flex-wrap gap-2">
+      <form onSubmit={add} className="flex flex-wrap gap-2">
         <Input
-          value={f.value_ar}
-          onChange={(e) => setF({ ...f, value_ar: e.target.value })}
-          placeholder={TYPE_PLACEHOLDER[type] || 'قيمة جديدة'}
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder={`${TYPE_PLACEHOLDER[type] || 'قيمة جديدة'} — تُضاف في الآخر`}
           className="min-w-[160px] flex-1"
-          aria-label={`قيمة ${TYPE_LABEL[type] || type}`}
-        />
-        <Input
-          type="number"
-          value={f.sort}
-          onChange={(e) => setF({ ...f, sort: e.target.value })}
-          placeholder="الترتيب"
-          className="w-20"
-          min="0"
-          aria-label="الترتيب"
+          aria-label={`قيمة جديدة لـ${TYPE_LABEL[type] || type}`}
         />
         <Button type="submit" className="shrink-0">
-          {editId ? 'حفظ' : <IconPlus width={16} height={16} />}
+          <IconPlus width={16} height={16} /> إضافة
         </Button>
-        {editId && (
-          <Button type="button" onClick={() => { setF({ value_ar: '', sort: '' }); setEditId(null); setErrs({}); }} variant="outline" className="shrink-0">
-            إلغاء
-          </Button>
-        )}
-        {errs.value_ar && <span className="w-full basis-full text-xs text-danger">{errs.value_ar}</span>}
       </form>
       <ul className="divide-y divide-line/60">
-        {(items || []).length === 0 && (
+        {ordered.length === 0 && (
           <li className="py-4 text-center text-sm text-soft">لا توجد قيم بعد — أضف أول قيمة من الأعلى.</li>
         )}
-        {(items || []).map((a) => (
-          <li key={a.id} className="flex items-center justify-between gap-3 py-2">
-            <span className="text-sm font-medium text-ink">{a.value_ar}</span>
-            <div className="flex items-center gap-1">
-              <span className="text-[11px] text-soft">ترتيب: {a.sort}</span>
-              <button onClick={() => startEdit(a)} className="rounded-sm p-1.5 text-gray-400 hover:text-brand" title="تعديل" aria-label="تعديل"><IconEdit width={14} height={14} /></button>
-              <button onClick={() => remove(a)} className="rounded-sm p-1.5 text-gray-400 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
-            </div>
-          </li>
-        ))}
+        {ordered.map((a, ix) => {
+          const n = usage[a.value_ar] || 0;
+          return (
+            <li key={a.id} className="py-2">
+              <div className="flex items-center justify-between gap-2">
+                {editId === a.id ? (
+                  <div className="flex min-w-0 flex-1 gap-2">
+                    <Input value={draft} onChange={(e) => setDraft(e.target.value)} className="flex-1" aria-label="الاسم الجديد" />
+                    <Button size="sm" onClick={() => saveRename(a)}>حفظ</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>إلغاء</Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                      {a.value_ar}
+                      <span className="ms-2 text-[11px] font-normal text-soft">
+                        {n > 0 ? `مستعملة في ${booksWord(n)}` : 'غير مستعملة'}
+                      </span>
+                    </span>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <MoveButtons
+                        onUp={() => move(a.id, -1)}
+                        onDown={() => move(a.id, 1)}
+                        upDisabled={busy || ix === 0}
+                        downDisabled={busy || ix === ordered.length - 1}
+                      />
+                      <button onClick={() => { setDraft(a.value_ar); setEditId(a.id); }} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-brand" title="إعادة تسمية" aria-label="إعادة تسمية"><IconEdit width={14} height={14} /></button>
+                      <button onClick={() => askDelete(a)} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-rose-50 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
+                    </div>
+                  </>
+                )}
+              </div>
+              {deletingId === a.id && (
+                <ReassignDelete
+                  itemLabel={a.value_ar}
+                  usage={n}
+                  options={ordered.filter((x) => x.id !== a.id).map((x) => x.value_ar)}
+                  onConfirm={(to) => remove(a, to)}
+                  onCancel={() => setDeletingId(null)}
+                  busy={busy}
+                />
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -127,9 +241,12 @@ export default function CatalogData() {
 
   const [cats, setCats] = useState([]);
   const [attrs, setAttrs] = useState({});
-  const [catForm, setCatForm] = useState({ name_ar: '', sort: '' });
-  const [catEditId, setCatEditId] = useState(null);
-  const [catErrors, setCatErrors] = useState({});
+  const [usage, setUsage] = useState({});
+  const [catName, setCatName] = useState('');
+  const [editCatId, setEditCatId] = useState(null);
+  const [editCatDraft, setEditCatDraft] = useState('');
+  const [deletingCatId, setDeletingCatId] = useState(null);
+  const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
@@ -139,12 +256,18 @@ export default function CatalogData() {
         adminGetCategories(),
         ...TYPES.map((t) => adminGetAttributeOptions(t)),
       ]);
-      setCats(cList);
+      const books = await adminGetBooks().catch(() => []);
+      setCats([...cList].sort((a, b) => a.sort - b.sort));
       const byType = {};
       TYPES.forEach((t, i) => {
         byType[t] = aLists[i];
       });
       setAttrs(byType);
+      const u = { category: countByColumn(books, 'category') };
+      TYPES.forEach((t) => {
+        u[t] = countByColumn(books, ATTRIBUTE_COLUMNS[t]);
+      });
+      setUsage(u);
     } catch (e) {
       show(e.message, 'error');
     } finally {
@@ -157,57 +280,94 @@ export default function CatalogData() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const catValidate = (name) => {
-    const e = {};
-    if (!name.trim()) e.name_ar = 'اسم التصنيف مطلوب';
-    const dup = cats.some((c) => c.name_ar === name.trim() && c.id !== catEditId);
-    if (dup) e.name_ar = 'تصنيف بهذا الاسم موجود بالفعل';
-    return e;
-  };
+  const orderedCats = [...cats].sort((a, b) => a.sort - b.sort);
 
-  const catSubmit = async (e) => {
+  const addCat = async (e) => {
     e.preventDefault();
-    const errs = catValidate(catForm.name_ar);
-    setCatErrors(errs);
-    if (Object.keys(errs).length) return;
+    const v = catName.trim();
+    if (!v) return;
+    if (cats.some((c) => c.name_ar === v)) {
+      show('تصنيف بهذا الاسم موجود بالفعل', 'error');
+      return;
+    }
     try {
-      if (catEditId) {
-        await adminUpdateCategory(catEditId, { name_ar: catForm.name_ar.trim(), sort: Number(catForm.sort) || 0 });
-        show('تم تحديث التصنيف ✓');
-      } else {
-        await adminCreateCategory({ name_ar: catForm.name_ar.trim(), sort: Number(catForm.sort) || 0 });
-        show('تم إضافة التصنيف ✓');
-      }
-      setCatForm({ name_ar: '', sort: '' });
-      setCatEditId(null);
+      await adminCreateCategory({ name_ar: v, sort: nextSort(cats) });
+      setCatName('');
+      show('تمت إضافة التصنيف في الآخر ✓');
       load();
     } catch (err) {
       show(err.message, 'error');
     }
   };
 
-  const catStartEdit = (c) => {
-    setCatForm({ name_ar: c.name_ar, sort: String(c.sort) });
-    setCatEditId(c.id);
-    setCatErrors({});
-  };
-
-  const catDelete = async (c) => {
-    if (!window.confirm(`حذف تصنيف «${c.name_ar}»؟ الكتب المرتبطة ستحتفظ بالاسم النصي.`)) return;
+  const moveCat = async (id, dir) => {
+    const reordered = reorderList(orderedCats, id, dir);
+    if (!reordered) return;
+    setBusy(true);
     try {
-      await adminDeleteCategory(c.id);
-      show('تم حذف التصنيف');
+      await adminReorderRows('categories', reordered.map((r) => r.id));
       load();
     } catch (err) {
       show(err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveCatRename = async (cat) => {
+    const v = editCatDraft.trim();
+    if (!v) return;
+    if (v === cat.name_ar) {
+      setEditCatId(null);
+      return;
+    }
+    if (cats.some((c) => c.name_ar === v)) {
+      show('تصنيف بهذا الاسم موجود بالفعل', 'error');
+      return;
+    }
+    const n = (usage.category || {})[cat.name_ar] || 0;
+    if (n > 0 && !window.confirm(`«${cat.name_ar}» مستعمل في ${booksWord(n)} — سيتم تحديثها إلى «${v}». متابعة؟`)) return;
+    try {
+      await adminUpdateCategory(cat.id, { name_ar: v });
+      if (n > 0) await adminPropagateRename('category', cat.name_ar, v);
+      setEditCatId(null);
+      show('تمت إعادة التسمية وتحديث الكتب ✓');
+      load();
+    } catch (err) {
+      show(err.message, 'error');
+    }
+  };
+
+  const removeCat = async (cat, replacement) => {
+    setBusy(true);
+    try {
+      if (replacement) await adminReassignBooks('category', cat.name_ar, replacement);
+      await adminDeleteCategory(cat.id);
+      setDeletingCatId(null);
+      show(replacement ? 'تم نقل الكتب والحذف ✓' : 'تم حذف التصنيف');
+      load();
+    } catch (err) {
+      show(err.message, 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const askDeleteCat = (cat) => {
+    const n = (usage.category || {})[cat.name_ar] || 0;
+    if (n === 0) {
+      if (!window.confirm(`حذف تصنيف «${cat.name_ar}»؟`)) return;
+      removeCat(cat, null);
+    } else {
+      setDeletingCatId(cat.id);
     }
   };
 
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl py-16 text-center">
-        <Spinner className="mx-auto size-10 text-brand" />
-        <p className="mt-3 text-sm text-soft">جارٍ تحميل بيانات الكتالوج…</p>
+        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-brand border-t-transparent" />
+        <p className="mt-3 text-sm text-soft">جارٍ تحميل التصنيفات والخيارات…</p>
       </div>
     );
   }
@@ -215,69 +375,95 @@ export default function CatalogData() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <PageHeader
-        title="بيانات الكتالوج 📋"
-        description="إدارة التصنيفات وقوائم الخيارات (التجليد، المقاس، الورق) التي تظهر في نموذج الكتاب."
-        crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'بيانات الكتالوج' }]}
+        title="التصنيفات والخيارات 📋"
+        description="التصنيفات وقوائم الخيارات (التجليد، المقاس، الورق) التي تظهر في نموذج الكتاب. أي تغيير هنا ينعكس على الكتب تلقائياً."
+        crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'التصنيفات والخيارات' }]}
       />
 
       {/* Categories */}
       <section className="card border border-line/70 p-5">
-        <h2 className="admin-section-title mb-4">التصنيفات</h2>
-        <form onSubmit={catSubmit} className="mb-4 flex flex-wrap gap-2">
+        <h2 className="admin-section-title mb-1">التصنيفات</h2>
+        <p className="mb-4 text-xs text-soft">تُضاف في الآخر — رتّبها بالأسهم. إعادة التسمية تُحدّث الكتب تلقائياً.</p>
+        <form onSubmit={addCat} className="mb-4 flex flex-wrap gap-2">
           <Input
-            value={catForm.name_ar}
-            onChange={(e) => setCatForm({ ...catForm, name_ar: e.target.value })}
-            placeholder="اسم التصنيف بالعربية"
+            value={catName}
+            onChange={(e) => setCatName(e.target.value)}
+            placeholder="اسم التصنيف الجديد، مثال: السيرة النبوية"
             className="min-w-[180px] flex-1"
-          />
-          <Input
-            type="number"
-            value={catForm.sort}
-            onChange={(e) => setCatForm({ ...catForm, sort: e.target.value })}
-            placeholder="الترتيب"
-            className="w-20"
-            min="0"
+            aria-label="اسم التصنيف الجديد"
           />
           <Button type="submit" className="shrink-0">
-            {catEditId ? 'حفظ' : <IconPlus width={16} height={16} />}
+            <IconPlus width={16} height={16} /> إضافة
           </Button>
-          {catEditId && (
-            <Button type="button" onClick={() => { setCatForm({ name_ar: '', sort: '' }); setCatEditId(null); setCatErrors({}); }} variant="outline" className="shrink-0">
-              إلغاء
-            </Button>
-          )}
-          {catErrors.name_ar && <span className="w-full basis-full text-xs text-danger">{catErrors.name_ar}</span>}
         </form>
         <ul className="divide-y divide-line/60">
-          {cats.length === 0 && (
+          {orderedCats.length === 0 && (
             <li className="py-6 text-center text-sm text-soft">لا توجد تصنيفات بعد — أضف أول تصنيف من الأعلى.</li>
           )}
-          {cats.map((c) => (
-            <li key={c.id} className="flex items-center justify-between gap-3 py-2">
-              <span className="text-sm font-medium text-ink">{c.name_ar}</span>
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] text-soft">ترتيب: {c.sort}</span>
-                <button onClick={() => catStartEdit(c)} className="rounded-sm p-1.5 text-gray-400 hover:text-brand" title="تعديل"><IconEdit width={14} height={14} /></button>
-                <button onClick={() => catDelete(c)} className="rounded-sm p-1.5 text-gray-400 hover:text-danger" title="حذف"><IconTrash width={14} height={14} /></button>
-              </div>
-            </li>
-          ))}
+          {orderedCats.map((c, ix) => {
+            const n = (usage.category || {})[c.name_ar] || 0;
+            return (
+              <li key={c.id} className="py-2">
+                <div className="flex items-center justify-between gap-2">
+                  {editCatId === c.id ? (
+                    <div className="flex min-w-0 flex-1 gap-2">
+                      <Input value={editCatDraft} onChange={(e) => setEditCatDraft(e.target.value)} className="flex-1" aria-label="الاسم الجديد" />
+                      <Button size="sm" onClick={() => saveCatRename(c)}>حفظ</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditCatId(null)}>إلغاء</Button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
+                        {c.name_ar}
+                        <span className="ms-2 text-[11px] font-normal text-soft">
+                          {n > 0 ? `مستعمل في ${booksWord(n)}` : 'غير مستعمل'}
+                        </span>
+                      </span>
+                      <div className="flex shrink-0 items-center gap-0.5">
+                        <MoveButtons
+                          onUp={() => moveCat(c.id, -1)}
+                          onDown={() => moveCat(c.id, 1)}
+                          upDisabled={busy || ix === 0}
+                          downDisabled={busy || ix === orderedCats.length - 1}
+                        />
+                        <button onClick={() => { setEditCatDraft(c.name_ar); setEditCatId(c.id); }} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-brand" title="إعادة تسمية" aria-label="إعادة تسمية"><IconEdit width={14} height={14} /></button>
+                        <button onClick={() => askDeleteCat(c)} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-rose-50 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {deletingCatId === c.id && (
+                  <ReassignDelete
+                    itemLabel={c.name_ar}
+                    usage={n}
+                    options={orderedCats.filter((x) => x.id !== c.id).map((x) => x.name_ar)}
+                    onConfirm={(to) => removeCat(c, to)}
+                    onCancel={() => setDeletingCatId(null)}
+                    busy={busy}
+                  />
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
       {/* Attributes */}
       <section className="card border border-line/70 p-5">
-        <h2 className="admin-section-title mb-4">خيارات السمات (التجليد / المقاس / الورق)</h2>
+        <h2 className="admin-section-title mb-1">خيارات الطبعة (التجليد / المقاس / الورق)</h2>
+        <p className="mb-4 text-xs text-soft">القيم التي يختار منها نموذج الكتاب. إعادة التسمية تُحدّث الكتب تلقائياً.</p>
         <div className="space-y-6">
           {TYPES.map((t) => (
-            <AttributeManager key={t} type={t} items={attrs[t]} onReload={load} />
+            <AttributeManager
+              key={t}
+              type={t}
+              items={[...(attrs[t] || [])].sort((a, b) => a.sort - b.sort)}
+              usage={usage[t] || {}}
+              onReload={load}
+            />
           ))}
         </div>
       </section>
-
-      <p className="text-center text-xs leading-5 text-soft">
-        التصنيف في جدول الكتب حقل نصي — عند إعادة تسمية تصنيف مستخدم، حدّث الكتب المرتبطة من صفحة الكتب.
-      </p>
     </div>
   );
 }

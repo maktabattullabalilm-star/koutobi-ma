@@ -15,17 +15,27 @@ arrays in code.
 
 - [x] New admin page (under `/admin`, e.g. `/admin/catalog-data`) with two
   managers: categories list + attribute lists grouped by type.
-- [x] Categories: name_ar (unique), sort order, book count shown,
+- [x] Categories: name_ar (unique), book count shown per row,
   delete blocked (or reassign prompt) when books still use it.
 - [x] Attribute types ship seeded with current values:
   التجليد (فني/عادي)، المقاس (17×24، 14×20، 12×17، 24×17 سم)،
-  الورق (شامواه/أبيض). New types addable (e.g. اللغة).
+  الورق (شامواه/أبيض).
+- [ ] New attribute *types* addable (e.g. اللغة) — NOT built; needs an
+  Arabic-label registry for types. Honestly deferred, not done.
 - [x] BookForm category/binding/size/paper selects read from DB with
   loading fallback to today's hardcoded values if the fetch fails.
 - [x] Storefront category chips/nav read from the same source
   (cached, fallback to `config.js` list on error).
 - [x] Deleting a category in use: admin must pick a replacement category
   for affected books first (no silent orphans).
+
+## Librarian-task rework (added after first pass)
+
+- Sort-number fields removed everywhere — new items append last, ↑↓
+  buttons reorder. No librarian should ever type a sort order.
+- Every row shows usage ("مستعمل في N كتب" / "غير مستعملة").
+- Rename propagates to `books` text columns with a count confirmation.
+- Page renamed to "التصنيفات والخيارات" (a librarian knows what that is).
 
 ## Schema
 

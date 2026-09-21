@@ -185,7 +185,7 @@ export default function AdminDashboard() {
               <Link to="/admin/books">إدارة الكتب</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/admin/catalog">بيانات الكتالوج</Link>
+              <Link to="/admin/catalog">التصنيفات والخيارات</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
               <Link to="/admin/orders">متابعة الطلبات</Link>

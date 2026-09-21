@@ -224,6 +224,38 @@ export async function adminDeleteAttributeOption(id) {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Rename propagation: books store category/attribute values as plain text,
+ * so renaming a catalog value must update every book using it — otherwise
+ * books silently keep a name that no longer exists. Returns updated count.
+ */
+export async function adminPropagateRename(column, oldValue, newValue) {
+  if (!oldValue || !newValue || oldValue === newValue) return 0;
+  const { data, error } = await supabase
+    .from('books')
+    .update({ [column]: newValue })
+    .eq(column, oldValue)
+    .select('id');
+  if (error) throw new Error(error.message);
+  return (data || []).length;
+}
+
+/** Reassign books from one catalog value to another (guarded delete). */
+export async function adminReassignBooks(column, fromValue, toValue) {
+  return adminPropagateRename(column, fromValue, toValue);
+}
+
+/** Persist a normalized order for a list of { id } rows. */
+export async function adminReorderRows(table, orderedIds) {
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await supabase
+      .from(table)
+      .update({ sort: (i + 1) * 10 })
+      .eq('id', orderedIds[i]);
+    if (error) throw new Error(error.message);
+  }
+}
+
 // ---------- Stock & settings ----------
 
 /** Call the SECURITY DEFINER RPC to decrement stock atomically. */

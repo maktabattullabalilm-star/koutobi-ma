@@ -61,6 +61,14 @@ your TEST order row must be there, with its items in `order_items`.
 - [ ] Log in with a non-admin account → dead-end screen now has a working تسجيل الخروج button
       (then delete that test account in Supabase Dashboard → Authentication → Users)
 
+## التصنيفات والخيارات (`/admin/catalog` — librarian flows)
+
+- [ ] Add a category `TEST-تصنيف` → appears last, no numbers asked → move it up with ↑ → order sticks after reload → delete it (unused → plain confirm)
+- [ ] Rename a category that books use → confirmation names the book count → books show the new name in the storefront filter
+- [ ] Try deleting a category that books use → forced to pick a replacement → books move, category gone, nothing orphaned
+- [ ] Add an attribute value → reorder with ↑↓ → rename a used one → books update
+- [ ] Delete the `TEST-تصنيف` afterwards so the store stays clean
+
 ## Import panel (`/admin/books/new` → استيراد 📥)
 
 - [ ] ISBN tab: enter `9780131103627` → بحث → fields prefill from Open Library,
