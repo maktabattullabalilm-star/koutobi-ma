@@ -21,10 +21,29 @@ vi.mock('../../lib/admin', () => ({
       is_featured: true, is_out_of_stock: true, cover_image: '',
     },
   ])),
+  adminCreateBook: vi.fn(),
+  adminCreateBookImage: vi.fn(),
+  adminDeleteBookImage: vi.fn(),
+  adminGetBookImages: vi.fn(async () => []),
   adminUpdateBook: vi.fn(async () => ({})),
+  adminUpdateBookImage: vi.fn(),
   adminDeleteBookWithImages: vi.fn(async () => ({})),
+  adminDecrementStock: vi.fn(),
+  adminGetCategories: vi.fn(async () => []),
+  adminCreateCategory: vi.fn(),
+  adminUpdateCategory: vi.fn(),
+  adminDeleteCategory: vi.fn(),
+  adminGetAttributeOptions: vi.fn(async () => []),
+  adminCreateAttributeOption: vi.fn(),
+  adminUpdateAttributeOption: vi.fn(),
+  adminDeleteAttributeOption: vi.fn(),
+  getCategoriesForForm: vi.fn(async () => []),
+  getAttributeOptionsForForm: vi.fn(async () => []),
   getAppSetting: vi.fn(async () => 'hide'),
   adminUpdateAppSetting: vi.fn(async () => ({})),
+  adminUpdateOrderStatus: vi.fn(),
+  uploadR2File: vi.fn(),
+  deleteR2Object: vi.fn(),
 }));
 
 vi.mock('../../lib/supabase', () => ({
@@ -38,13 +57,15 @@ vi.mock('../../lib/supabase', () => ({
 }));
 
 vi.mock('../../context/AuthContext', () => ({
-  useAuth: () => ({
+  useAuth: vi.fn(() => ({
     session: { access_token: 'test-token' },
     profile: { email: 'admin@test.ma' },
     loading: false,
     isAdmin: true,
+    signIn: vi.fn(),
+    signUp: vi.fn(),
     signOut: vi.fn(),
-  }),
+  })),
 }));
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -52,6 +73,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => vi.fn(),
+    useParams: () => ({}),
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Link: ({ to, children, ...rest }) => (
       <a href={typeof to === 'string' ? to : '#'} {...rest}>{children}</a>
@@ -67,6 +89,8 @@ const { default: Dashboard } = await import('./Dashboard');
 const { default: BooksAdmin } = await import('./BooksAdmin');
 const { default: PageHeader } = await import('./PageHeader');
 const { default: Settings } = await import('./Settings');
+const { default: AdminLogin } = await import('./AdminLogin');
+const { default: BookForm } = await import('./BookForm');
 
 afterEach(cleanup);
 
@@ -116,6 +140,54 @@ describe('Settings (sensitive area, separate page)', () => {
     expect(await screen.findByText('إعدادات المتجر')).toBeTruthy();
     // 2FA enroll CTA (no factor enrolled in mock)
     expect(await screen.findByText(/تفعيل بخطوتين/)).toBeTruthy();
+  });
+});
+
+describe('AdminLogin', () => {
+  it('renders the login form for logged-out admins', async () => {
+    const { useAuth } = await import('../../context/AuthContext');
+    useAuth.mockReturnValueOnce({
+      supabaseEnabled: true,
+      session: null,
+      profile: null,
+      loading: false,
+      isAdmin: false,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+    });
+    render(<AdminLogin />);
+    expect(await screen.findByText('تسجيل الدخول')).toBeTruthy();
+    expect(await screen.findByText('نسيت كلمة المرور؟')).toBeTruthy();
+  });
+
+  it('renders a logout button for logged-in non-admins', async () => {
+    const { useAuth } = await import('../../context/AuthContext');
+    useAuth.mockReturnValueOnce({
+      supabaseEnabled: true,
+      session: { access_token: 't' },
+      profile: { email: 'user@test.ma' },
+      loading: false,
+      isAdmin: false,
+      signIn: vi.fn(),
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+    });
+    render(<AdminLogin />);
+    expect(await screen.findByText('تسجيل الخروج')).toBeTruthy();
+  });
+});
+
+describe('BookForm (new book)', () => {
+  it('renders all sections without crashing', async () => {
+    render(<BookForm />);
+    expect(await screen.findByText('إضافة كتاب جديد 📚')).toBeTruthy();
+    expect(await screen.findByText('معلومات الكتاب')).toBeTruthy();
+    expect(await screen.findByText('بيانات الطبعة والمخزون')).toBeTruthy();
+    expect(await screen.findByText(/استيراد بيانات الكتاب/)).toBeTruthy();
+    expect(await screen.findByText(/صور الكتاب/)).toBeTruthy();
+    expect(await screen.findByText('الحالة والعرض')).toBeTruthy();
+    expect(await screen.findByText('نشر الكتاب')).toBeTruthy();
   });
 });
 
