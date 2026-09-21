@@ -80,6 +80,9 @@ const FORM_TABS = [
 let uidCounter = 0;
 const nextUid = () => `img-${Date.now()}-${uidCounter++}`;
 
+/** Proper Arabic count: 1 → واحدة, 2 → اثنتان, 3+ → number + plural. */
+const pluralImg = (n) => (n === 1 ? 'صورة واحدة' : n === 2 ? 'صورتان' : `${n} صور`);
+
 export default function BookForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -726,13 +729,13 @@ export default function BookForm() {
               {images.map((img, ix) => (
                 <figure
                   key={img.uid}
-                  className={`overflow-hidden rounded-md border bg-white ${img.is_primary ? 'border-brand ring-1 ring-brand' : 'border-line'}`}
+                  className={`w-full max-w-[190px] overflow-hidden rounded-md border bg-white ${img.is_primary ? 'border-brand ring-1 ring-brand' : 'border-line'}`}
                 >
                   <div className="relative">
                     {img.preview || img.url ? (
-                      <img src={img.preview || img.url} alt={`صورة ${ix + 1}`} className="aspect-square w-full object-cover" />
+                      <img src={img.preview || img.url} alt={`صورة ${ix + 1}`} className="aspect-[3/4] w-full object-cover" />
                     ) : (
-                      <div className="flex aspect-square w-full items-center justify-center bg-gray-50 text-gray-300">
+                      <div className="flex aspect-[3/4] w-full items-center justify-center bg-gray-50 text-gray-300">
                         <IconBook width={24} height={24} />
                       </div>
                     )}
@@ -767,20 +770,20 @@ export default function BookForm() {
                         onClick={() => markPrimary(img.uid)}
                         disabled={img.is_primary}
                         title="اجعلها الصورة الرئيسية"
-                        className={`rounded-sm p-1.5 transition ${img.is_primary ? 'text-brand' : 'text-gray-300 hover:bg-amber-50 hover:text-amber-500'}`}
+                        className={`flex h-9 w-9 items-center justify-center rounded-md transition ${img.is_primary ? 'text-brand' : 'text-gray-300 hover:bg-amber-50 hover:text-amber-500'}`}
                         aria-label="صورة رئيسية"
                       >
                         <IconStar filled={img.is_primary} width={16} height={16} />
                       </button>
                       <div className="flex items-center gap-0.5" dir="ltr">
-                        <button type="button" onClick={() => moveImage(img.uid, -1)} disabled={ix === 0} className="rounded-sm p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تقديم">‹</button>
-                        <button type="button" onClick={() => moveImage(img.uid, 1)} disabled={ix === images.length - 1} className="rounded-sm p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تأخير">›</button>
+                        <button type="button" onClick={() => moveImage(img.uid, -1)} disabled={ix === 0} title="تقديم" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تقديم">‹</button>
+                        <button type="button" onClick={() => moveImage(img.uid, 1)} disabled={ix === images.length - 1} title="تأخير" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تأخير">›</button>
                       </div>
                       <button
                         type="button"
                         onClick={() => removeImage(img.uid)}
                         title="حذف الصورة"
-                        className="rounded-sm p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-danger"
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-300 transition hover:bg-rose-50 hover:text-danger"
                         aria-label="حذف الصورة"
                       >
                         <IconTrash width={16} height={16} />
@@ -850,7 +853,13 @@ export default function BookForm() {
             </Button>
             <div className="flex items-center gap-3">
               {images.length > 0 && (
-                <span className="text-xs text-soft">{images.length} صور · {images.filter((i) => i.blob).length} بانتظار الرفع</span>
+                <span className="text-xs text-soft">
+                  {pluralImg(images.length)}
+                  {' · '}
+                  {images.filter((i) => i.blob).length > 0
+                    ? `${pluralImg(images.filter((i) => i.blob).length)} بانتظار الرفع`
+                    : 'كل الصور مرفوعة'}
+                </span>
               )}
               <Button type="submit" disabled={saving || staging} className="flex-1 px-8 sm:flex-none">
                 {saving ? 'جارٍ الحفظ…' : isEdit ? 'حفظ التعديلات' : 'نشر الكتاب'}
