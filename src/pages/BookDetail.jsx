@@ -196,7 +196,7 @@ export default function BookDetail() {
               disabled={soldOut}
               className="flex-1 bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark hover:bg-amber-300"
             >
-              ⚡ اطلب الآن
+              اطلب الآن
             </Button>
           </div>
 
@@ -215,7 +215,7 @@ export default function BookDetail() {
 
           {/* specs */}
           <section className="mt-7">
-            <h2 className="text-lg font-bold text-ink">بيانات الطبعة 📋</h2>
+            <h2 className="text-lg font-bold text-ink">بيانات الطبعة</h2>
             <Card className="mt-3 border-line/70 p-4">
             <dl>
               <Spec label="المؤلف" value={book.author_ar} />

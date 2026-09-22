@@ -53,7 +53,7 @@ export default function Home() {
             <h1 className="mt-4 text-3xl font-bold leading-tight sm:text-4xl lg:text-[42px]">
               مكتبة الكتب الإسلامية
               <br />
-              في خدمتكم من قلب المغرب 🇲🇦
+              في خدمتكم من قلب المغرب
             </h1>
             <p className="mt-4 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
               اختر كتابك المفضّل، أرسل اسمك وهاتفك وعنوانك، وسنتصل بك لتأكيد الطلب وتوصيله إلى باب منزلك.
@@ -138,7 +138,7 @@ export default function Home() {
         <div className="container-x">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <h2 className="section-title mb-1!">أحدث الإصدارات 📖</h2>
+              <h2 className="section-title mb-1!">أحدث الإصدارات</h2>
               <p className="text-sm text-soft">جديدنا الذي وصل حديثاً إلى المكتبة</p>
             </div>
             <Link to="/catalog" className="text-sm font-semibold text-brand hover:text-brand-dark">
@@ -157,7 +157,7 @@ export default function Home() {
       <section className="container-x py-12">
         <div className="mb-6 flex items-end justify-between">
           <div>
-            <h2 className="section-title mb-1!">الكتب الأكثر مبيعاً ⭐</h2>
+            <h2 className="section-title mb-1!">الكتب الأكثر مبيعاً</h2>
             <p className="text-sm text-soft">تشكيلة مميّزة يفضّلها طلاب العلم</p>
           </div>
           <Link to="/catalog" className="text-sm font-semibold text-brand hover:text-brand-dark">
@@ -175,7 +175,7 @@ export default function Home() {
       <section id="how" className="container-x scroll-mt-24 pb-4">
         <div className="rounded-2xl border border-line/70 bg-white p-8 shadow-card sm:p-10">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-ink sm:text-3xl">كيف أطلب من كُتُبِي؟ 🛍️</h2>
+            <h2 className="text-2xl font-bold text-ink sm:text-3xl">كيف أطلب من كُتُبِي؟</h2>
             <p className="mx-auto mt-2 max-w-lg text-sm text-soft">
               طريقة الطلب بسيطة جداً ولا تتطلب حساباً أو بطاقة بنكية — الدفع عند الاستلام.
             </p>
@@ -225,7 +225,7 @@ export default function Home() {
       {/* ================= TESTIMONIALS ================= */}
       <section className="bg-brand-pale py-12">
         <div className="container-x">
-          <h2 className="section-title text-center">آراء عملائنا 💬</h2>
+          <h2 className="section-title text-center">آراء عملائنا</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {[
               { name: 'أم يوسف — الدار البيضاء', txt: 'طلبت كتابين، وكّلتهم بجودة التغليف والتوصيل. وصلنا في يومين والدفع عند الاستلام ريّحني كثيراً.', book: 'حصن المسلم' },
@@ -252,7 +252,7 @@ export default function Home() {
       {/* ================= BOTTOM CTA ================= */}
       <section className="container-x py-14">
         <div className="rounded-2xl bg-linear-to-bl from-brand-dark to-brand p-8 text-center text-white sm:p-12">
-          <h2 className="text-2xl font-bold sm:text-3xl">جاهز لاقتناء كتابك المفضّل؟ 📚</h2>
+          <h2 className="text-2xl font-bold sm:text-3xl">جاهز لاقتناء كتابك المفضّل؟</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-white/85">
             تصفّح المكتبة، اختر كتبك، وأرسل بياناتك — وسنتواصل معك لتأكيد الطلب.
           </p>

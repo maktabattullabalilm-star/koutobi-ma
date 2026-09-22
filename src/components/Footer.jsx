@@ -19,7 +19,7 @@ export default function Footer() {
       <div className="border-b border-line bg-brand-pale">
         <div className="container-x flex flex-col items-center gap-4 py-6 text-center sm:flex-row sm:justify-between sm:text-start">
           <div>
-            <h3 className="text-lg font-bold text-ink">خدمة العملاء متواجدة لمساعدتكم 🌱</h3>
+            <h3 className="text-lg font-bold text-ink">خدمة العملاء متواجدة لمساعدتكم</h3>
             <p className="text-sm text-soft">اطلب عبر الموقع وسنتصل بك لتأكيد الطلب والتوصيل.</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -90,7 +90,7 @@ export default function Footer() {
       <div className="border-t border-line">
         <div className="container-x flex flex-col items-center justify-between gap-2 py-5 text-center text-xs text-gray-400 sm:flex-row">
           <span>© {new Date().getFullYear()} مكتبة كُتُبِي.ما — جميع الحقوق محفوظة</span>
-          <span>الدفع عند الاستلام 🛍️ | توصيل لجميع المدن 🚚</span>
+          <span>الدفع عند الاستلام · توصيل لجميع المدن</span>
         </div>
       </div>
     </footer>

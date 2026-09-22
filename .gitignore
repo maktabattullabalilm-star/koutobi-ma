@@ -7,3 +7,5 @@ dist
 *.log
 .DS_Store
 supabase/.temp
+# throwaway frontend audit snapshots
+.audit/

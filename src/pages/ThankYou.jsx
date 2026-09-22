@@ -29,7 +29,7 @@ export default function ThankYou() {
         </svg>
       </span>
 
-      <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">شكراً لك! تم استلام طلبك 🎉</h1>
+      <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">شكراً لك! تم استلام طلبك</h1>
       <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-soft">
         سيصلك اتصال من فريقنا لتأكيد الطلب وتحديد التفاصيل.
         {order?.demo && (
@@ -73,9 +73,9 @@ export default function ThankYou() {
 
       <div className="mx-auto mt-10 grid max-w-lg gap-3 text-start sm:grid-cols-3">
         {[
-          { t: '📞 اتصال تأكيدي', d: 'سنتصل بك قريباً' },
-          { t: '🚚 التوصيل', d: 'لكل المدن المغربية' },
-          { t: '💵 الدفع عند الاستلام', d: 'بدون بطاقة بنكية' },
+          { t: 'اتصال تأكيدي', d: 'سنتصل بك قريباً' },
+          { t: 'التوصيل', d: 'لكل المدن المغربية' },
+          { t: 'الدفع عند الاستلام', d: 'بدون بطاقة بنكية' },
         ].map((s) => (
           <Card key={s.t} className="border-line/60 bg-gray-50 p-4">
             <div className="text-sm font-bold text-ink">{s.t}</div>

@@ -91,7 +91,7 @@ export default function Header() {
             </NavLink>
           ))}
           <Link to="/#how" className="whitespace-nowrap px-3 py-2 text-[13px] font-medium text-brand hover:text-brand-dark">
-            كيف أطلب؟ 💬
+            كيف أطلب؟
           </Link>
         </div>
       </nav>
@@ -135,7 +135,7 @@ export default function Header() {
               </Link>
             ))}
             <Link to="/#how" onClick={() => setOpen(false)} className="block rounded-md px-3 py-3 text-sm font-semibold text-brand hover:bg-brand-pale">
-              كيف أطلب؟ 💬
+              كيف أطلب؟
             </Link>
           </nav>
 

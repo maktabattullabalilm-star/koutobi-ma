@@ -16,7 +16,7 @@ export default function Cart() {
         <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-pale text-brand">
           <IconCart width={28} height={28} />
         </span>
-        <h1 className="mt-4 text-xl font-bold text-ink">سلتك فارغة 🛒</h1>
+        <h1 className="mt-4 text-xl font-bold text-ink">سلتك فارغة</h1>
         <p className="mt-1 text-sm text-soft">تصفّح المكتبة وأضف بعض الكتب الرائعة.</p>
         <Button asChild className="mt-6">
           <Link to="/catalog">تصفّح الكتب</Link>
@@ -33,7 +33,7 @@ export default function Cart() {
 
   return (
     <div className="container-x py-8">
-      <h1 className="mb-1 text-2xl font-bold text-ink sm:text-3xl">سلة التسوق 🛒</h1>
+      <h1 className="mb-1 text-2xl font-bold text-ink sm:text-3xl">سلة التسوق</h1>
       <p className="mb-6 text-sm text-soft">لديك {count} كتاب في السلة · الدفع عند الاستلام</p>
 
       <div className="grid gap-6 lg:grid-cols-3">

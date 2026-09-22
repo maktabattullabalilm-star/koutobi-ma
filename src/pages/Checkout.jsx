@@ -55,7 +55,7 @@ export default function Checkout() {
       if (res.adjusted?.length) {
         show(`تم تعديل الكمية حسب المتوفر: ${res.adjusted.map((a) => `«${a.title}» أصبحت ${a.given}`).join('، ')}`);
       } else {
-        show('تم استلام طلبك بنجاح 🎉');
+        show('تم استلام طلبك');
       }
       navigate('/thank-you', { replace: true });
     } catch (err) {
@@ -96,7 +96,7 @@ export default function Checkout() {
 
   return (
     <div className="container-x py-8">
-      <h1 className="mb-1 text-2xl font-bold text-ink sm:text-3xl">إتمام الطلب 📦</h1>
+      <h1 className="mb-1 text-2xl font-bold text-ink sm:text-3xl">إتمام الطلب</h1>
       <p className="mb-6 text-sm text-soft">أدخل بيانات التوصيل وسنتصل بك هاتفياً للتأكيد.</p>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -121,7 +121,7 @@ export default function Checkout() {
 
           <Card className="border-line/60 bg-brand-pale p-5">
             <h2 className="flex items-center gap-2 text-sm font-bold text-brand-dark">
-              <IconCash width={18} height={18} /> الدفع عند الاستلام 💵
+              <IconCash width={18} height={18} /> الدفع عند الاستلام
             </h2>
             <p className="mt-1.5 text-xs leading-5 text-brand-dark/80">
               لا حاجة لأي بطاقة بنكية. ادفع نقداً عند استلام كتابك من موصل الطلبات.
