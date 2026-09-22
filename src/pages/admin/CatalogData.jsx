@@ -15,7 +15,7 @@ import {
 } from '../../lib/admin';
 import { ATTRIBUTE_COLUMNS, countByColumn, nextSort, reorderList } from '../../lib/catalog';
 import { useToast } from '../../components/Toast';
-import { IconEdit, IconPlus, IconTrash } from '../../components/icons';
+import { IconArrowDown, IconArrowUp, IconEdit, IconPlus, IconTrash } from '../../components/icons';
 import PageHeader from './PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,8 +36,8 @@ const booksWord = (n) => (n === 1 ? 'كتاب واحد' : n === 2 ? 'كتابا�
 function MoveButtons({ onUp, onDown, upDisabled, downDisabled }) {
   return (
     <div className="flex items-center gap-0.5" dir="ltr">
-      <button type="button" onClick={onUp} disabled={upDisabled} title="تحريك لأعلى" aria-label="تحريك لأعلى" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30">↑</button>
-      <button type="button" onClick={onDown} disabled={downDisabled} title="تحريك لأسفل" aria-label="تحريك لأسفل" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30">↓</button>
+      <button type="button" onClick={onUp} disabled={upDisabled} title="تحريك لأعلى" aria-label="تحريك لأعلى" className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"><IconArrowUp width={14} height={14} /></button>
+      <button type="button" onClick={onDown} disabled={downDisabled} title="تحريك لأسفل" aria-label="تحريك لأسفل" className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"><IconArrowDown width={14} height={14} /></button>
     </div>
   );
 }
@@ -75,12 +75,35 @@ function ReassignDelete({ itemLabel, usage, options, onConfirm, onCancel, busy }
   );
 }
 
+/**
+ * Guarded inline confirm: same amber voice as ReassignDelete, without the
+ * replacement picker — for zero-usage deletes and rename propagation.
+ * Nothing on this page ever uses a native browser dialog.
+ */
+function GuardConfirm({ text, confirmLabel = 'تأكيد', onConfirm, onCancel, busy }) {
+  return (
+    <div className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-3">
+      <p className="text-xs font-bold leading-5 text-amber-800">{text}</p>
+      <div className="mt-2 flex gap-2">
+        <Button size="sm" disabled={busy} onClick={onConfirm} className="shrink-0">
+          {busy ? '…' : confirmLabel}
+        </Button>
+        <Button size="sm" type="button" variant="ghost" onClick={onCancel} className="shrink-0">
+          إلغاء
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function AttributeManager({ type, items, usage, onReload }) {
   const { show } = useToast();
   const [value, setValue] = useState('');
   const [editId, setEditId] = useState(null);
   const [draft, setDraft] = useState('');
   const [deletingId, setDeletingId] = useState(null);
+  const [guardDelete, setGuardDelete] = useState(null);
+  const [guardRename, setGuardRename] = useState(null);
   const [busy, setBusy] = useState(false);
   const column = ATTRIBUTE_COLUMNS[type];
 
@@ -116,7 +139,21 @@ function AttributeManager({ type, items, usage, onReload }) {
     }
   };
 
-  const saveRename = async (item) => {
+  const rename = async (item, v) => {
+    const n = usage[item.value_ar] || 0;
+    try {
+      await adminUpdateAttributeOption(item.id, { value_ar: v });
+      if (n > 0) await adminPropagateRename(column, item.value_ar, v);
+      setEditId(null);
+      setGuardRename(null);
+      show('تمت إعادة التسمية وتحديث الكتب ✓');
+      onReload();
+    } catch (err) {
+      show(err.message, 'error');
+    }
+  };
+
+  const saveRename = (item) => {
     const v = draft.trim();
     if (!v) return;
     if (v === item.value_ar) {
@@ -128,16 +165,12 @@ function AttributeManager({ type, items, usage, onReload }) {
       return;
     }
     const n = usage[item.value_ar] || 0;
-    if (n > 0 && !window.confirm(`«${item.value_ar}» مستعملة في ${booksWord(n)} — سيتم تحديثها إلى «${v}». متابعة؟`)) return;
-    try {
-      await adminUpdateAttributeOption(item.id, { value_ar: v });
-      if (n > 0) await adminPropagateRename(column, item.value_ar, v);
+    if (n > 0) {
+      setGuardRename({ item, value: v });
       setEditId(null);
-      show('تمت إعادة التسمية وتحديث الكتب ✓');
-      onReload();
-    } catch (err) {
-      show(err.message, 'error');
+      return;
     }
+    rename(item, v);
   };
 
   const remove = async (item, replacement) => {
@@ -146,6 +179,7 @@ function AttributeManager({ type, items, usage, onReload }) {
       if (replacement) await adminReassignBooks(column, item.value_ar, replacement);
       await adminDeleteAttributeOption(item.id);
       setDeletingId(null);
+      setGuardDelete(null);
       show(replacement ? 'تم نقل الكتب والحذف ✓' : 'تم الحذف');
       onReload();
     } catch (err) {
@@ -158,9 +192,10 @@ function AttributeManager({ type, items, usage, onReload }) {
   const askDelete = (item) => {
     const n = usage[item.value_ar] || 0;
     if (n === 0) {
-      if (!window.confirm(`حذف «${item.value_ar}»؟`)) return;
-      remove(item, null);
+      setDeletingId(null);
+      setGuardDelete(item);
     } else {
+      setGuardDelete(null);
       setDeletingId(item.id);
     }
   };
@@ -228,6 +263,24 @@ function AttributeManager({ type, items, usage, onReload }) {
                   busy={busy}
                 />
               )}
+              {guardDelete && guardDelete.id === a.id && (
+                <GuardConfirm
+                  text={`حذف «${a.value_ar}» نهائياً؟ لا تستعمله أي كتب.`}
+                  confirmLabel="حذف"
+                  busy={busy}
+                  onCancel={() => setGuardDelete(null)}
+                  onConfirm={() => { const g = guardDelete; setGuardDelete(null); remove(g, null); }}
+                />
+              )}
+              {guardRename && guardRename.item.id === a.id && (
+                <GuardConfirm
+                  text={`«${a.value_ar}» مستعملة في ${booksWord(n)} — سيتم تحديثها إلى «${guardRename.value}».`}
+                  confirmLabel="تحديث الكتب"
+                  busy={busy}
+                  onCancel={() => setGuardRename(null)}
+                  onConfirm={() => rename(guardRename.item, guardRename.value)}
+                />
+              )}
             </li>
           );
         })}
@@ -246,6 +299,8 @@ export default function CatalogData() {
   const [editCatId, setEditCatId] = useState(null);
   const [editCatDraft, setEditCatDraft] = useState('');
   const [deletingCatId, setDeletingCatId] = useState(null);
+  const [guardCatDelete, setGuardCatDelete] = useState(null);
+  const [guardCatRename, setGuardCatRename] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -314,7 +369,21 @@ export default function CatalogData() {
     }
   };
 
-  const saveCatRename = async (cat) => {
+  const renameCat = async (cat, v) => {
+    const n = (usage.category || {})[cat.name_ar] || 0;
+    try {
+      await adminUpdateCategory(cat.id, { name_ar: v });
+      if (n > 0) await adminPropagateRename('category', cat.name_ar, v);
+      setEditCatId(null);
+      setGuardCatRename(null);
+      show('تمت إعادة التسمية وتحديث الكتب ✓');
+      load();
+    } catch (err) {
+      show(err.message, 'error');
+    }
+  };
+
+  const saveCatRename = (cat) => {
     const v = editCatDraft.trim();
     if (!v) return;
     if (v === cat.name_ar) {
@@ -326,16 +395,12 @@ export default function CatalogData() {
       return;
     }
     const n = (usage.category || {})[cat.name_ar] || 0;
-    if (n > 0 && !window.confirm(`«${cat.name_ar}» مستعمل في ${booksWord(n)} — سيتم تحديثها إلى «${v}». متابعة؟`)) return;
-    try {
-      await adminUpdateCategory(cat.id, { name_ar: v });
-      if (n > 0) await adminPropagateRename('category', cat.name_ar, v);
+    if (n > 0) {
+      setGuardCatRename({ cat, value: v });
       setEditCatId(null);
-      show('تمت إعادة التسمية وتحديث الكتب ✓');
-      load();
-    } catch (err) {
-      show(err.message, 'error');
+      return;
     }
+    renameCat(cat, v);
   };
 
   const removeCat = async (cat, replacement) => {
@@ -344,6 +409,7 @@ export default function CatalogData() {
       if (replacement) await adminReassignBooks('category', cat.name_ar, replacement);
       await adminDeleteCategory(cat.id);
       setDeletingCatId(null);
+      setGuardCatDelete(null);
       show(replacement ? 'تم نقل الكتب والحذف ✓' : 'تم حذف التصنيف');
       load();
     } catch (err) {
@@ -356,9 +422,10 @@ export default function CatalogData() {
   const askDeleteCat = (cat) => {
     const n = (usage.category || {})[cat.name_ar] || 0;
     if (n === 0) {
-      if (!window.confirm(`حذف تصنيف «${cat.name_ar}»؟`)) return;
-      removeCat(cat, null);
+      setDeletingCatId(null);
+      setGuardCatDelete(cat);
     } else {
+      setGuardCatDelete(null);
       setDeletingCatId(cat.id);
     }
   };
@@ -375,7 +442,7 @@ export default function CatalogData() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <PageHeader
-        title="التصنيفات والخيارات 📋"
+        title="التصنيفات والخيارات"
         description="التصنيفات وقوائم الخيارات (التجليد، المقاس، الورق) التي تظهر في نموذج الكتاب. أي تغيير هنا ينعكس على الكتب تلقائياً."
         crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'التصنيفات والخيارات' }]}
       />
@@ -440,6 +507,24 @@ export default function CatalogData() {
                     onConfirm={(to) => removeCat(c, to)}
                     onCancel={() => setDeletingCatId(null)}
                     busy={busy}
+                  />
+                )}
+                {guardCatDelete && guardCatDelete.id === c.id && (
+                  <GuardConfirm
+                    text={`حذف تصنيف «${c.name_ar}» نهائياً؟ لا تستعمله أي كتب.`}
+                    confirmLabel="حذف"
+                    busy={busy}
+                    onCancel={() => setGuardCatDelete(null)}
+                    onConfirm={() => { const g = guardCatDelete; setGuardCatDelete(null); removeCat(g, null); }}
+                  />
+                )}
+                {guardCatRename && guardCatRename.cat.id === c.id && (
+                  <GuardConfirm
+                    text={`«${c.name_ar}» مستعمل في ${booksWord(n)} — سيتم تحديثها إلى «${guardCatRename.value}».`}
+                    confirmLabel="تحديث الكتب"
+                    busy={busy}
+                    onCancel={() => setGuardCatRename(null)}
+                    onConfirm={() => renameCat(guardCatRename.cat, guardCatRename.value)}
                   />
                 )}
               </li>

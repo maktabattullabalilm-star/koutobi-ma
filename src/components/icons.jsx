@@ -1,5 +1,7 @@
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
   Banknote,
   BookOpen,
   Check,
@@ -44,6 +46,8 @@ export const IconPhone = adapt(Phone, 20);
 export const IconPaperPlane = adapt(Send, 18);
 export const IconChevronDown = adapt(ChevronDown, 16);
 export const IconArrowLeft = adapt(ArrowLeft, 18);
+export const IconArrowUp = adapt(ArrowUp, 16);
+export const IconArrowDown = adapt(ArrowDown, 16);
 
 export const IconStar = ({ filled, width, height, ...p }) => (
   <Star
