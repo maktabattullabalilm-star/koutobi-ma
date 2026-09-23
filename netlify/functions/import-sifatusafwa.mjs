@@ -19,7 +19,7 @@ export const config = {
   path: '/api/import-sifatusafwa',
 };
 
-const HTML_MAX_BYTES = 500 * 1024;
+const HTML_MAX_BYTES = 2 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20000;
 const SIFA_HOSTS = ['sifatusafwa.com'];
 
@@ -50,9 +50,12 @@ export default async function handler(req) {
 
     const body = await req.json().catch(() => ({}));
     let html = body?.html || '';
-    // Paste mode cap: regex parsing on unbounded input = ReDoS/DoS sink.
+    // Paste mode cap: sifa product pages run ~800KB (spec rows live past
+    // byte 500K), so the cap must clear a full page. All parsing regexes
+    // are linear (negated classes, lazy quantifiers — no nested loops),
+    // and this stays far under the platform payload/function limits.
     if (html && html.length > HTML_MAX_BYTES) {
-      return Response.json({ error: 'حجم HTML كبير جدًا (الحد 500KB)' }, { status: 413 });
+      return Response.json({ error: 'حجم HTML كبير جدًا (الحد 2MB)' }, { status: 413 });
     }
     const url = (body?.url || '').trim();
 
