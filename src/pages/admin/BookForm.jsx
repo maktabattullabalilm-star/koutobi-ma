@@ -1,44 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   adminCreateBook,
   adminCreateBookImage,
-  adminDecrementStock,
   adminDeleteBookImage,
   adminGetBookImages,
   adminGetBooks,
   adminUpdateBook,
   adminUpdateBookImage,
   deleteR2Object,
-  getAppSetting,
   getAttributeOptionsForForm,
   getCategoriesForForm,
   uploadR2File,
 } from '../../lib/admin';
-import { CATEGORIES, IMPORT_ISBN_ENDPOINT, IMPORT_SIFATUSAFWA_ENDPOINT } from '../../lib/config';
-import {
-  blobToBase64,
-  extractImageFiles,
-  IMAGE_MAX_COUNT,
-  resizeImageToLimit,
-} from '../../lib/images';
-import { isValidIsbn } from '../../lib/importers';
+import { FALLBACK_CATEGORIES, warnFallback } from '../../lib/site';
+import { blobToBase64, IMAGE_MAX_COUNT } from '../../lib/images';
+import { validateBook } from '../../lib/validators';
+import { useBookImport } from '../../hooks/useBookImport';
+import { pluralImg, useGallery } from '../../hooks/useGallery';
 import { useToast } from '../../components/Toast';
 import { Spinner } from '@/components/ui/spinner';
-import { IconBook, IconCheck, IconStar, IconTrash } from '../../components/icons';
-import PageHeader from './PageHeader';
+import { IconBook, IconCamera, IconCheck, IconChevronLeft, IconChevronRight, IconCopy, IconDownload, IconEye, IconImage, IconLayers, IconStar, IconTrash } from '../../components/icons';
+import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 
 const EMPTY = {
@@ -65,7 +54,7 @@ const EMPTY = {
   is_active: true,
 };
 
-const FALLBACK_CATS = CATEGORIES.map((c) => c.name);
+const FALLBACK_CATS = FALLBACK_CATEGORIES;
 const FALLBACK_PAPER = ['ورق أصفر (شامواه)', 'ورق أبيض'];
 const FALLBACK_BINDING = ['تجليد فني', 'تجليد عادي'];
 const FALLBACK_SIZES = ['17×24 سم', '14×20 سم', '12×17 سم', '24×17 سم'];
@@ -78,32 +67,38 @@ const FORM_TABS = [
   { id: 'sec-status', label: 'النشر' },
 ];
 
-let uidCounter = 0;
-const nextUid = () => `img-${Date.now()}-${uidCounter++}`;
-
-/** Proper Arabic count: 1 → واحدة, 2 → اثنتان, 3+ → number + plural. */
-const pluralImg = (n) => (n === 1 ? 'صورة واحدة' : n === 2 ? 'صورتان' : `${n} صور`);
-
 export default function BookForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const { session } = useAuth();
   const { show } = useToast();
   const navigate = useNavigate();
-  const fileRef = useRef(null);
-  const cameraRef = useRef(null);
-  const [dragging, setDragging] = useState(false);
 
   const [form, setForm] = useState(EMPTY);
-  // Gallery working set: { uid, id?, url, r2_key?, blob?, ext?, preview?, is_primary }
-  // - `blob` set → staged locally, uploaded to R2 on save (never orphaned).
-  // - `id` set → already persisted in book_images.
-  const [images, setImages] = useState([]);
-  const [originalImages, setOriginalImages] = useState([]);
-  const [urlInput, setUrlInput] = useState('');
+  // Gallery working set lives in a hook (images, staging, drop/paste/URL).
+  const {
+    images,
+    originalImages,
+    urlInput,
+    setUrlInput,
+    staging,
+    dragging,
+    setDragging,
+    fileRef,
+    cameraRef,
+    resetGallery,
+    markPrimary,
+    moveImage,
+    removeImage,
+    copyUrl,
+    stageFiles,
+    onDropImages,
+    onPasteImages,
+    addUrlImage,
+    attachCover,
+  } = useGallery();
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(isEdit);
-  const [staging, setStaging] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cats, setCats] = useState([]);
   const [paperOpts, setPaperOpts] = useState([]);
@@ -111,23 +106,6 @@ export default function BookForm() {
   const [sizeOpts, setSizeOpts] = useState([]);
   // Import panel state
   const [importTab, setImportTab] = useState('sifa'); // sifa | isbn
-  const [sifaUrl, setSifaUrl] = useState('');
-  const [sifaHtml, setSifaHtml] = useState('');
-  const [showHtmlFallback, setShowHtmlFallback] = useState(false);
-  const [isbnInput, setIsbnInput] = useState('');
-  const [importing, setImporting] = useState(false);
-
-  // Revoke local preview URLs on unmount.
-  const imagesRef = useRef(images);
-  imagesRef.current = images;
-  useEffect(
-    () => () => {
-      imagesRef.current.forEach((i) => {
-        if (i.preview) URL.revokeObjectURL(i.preview);
-      });
-    },
-    []
-  );
 
   useEffect(() => {
     // Fetch dropdown options (public reads — no admin check needed)
@@ -138,12 +116,14 @@ export default function BookForm() {
       getAttributeOptionsForForm('size'),
     ])
       .then(([c, p, b, s]) => {
+        if (!c.length) warnFallback('categories');
         setCats(c.length ? c : FALLBACK_CATS);
         setPaperOpts(p.length ? p : FALLBACK_PAPER);
         setBindingOpts(b.length ? b : FALLBACK_BINDING);
         setSizeOpts(s.length ? s : FALLBACK_SIZES);
       })
       .catch(() => {
+        warnFallback('catalog options');
         setCats(FALLBACK_CATS);
         setPaperOpts(FALLBACK_PAPER);
         setBindingOpts(FALLBACK_BINDING);
@@ -169,133 +149,14 @@ export default function BookForm() {
           old_price: b.old_price ?? '',
           pages: b.pages ?? '',
         });
-        const rows = (imgs || []).map((r) => ({
-          uid: nextUid(),
-          id: r.id,
-          url: r.url,
-          r2_key: r.r2_key || null,
-          is_primary: !!r.is_primary,
-        }));
-        if (rows.length && !rows.some((r) => r.is_primary)) rows[0].is_primary = true;
-        setImages(rows);
-        setOriginalImages(rows.map((r) => ({ ...r })));
+        const rows = imgs || [];
+        resetGallery(rows);
       })
       .catch((e) => show(e.message, 'error'))
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, isEdit, navigate, resetGallery, show]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const markPrimary = (uid) =>
-    setImages((prev) => prev.map((i) => ({ ...i, is_primary: i.uid === uid })));
-
-  const moveImage = (uid, dir) =>
-    setImages((prev) => {
-      const ix = prev.findIndex((i) => i.uid === uid);
-      const jx = ix + dir;
-      if (ix < 0 || jx < 0 || jx >= prev.length) return prev;
-      const next = [...prev];
-      [next[ix], next[jx]] = [next[jx], next[ix]];
-      return next;
-    });
-
-  const removeImage = (uid) =>
-    setImages((prev) => {
-      const target = prev.find((i) => i.uid === uid);
-      if (target?.preview) URL.revokeObjectURL(target.preview);
-      const next = prev.filter((i) => i.uid !== uid);
-      if (target?.is_primary && next.length) next[0] = { ...next[0], is_primary: true };
-      return next;
-    });
-
-  const copyUrl = async (url) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      show('تم نسخ الرابط ✓');
-    } catch {
-      show('تعذّر النسخ — انسخ الرابط يدوياً', 'error');
-    }
-  };
-
-  /** Resize selected files in the browser and stage them (upload happens on save). */
-  const stageFiles = async (fileList) => {    const files = [...(fileList || [])].filter((f) => f.type?.startsWith('image/'));
-    if (!files.length) return;
-    if (images.length + files.length > IMAGE_MAX_COUNT) {
-      show(`الحد الأقصى ${IMAGE_MAX_COUNT} صور لكل كتاب`, 'error');
-      return;
-    }
-    setStaging(true);
-    try {
-      const staged = [];
-      for (const f of files) {
-        const { blob, ext } = await resizeImageToLimit(f);
-        staged.push({
-          uid: nextUid(),
-          blob,
-          ext,
-          url: '',
-          r2_key: null,
-          preview: URL.createObjectURL(blob),
-          is_primary: false,
-        });
-      }
-      setImages((prev) => {
-        const next = [...prev, ...staged];
-        if (!prev.some((i) => i.is_primary) && next.length) {
-          next[prev.length] = { ...next[prev.length], is_primary: true };
-        }
-        return next;
-      });
-      show(`تم تجهيز ${staged.length} صورة — ستُرفع عند الحفظ`);
-    } catch (err) {
-      show(err.message, 'error');
-    } finally {
-      setStaging(false);
-      if (fileRef.current) fileRef.current.value = '';
-      if (cameraRef.current) cameraRef.current.value = '';
-    }
-  };
-
-  /** Drop image files onto the gallery zone. */
-  const onDropImages = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    const files = extractImageFiles(e.dataTransfer?.items);
-    if (files.length) stageFiles(files);
-  };
-
-  /** Paste a copied image (right-click → copy image, then Ctrl+V here). */
-  const onPasteImages = (e) => {
-    const files = extractImageFiles(e.clipboardData?.items);
-    if (files.length) {
-      e.preventDefault();
-      stageFiles(files);
-    }
-  };
-
-  const addUrlImage = () => {
-    const url = urlInput.trim();
-    if (!url) return;
-    if (!/^https?:\/\//i.test(url)) {
-      show('الرابط يجب أن يبدأ بـ http(s)://', 'error');
-      return;
-    }
-    if (images.length >= IMAGE_MAX_COUNT) {
-      show(`الحد الأقصى ${IMAGE_MAX_COUNT} صور لكل كتاب`, 'error');
-      return;
-    }
-    setImages((prev) => [
-      ...prev,
-      {
-        uid: nextUid(),
-        url,
-        r2_key: null,
-        is_primary: prev.length === 0 || !prev.some((i) => i.is_primary),
-      },
-    ]);
-    setUrlInput('');
-  };
 
   /** Merge imported fields into the form (only non-empty) + attach cover. Review = this form. */
   const applyImport = (fields, cover, sourceLabel, warnings = []) => {
@@ -306,107 +167,34 @@ export default function BookForm() {
       }
       return next;
     });
-    if (cover?.url) {
-      setImages((prev) => {
-        if (prev.length >= IMAGE_MAX_COUNT) {
-          show('المعرض ممتلئ — أُضيفت البيانات بدون الغلاف', 'error');
-          return prev;
-        }
-        return [
-          ...prev.map((i) => ({ ...i, is_primary: false })),
-          { uid: nextUid(), url: cover.url, r2_key: cover.r2_key || null, is_primary: true },
-        ];
-      });
-    }
+    if (cover?.url) attachCover(cover);
     if (warnings.length) show(`ملاحظات: ${warnings.join('؛ ')}`, 'error');
     show(`تم جلب البيانات (${sourceLabel}) — راجعها قبل الحفظ ✓`);
   };
 
-  const callImportEndpoint = async (endpoint, payload) => {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${session?.access_token || ''}`,
-      },
-      body: JSON.stringify(payload),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      const err = new Error(json?.error || `فشل الاستيراد (${res.status})`);
-      err.code = json?.code;
-      throw err;
-    }
-    return json;
-  };
-
-  const importFromSifaUrl = async () => {
-    const url = sifaUrl.trim();
-    if (!url) {
-      show('الصق رابط صفحة المنتج أولاً', 'error');
-      return;
-    }
-    setImporting(true);
-    try {
-      const json = await callImportEndpoint(IMPORT_SIFATUSAFWA_ENDPOINT, { url });
-      setShowHtmlFallback(false);
-      applyImport(json.fields, json.cover, 'sifatusafwa', json.warnings);
-    } catch (err) {
-      if (err.code === 'FETCH_BLOCKED') setShowHtmlFallback(true);
-      show(err.message, 'error');
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const importFromSifaHtml = async () => {
-    if (!sifaHtml.trim()) {
-      show('الصق محتوى الصفحة أولاً', 'error');
-      return;
-    }
-    setImporting(true);
-    try {
-      const json = await callImportEndpoint(IMPORT_SIFATUSAFWA_ENDPOINT, {
-        html: sifaHtml,
-        url: sifaUrl.trim() || undefined,
-      });
-      applyImport(json.fields, json.cover, 'sifatusafwa', json.warnings);
-    } catch (err) {
-      show(err.message, 'error');
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const importFromIsbn = async () => {
-    const isbn = isbnInput.trim();
-    if (!isbn) {
-      show('أدخل رقم ISBN أولاً', 'error');
-      return;
-    }
-    if (!isValidIsbn(isbn)) {
-      show('رقم ISBN غير صالح — تحقق من الرقم', 'error');
-      return;
-    }
-    setImporting(true);
-    try {
-      const json = await callImportEndpoint(IMPORT_ISBN_ENDPOINT, { isbn });
-      applyImport(json.fields, json.cover, 'المكتبة العالمية', json.warnings);
-    } catch (err) {
-      show(err.message, 'error');
-    } finally {
-      setImporting(false);
-    }
-  };
+  // Import panel logic lives in a hook (state + endpoint calls);
+  // merging stays here because it touches form/gallery state.
+  const {
+    sifaUrl,
+    setSifaUrl,
+    sifaHtml,
+    setSifaHtml,
+    isbnInput,
+    setIsbnInput,
+    importing,
+    showHtmlFallback,
+    importFromSifaUrl,
+    importFromSifaHtml,
+    importFromIsbn,
+  } = useBookImport({ accessToken: session?.access_token, onApply: applyImport });
 
   const save = async (e) => {
     e.preventDefault();
     // key → [message, section anchor] so the summary can jump to the field.
-    const errs = {};
-    if (!form.title_ar.trim()) errs.title_ar = ['عنوان الكتاب مطلوب', 'sec-info'];
-    const price = Number(form.price);
-    if (form.price === '' || Number.isNaN(price) || price < 0) errs.price = ['أدخل سعراً صحيحاً', 'sec-info'];
-    if (form.old_price && (Number.isNaN(Number(form.old_price)) || Number(form.old_price) <= price)) errs.old_price = ['السعر القديم يجب أن يكون أكبر من السعر الحالي', 'sec-info'];
+    const catNames = (cats.length ? cats : FALLBACK_CATS).map((c) =>
+      typeof c === 'string' ? c : c.name_ar || c.name
+    );
+    const errs = validateBook(form, { categories: catNames });
     setErrors(errs);
     if (Object.keys(errs).length) {
       show('تحقق من الحقول الناقصة', 'error');
@@ -414,6 +202,7 @@ export default function BookForm() {
     }
 
     setSaving(true);
+    const price = Number(form.price);
     // R2 keys uploaded during THIS save — deleted again if the save fails (no orphans).
     const uploadedKeys = [];
     try {
@@ -424,7 +213,11 @@ export default function BookForm() {
         if (img.blob) {
           const base64 = await blobToBase64(img.blob);
           const up = await uploadR2File(
-            { name: `book-${Date.now()}-${n++}.${img.ext || 'jpg'}`, type: img.blob.type || 'image/jpeg', base64 },
+            {
+              name: `book-${Date.now()}-${n++}.${img.ext || 'jpg'}`,
+              type: img.blob.type || 'image/jpeg',
+              base64,
+            },
             session?.access_token
           );
           uploadedKeys.push(up.key);
@@ -527,9 +320,13 @@ export default function BookForm() {
 
   const toggle = (k) => () => setForm((f) => ({ ...f, [k]: !f[k] }));
   const check = (k, label) => (
-    <label className={`flex flex-1 cursor-pointer items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium transition ${form[k] ? 'border-brand bg-brand-light text-brand' : 'border-line bg-white text-soft'}`}>
+    <label
+      className={`flex flex-1 cursor-pointer items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium transition ${form[k] ? 'border-brand bg-brand-light text-brand' : 'border-line bg-white text-soft'}`}
+    >
       <input type="checkbox" checked={form[k]} onChange={toggle(k)} className="sr-only" />
-      <span className={`h-3 w-3 rounded-xs border ${form[k] ? 'border-brand bg-brand' : 'border-gray-300 bg-white'}`} />
+      <span
+        className={`h-3 w-3 rounded-xs border ${form[k] ? 'border-brand bg-brand' : 'border-gray-300 bg-white'}`}
+      />
       {label}
     </label>
   );
@@ -537,19 +334,16 @@ export default function BookForm() {
   const field = (label, name, extra = {}) => (
     <Field>
       <FieldLabel htmlFor={name}>{label}</FieldLabel>
-      <Input
-        id={name}
-        value={form[name]}
-        onChange={set(name)}
-        {...extra}
-      />
+      <Input id={name} value={form[name]} onChange={set(name)} {...extra} />
       {errors[name] && <FieldError>{errors[name][0]}</FieldError>}
     </Field>
   );
 
   const selectField = (label, name, options) => (
     <div>
-      <Label htmlFor={name} className="mb-1.5 block">{label}</Label>
+      <Label htmlFor={name} className="mb-1.5 block">
+        {label}
+      </Label>
       <Select value={form[name]} onValueChange={(v) => setForm((f) => ({ ...f, [name]: v }))}>
         <SelectTrigger id={name}>
           <SelectValue />
@@ -579,11 +373,18 @@ export default function BookForm() {
       <PageHeader
         title={isEdit ? 'تعديل الكتاب ✏️' : 'إضافة كتاب جديد 📚'}
         description="املأ بيانات الكتاب وارفعه ليكون جاهزاً للبيع."
-        crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'الكتب', to: '/admin/books' }, { label: isEdit ? 'تعديل' : 'جديد' }]}
+        crumbs={[
+          { label: 'لوحة التحكم', to: '/admin/dashboard' },
+          { label: 'الكتب', to: '/admin/books' },
+          { label: isEdit ? 'تعديل' : 'جديد' },
+        ]}
       />
 
       {/* sticky section tabs */}
-      <nav className="sticky top-0 z-10 -mx-1 mb-5 flex gap-1 overflow-x-auto bg-gray-50/95 px-1 py-2 backdrop-blur-sm" aria-label="أقسام النموذج">
+      <nav
+        className="sticky top-0 z-10 -mx-1 mb-5 flex gap-1 overflow-x-auto bg-gray-50/95 px-1 py-2 backdrop-blur-sm"
+        aria-label="أقسام النموذج"
+      >
         {FORM_TABS.map((t) => (
           <a
             key={t.id}
@@ -612,17 +413,35 @@ export default function BookForm() {
         )}
         {/* قسم البيانات */}
         <section id="sec-info" className="card scroll-mt-24 border border-line/70 p-5">
-          <h2 className="admin-section-title mb-4">معلومات الكتاب</h2>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <IconBook width={15} height={15} />
+            </span>
+            <h2 className="admin-section-title">معلومات الكتاب</h2>
+          </div>
+          <p className="mb-4 text-xs text-soft">البيانات الأساسية التي تظهر في بطاقة الكتاب بالمتجر.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {field('العنوان *', 'title_ar', { placeholder: 'مثال: الداء والدواء' })}
             {field('العنوان الفرعي', 'subtitle_ar', { placeholder: 'اختياري' })}
             {field('المؤلف', 'author_ar', { placeholder: 'مثال: ابن القيم الجوزية' })}
             {field('الناشر', 'publisher_ar', { placeholder: 'مثال: دار ابن كثير' })}
             {selectField('التصنيف *', 'category', cats)}
-            {field('السعر (درهم) *', 'price', { type: 'number', min: 0, step: '0.01', placeholder: 'مثال: 80' })}
-            {field('السعر قبل الخصم (اختياري)', 'old_price', { type: 'number', min: 0, step: '0.01', placeholder: 'اتركه فارغاً إن لم يوجد خصم' })}
+            {field('السعر (درهم) *', 'price', {
+              type: 'number',
+              min: 0,
+              step: '0.01',
+              placeholder: 'مثال: 80',
+            })}
+            {field('السعر قبل الخصم (اختياري)', 'old_price', {
+              type: 'number',
+              min: 0,
+              step: '0.01',
+              placeholder: 'اتركه فارغاً إن لم يوجد خصم',
+            })}
             <div className="sm:col-span-2">
-              <Label htmlFor="description_ar" className="mb-1.5 block">الوصف</Label>
+              <Label htmlFor="description_ar" className="mb-1.5 block">
+                الوصف
+              </Label>
               <Textarea
                 id="description_ar"
                 value={form.description_ar}
@@ -637,7 +456,13 @@ export default function BookForm() {
 
         {/* قسم بيانات الطبعة */}
         <section id="sec-edition" className="card scroll-mt-24 border border-line/70 p-5">
-          <h2 className="admin-section-title mb-4">بيانات الطبعة والمخزون</h2>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <IconLayers width={15} height={15} />
+            </span>
+            <h2 className="admin-section-title">بيانات الطبعة والمخزون</h2>
+          </div>
+          <p className="mb-4 text-xs text-soft">مواصفات النسخة المعروضة وكمية المخزون.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {field('عدد الصفحات', 'pages', { type: 'number', min: 0, placeholder: 'مثال: 480' })}
             {field('رقم ISBN', 'isbn', { placeholder: 'مثال: 978-2-7451-...' })}
@@ -656,9 +481,15 @@ export default function BookForm() {
 
         {/* قسم الاستيراد */}
         <section id="sec-import" className="card scroll-mt-24 border border-line/70 p-5">
-          <h2 className="admin-section-title">استيراد بيانات الكتاب 📥</h2>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <IconDownload width={15} height={15} />
+            </span>
+            <h2 className="admin-section-title">استيراد بيانات الكتاب</h2>
+          </div>
           <p className="mb-4 mt-1 text-xs leading-5 text-soft">
-            اجلب البيانات من مصدر خارجي ثم راجعها وعدّلها قبل الحفظ — لا يُنشأ أي كتاب تلقائياً، والسعر يُحدَّد يدوياً دائماً (MAD).
+            اجلب البيانات من مصدر خارجي ثم راجعها وعدّلها قبل الحفظ — لا يُنشأ أي كتاب تلقائياً، والسعر
+            يُحدَّد يدوياً دائماً (MAD).
           </p>
 
           <div className="mb-4 flex gap-2">
@@ -714,7 +545,12 @@ export default function BookForm() {
                     className="mt-2 bg-white font-mono text-xs"
                     aria-label="محتوى الصفحة المنسوخ"
                   />
-                  <Button type="button" onClick={importFromSifaHtml} disabled={importing} className="mt-2 w-full">
+                  <Button
+                    type="button"
+                    onClick={importFromSifaHtml}
+                    disabled={importing}
+                    className="mt-2 w-full"
+                  >
                     {importing ? 'جارٍ التحليل…' : 'تحليل المحتوى الملصق'}
                   </Button>
                 </div>
@@ -745,10 +581,20 @@ export default function BookForm() {
 
         {/* قسم الصور */}
         <section id="sec-gallery" className="card scroll-mt-24 border border-line/70 p-5">
-          <h2 className="admin-section-title">صور الكتاب (حتى {IMAGE_MAX_COUNT})</h2>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <IconImage width={15} height={15} />
+            </span>
+            <h2 className="admin-section-title">صور الكتاب (حتى {IMAGE_MAX_COUNT})</h2>
+            {images.length > 0 && (
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold tabular-nums text-soft">
+                {pluralImg(images.length)}
+              </span>
+            )}
+          </div>
           <p className="mb-4 mt-1 text-xs leading-5 text-soft">
-            الصور المختارة من جهازك تُصغَّر تلقائياً ثم تُحفظ في تخزين المتجر عند الحفظ.
-            الصورة ★ الرئيسية تظهر في بطاقات المتجر.
+            الصور المختارة من جهازك تُصغَّر تلقائياً ثم تُحفظ في تخزين المتجر عند الحفظ. الصورة الرئيسية
+            تظهر في بطاقات المتجر.
           </p>
 
           {images.length > 0 && (
@@ -760,15 +606,19 @@ export default function BookForm() {
                 >
                   <div className="relative">
                     {img.preview || img.url ? (
-                      <img src={img.preview || img.url} alt={`صورة ${ix + 1}`} className="aspect-[3/4] w-full object-cover" />
+                      <img
+                        src={img.preview || img.url}
+                        alt={`صورة ${ix + 1}`}
+                        className="aspect-[3/4] w-full object-cover"
+                      />
                     ) : (
                       <div className="flex aspect-[3/4] w-full items-center justify-center bg-gray-50 text-gray-300">
                         <IconBook width={24} height={24} />
                       </div>
                     )}
                     {img.is_primary && (
-                      <span className="absolute right-1.5 top-1.5 rounded-sm bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
-                        ★ الرئيسية
+                      <span className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-sm bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+                        <IconStar filled width={10} height={10} /> الرئيسية
                       </span>
                     )}
                     {img.blob && (
@@ -784,9 +634,10 @@ export default function BookForm() {
                         onClick={() => copyUrl(img.url)}
                         dir="ltr"
                         title="اضغط لنسخ الرابط"
-                        className="block w-full truncate text-left text-[10px] text-soft underline decoration-dotted hover:text-brand"
+                        className="flex w-full items-center gap-1 text-left text-[10px] text-soft underline decoration-dotted hover:text-brand"
                       >
-                        📋 {img.url}
+                        <IconCopy width={10} height={10} className="shrink-0" />
+                        <span className="min-w-0 flex-1 truncate">{img.url}</span>
                       </button>
                     ) : (
                       <span className="block text-[10px] text-soft">معاينة محلية — لم تُرفع بعد</span>
@@ -803,8 +654,26 @@ export default function BookForm() {
                         <IconStar filled={img.is_primary} width={16} height={16} />
                       </button>
                       <div className="flex items-center gap-0.5" dir="ltr">
-                        <button type="button" onClick={() => moveImage(img.uid, -1)} disabled={ix === 0} title="تقديم" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تقديم">‹</button>
-                        <button type="button" onClick={() => moveImage(img.uid, 1)} disabled={ix === images.length - 1} title="تأخير" className="flex h-9 w-9 items-center justify-center rounded-md text-base text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30" aria-label="تأخير">›</button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(img.uid, -1)}
+                          disabled={ix === 0}
+                          title="تقديم"
+                          className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"
+                          aria-label="تقديم"
+                        >
+                          <IconChevronLeft width={14} height={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(img.uid, 1)}
+                          disabled={ix === images.length - 1}
+                          title="تأخير"
+                          className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"
+                          aria-label="تأخير"
+                        >
+                          <IconChevronRight width={14} height={14} />
+                        </button>
                       </div>
                       <button
                         type="button"
@@ -832,7 +701,13 @@ export default function BookForm() {
                 if (!staging && !saving && images.length < IMAGE_MAX_COUNT) fileRef.current?.click();
               }}
               onKeyDown={(e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && !staging && !saving && images.length < IMAGE_MAX_COUNT) fileRef.current?.click();
+                if (
+                  (e.key === 'Enter' || e.key === ' ') &&
+                  !staging &&
+                  !saving &&
+                  images.length < IMAGE_MAX_COUNT
+                )
+                  fileRef.current?.click();
               }}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -847,7 +722,9 @@ export default function BookForm() {
                   : 'border-line bg-gray-50 hover:border-brand/50 hover:bg-brand-pale/50'
               }`}
             >
-              <span className="text-2xl" aria-hidden>🖼️</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-light text-brand" aria-hidden>
+                <IconImage width={20} height={20} />
+              </span>
               <span className="text-sm font-bold text-ink">
                 {staging
                   ? 'جارٍ التجهيز…'
@@ -855,7 +732,9 @@ export default function BookForm() {
                     ? `اكتمل العدد (${IMAGE_MAX_COUNT})`
                     : 'اسحب الصور إلى هنا، أو الصقها (Ctrl+V)، أو اضغط للاختيار من جهازك'}
               </span>
-              <span className="text-[11px] text-soft">تُصغَّر تلقائياً إلى أقل من 180 ك.ب — لا حاجة لأي روابط</span>
+              <span className="text-[11px] text-soft">
+                تُصغَّر تلقائياً إلى أقل من 180 ك.ب — لا حاجة لأي روابط
+              </span>
             </div>
             <input
               ref={fileRef}
@@ -872,7 +751,7 @@ export default function BookForm() {
               variant="outline"
               className="w-full"
             >
-              📷 التقط صورة بالكاميرا
+              <IconCamera width={16} height={16} /> التقط صورة بالكاميرا
             </Button>
             <input
               ref={cameraRef}
@@ -911,10 +790,16 @@ export default function BookForm() {
 
         {/* قسم الحالة */}
         <section id="sec-status" className="card scroll-mt-24 border border-line/70 p-5">
-          <h2 className="admin-section-title mb-4">الحالة والعرض</h2>
+          <div className="mb-1 flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+              <IconEye width={15} height={15} />
+            </span>
+            <h2 className="admin-section-title">الحالة والعرض</h2>
+          </div>
+          <p className="mb-4 text-xs text-soft">التحكم في ظهور الكتاب وتمييزه في المتجر.</p>
           <div className="flex flex-wrap gap-3">
             {check('is_new', 'كتاب جديد')}
-            {check('is_featured', '⭐ كتاب مميز')}
+            {check('is_featured', (<span className="flex items-center gap-1.5"><IconStar filled width={14} height={14} className="text-amber-500" /> كتاب مميز</span>))}
             {check('is_out_of_stock', 'نفدت الكمية')}
             {check('is_active', 'منشور في المتجر')}
           </div>

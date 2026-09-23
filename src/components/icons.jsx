@@ -4,11 +4,17 @@ import {
   ArrowUp,
   Banknote,
   BookOpen,
+  Camera,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Download,
   Eye,
   Headset,
   Heart,
+  Image,
   Inbox,
   LayoutGrid,
   Layers,
@@ -51,6 +57,12 @@ export const IconHeart = adapt(Heart, 18);
 export const IconPhone = adapt(Phone, 20);
 export const IconPaperPlane = adapt(Send, 18);
 export const IconChevronDown = adapt(ChevronDown, 16);
+export const IconChevronLeft = adapt(ChevronLeft, 16);
+export const IconChevronRight = adapt(ChevronRight, 16);
+export const IconCamera = adapt(Camera, 18);
+export const IconImage = adapt(Image, 24);
+export const IconCopy = adapt(Copy, 12);
+export const IconDownload = adapt(Download, 16);
 export const IconArrowLeft = adapt(ArrowLeft, 18);
 export const IconArrowUp = adapt(ArrowUp, 16);
 export const IconArrowDown = adapt(ArrowDown, 16);
