@@ -132,6 +132,11 @@ const SPEC_KEYS = [
   'Reference',
   'Harakat',
   'Print Quality',
+  // French locale pages (/fr/) use French labels for the same spec block.
+  'Titre',
+  'Auteur',
+  'Édition',
+  'Couverture',
 ];
 
 /**
@@ -166,14 +171,14 @@ export function parseSifatusafwa(html) {
     // Skip label-only rows ("Author:") and prefix hits ("AUTHORS" nav header):
     // a real value carries at least one letter or digit.
     if (!/[\p{L}\p{N}]/u.test(val)) continue;
-    if (key === 'title' && !out.title) out.title = val;
-    else if (key === 'author' && !out.author) out.author = val;
-    else if (key === 'edition' && !out.publisher) out.publisher = val;
+    if ((key === 'title' || key === 'titre') && !out.title) out.title = val;
+    else if ((key === 'author' || key === 'auteur') && !out.author) out.author = val;
+    else if ((key === 'edition' || key === 'édition') && !out.publisher) out.publisher = val;
     else if (key === 'pages' && out.pages == null) {
       const n = parseInt(val.replace(/[^\d]/g, ''), 10);
       if (Number.isFinite(n) && n > 0) out.pages = n;
     } else if (key === 'format' && !out.size) out.size = val;
-    else if (key === 'cover' && !out.binding) out.binding = val;
+    else if ((key === 'cover' || key === 'couverture') && !out.binding) out.binding = val;
     else if (key === 'volumes' && !out.volumes) out.volumes = val;
     else if (key === 'checking and preparation' && !out.checker) out.checker = val;
     else if (key === 'reference' && !out.reference) out.reference = val;

@@ -97,6 +97,16 @@ describe('parseSifatusafwa', () => {
     expect(p.author).toBe('جهاد الترباني');
     expect(p.title).toBe('كتاب الاختبار');
   });
+
+  it('parses French-locale spec labels (Titre/Auteur/Édition/Couverture)', () => {
+    const html = `<html><body><div>Auteurs</div><div>Auteur:</div><ul><li>- Titre معجزات النبي</li><li>- Auteur الإمام ابن كثير</li><li>- Édition دار التقوى</li><li>- Pages 375</li><li>- Format 17x24cm</li><li>- Couverture Rigide</li></ul></body></html>`;
+    const p = parseSifatusafwa(html);
+    expect(p.title).toBe('معجزات النبي');
+    expect(p.author).toBe('الإمام ابن كثير');
+    expect(p.publisher).toBe('دار التقوى');
+    expect(p.pages).toBe(375);
+    expect(sifaToBookFields(p).binding_ar).toBe('مجلد فني');
+  });
 });
 
 describe('htmlToTextLines + metaContent', () => {
