@@ -69,20 +69,6 @@ your TEST order row must be there, with its items in `order_items`.
 - [ ] Add an attribute value → reorder with ↑↓ → rename a used one → books update
 - [ ] Delete the `TEST-تصنيف` afterwards so the store stays clean
 
-## Import panel (`/admin/books/new` → استيراد 📥)
-
-- [ ] ISBN tab: enter `9780131103627` → بحث → fields prefill from Open Library,
-      cover attached as primary → **delete the test book afterwards** (and its
-      `covers/imported-*` object from R2)
-- [ ] ISBN tab: enter `123` → clear client-side error "رقم ISBN غير صالح"
-- [ ] ISBN tab: enter a valid-but-unknown ISBN (e.g. `9786038245999`) →
-      friendly "لم يتم العثور" message, form stays manual
-- [ ] sifatusafwa tab: paste a product URL → جلب → fields prefill
-      (if the server is blocked: paste-HTML box appears → open the page in your
-      browser, Ctrl+U, copy all, paste, تحليل → same prefill)
-- [ ] Imported cover lands in R2 under `covers/imported-*` (check R2 dashboard)
-- [ ] Nothing is created until you press نشر/حفظ — review screen IS the form
-
 ## Two-factor login (admin → الإعدادات → التحقق بخطوتين)
 
 - [ ] Dashboard shows the amber attention item linking to settings when 2FA is off
@@ -97,8 +83,8 @@ your TEST order row must be there, with its items in `order_items`.
 
 ```bash
 netlify dev --port 8888   # serves site + functions at :8888
-curl -X POST localhost:8888/api/import-isbn \
-  -H 'Content-Type: application/json' -d '{"isbn":"x"}'   # → 401 without admin JWT
+curl -X POST localhost:8888/api/upload-image \
+  -H 'Content-Type: application/json' -d '{}'   # → 401 without admin JWT
 ```
 Happy-path function tests need a real admin session — use the browser flow above.
 
@@ -123,5 +109,9 @@ to Netlify on your explicit approval.
 
 ---
 *Note for developers: an automated vitest suite also exists
-(`npm test`, 99 tests, mocked Supabase). It guards the code but never
-replaces the hand-testing above.*
+(`npm test`, 149 tests across 18 files, mocked Supabase;
+`npm run test:coverage` enforces the ratchet floor in `vite.config.js`).
+It guards pure helpers, validators, admin domain modules, route guards,
+and the checkout validation flow — but never replaces the hand-testing above.
+Live RPC checks (`create_order` pricing/stock/phone/rate-limit, hardened
+`decrement_stock`) were verified directly against the project DB on 2026-09-22.*

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   adminCreateBook,
@@ -71,7 +71,6 @@ export default function BookForm() {
   const { session } = useAuth();
   const { show } = useToast();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [form, setForm] = useState(EMPTY);
   // Gallery working set lives in a hook (images, staging, drop/paste/URL).
@@ -94,7 +93,6 @@ export default function BookForm() {
     onDropImages,
     onPasteImages,
     addUrlImage,
-    attachCover,
   } = useGallery();
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(isEdit);
@@ -129,21 +127,6 @@ export default function BookForm() {
 
     if (!isEdit) {
       setForm({ ...EMPTY, cover_image: '' });
-      // One-shot handoff from the standalone import page (new books only —
-      // the import flow never runs while editing). Cleared after applying.
-      const data = location.state?.importData;
-      if (data) {
-        setForm((f) => {
-          const next = { ...f };
-          for (const [k, v] of Object.entries(data.fields || {})) {
-            if (v !== '' && v != null && k in next) next[k] = v;
-          }
-          return next;
-        });
-        if (data.cover?.url) attachCover(data.cover);
-        show(`تم جلب البيانات (${data.sourceLabel}) — راجعها قبل الحفظ ✓`);
-        navigate(location.pathname, { replace: true, state: {} });
-      }
       return;
     }
     Promise.all([adminGetBooks(), adminGetBookImages(id)])
@@ -166,7 +149,7 @@ export default function BookForm() {
       })
       .catch((e) => show(e.message, 'error'))
       .finally(() => setLoading(false));
-  }, [attachCover, id, isEdit, location, navigate, resetGallery, show]);
+  }, [id, isEdit, navigate, resetGallery, show]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 

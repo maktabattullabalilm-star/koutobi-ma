@@ -16,8 +16,6 @@ import path from 'node:path';
  *   because server-only keys (SUPABASE_URL, R2_*) live outside VITE_*.
  */
 const FUNCTION_MODULES = [
-  'netlify/functions/import-sifatusafwa.mjs',
-  'netlify/functions/import-isbn.mjs',
   'netlify/functions/upload-image.mjs',
   'netlify/functions/delete-image.mjs',
 ];

@@ -22,7 +22,6 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const BooksAdmin = lazy(() => import('./pages/admin/BooksAdmin'));
 const BookForm = lazy(() => import('./pages/admin/BookForm'));
-const BookImport = lazy(() => import('./pages/admin/BookImport'));
 const OrdersAdmin = lazy(() => import('./pages/admin/OrdersAdmin'));
 const CatalogData = lazy(() => import('./pages/admin/CatalogData'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
@@ -72,7 +71,6 @@ export default function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="books" element={<BooksAdmin />} />
               <Route path="books/new" element={<BookForm />} />
-              <Route path="books/import" element={<BookImport />} />
               <Route path="books/:id/edit" element={<BookForm />} />
               <Route path="orders" element={<OrdersAdmin />} />
               <Route path="catalog" element={<CatalogData />} />

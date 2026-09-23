@@ -268,14 +268,9 @@ export default function BooksAdmin() {
         description={books ? `${books.length} كتاب في المكتبة` : 'جارٍ التحميل…'}
         crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'الكتب' }]}
         actions={
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/admin/books/import">استيراد بيانات</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/admin/books/new">＋ إضافة كتاب</Link>
-            </Button>
-          </div>
+          <Button asChild>
+            <Link to="/admin/books/new">＋ إضافة كتاب</Link>
+          </Button>
         }
       />
 

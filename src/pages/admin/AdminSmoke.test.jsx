@@ -89,11 +89,9 @@ vi.mock('../../context/AuthContext', () => ({
   })),
 }));
 
-const { mockNavigate, mockShow, mockLocation } = vi.hoisted(() => ({
+const { mockNavigate, mockShow } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockShow: vi.fn(),
-  // stable identity across renders (like the real router) so mount effects run once
-  mockLocation: { pathname: '/admin/books/new', state: {} },
 }));
 
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -101,7 +99,6 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useLocation: () => mockLocation,
     useParams: () => ({}),
     Link: ({ to, children, ...rest }) => (
       <a href={typeof to === 'string' ? to : '#'} {...rest}>
@@ -121,7 +118,6 @@ const { default: PageHeader } = await import('../../components/admin/PageHeader'
 const { default: Settings } = await import('./Settings');
 const { default: AdminLogin } = await import('./AdminLogin');
 const { default: BookForm } = await import('./BookForm');
-const { default: BookImport } = await import('./BookImport');
 
 afterEach(cleanup);
 
@@ -218,32 +214,6 @@ describe('BookForm (new book)', () => {
     expect(await screen.findByText(/صور الكتاب/)).toBeTruthy();
     expect(await screen.findByText('الحالة والعرض')).toBeTruthy();
     expect(await screen.findByText('نشر الكتاب')).toBeTruthy();
-    // import lives on its own page now — never inside the form
-    expect(screen.queryByText(/استيراد بيانات الكتاب/)).toBeNull();
-  });
-
-  it('prefills from the standalone import handoff (location state)', async () => {
-    mockLocation.state = {
-      importData: {
-        fields: { title_ar: 'كتاب مستورد', author_ar: 'مؤلف مستورد' },
-        cover: { url: 'https://example.com/cover.jpg' },
-        sourceLabel: 'ISBN',
-      },
-    };
-    render(<BookForm />);
-    expect(await screen.findByDisplayValue('كتاب مستورد')).toBeTruthy();
-    expect(await screen.findByDisplayValue('مؤلف مستورد')).toBeTruthy();
-    expect(mockShow).toHaveBeenCalledWith(expect.stringMatching(/تم جلب البيانات/));
-    mockLocation.state = {};
-  });
-});
-
-describe('BookImport (standalone import flow)', () => {
-  it('renders the source tabs without crashing', async () => {
-    render(<BookImport />);
-    expect(await screen.findByText(/استيراد بيانات الكتاب/)).toBeTruthy();
-    expect(await screen.findByText('رابط sifatusafwa')).toBeTruthy();
-    expect(await screen.findByText('رقم ISBN')).toBeTruthy();
   });
 });
 

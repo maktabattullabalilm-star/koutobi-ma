@@ -153,24 +153,6 @@ export function useGallery() {
     setUrlInput('');
   };
 
-  /** Attach an imported cover (used by the import hook's onApply). Stable identity. */
-  const attachCover = useCallback(
-    (cover) => {
-      if (!cover?.url) return;
-      setImages((prev) => {
-        if (prev.length >= IMAGE_MAX_COUNT) {
-          show('المعرض ممتلئ — أُضيفت البيانات بدون الغلاف', 'error');
-          return prev;
-        }
-        return [
-          ...prev.map((i) => ({ ...i, is_primary: false })),
-          { uid: nextUid(), url: cover.url, r2_key: cover.r2_key || null, is_primary: true },
-        ];
-      });
-    },
-    [show]
-  );
-
   return {
     images,
     setImages,
@@ -191,7 +173,6 @@ export function useGallery() {
     onDropImages,
     onPasteImages,
     addUrlImage,
-    attachCover,
   };
 }
 
