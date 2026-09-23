@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   adminCreateAttributeOption,
   adminCreateCategory,
@@ -15,17 +15,11 @@ import {
 } from '../../lib/admin';
 import { ATTRIBUTE_COLUMNS, countByColumn, nextSort, reorderList } from '../../lib/catalog';
 import { useToast } from '../../components/Toast';
-import { IconArrowDown, IconArrowUp, IconEdit, IconPlus, IconTrash } from '../../components/icons';
-import PageHeader from './PageHeader';
+import { IconArrowDown, IconArrowUp, IconBook, IconEdit, IconGrid, IconLayers, IconPlus, IconRuler, IconTrash } from '../../components/icons';
+import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const TYPES = ['binding', 'size', 'paper'];
 const TYPE_LABEL = { binding: 'التجليد', size: 'المقاس', paper: 'الورق' };
@@ -36,8 +30,26 @@ const booksWord = (n) => (n === 1 ? 'كتاب واحد' : n === 2 ? 'كتابا�
 function MoveButtons({ onUp, onDown, upDisabled, downDisabled }) {
   return (
     <div className="flex items-center gap-0.5" dir="ltr">
-      <button type="button" onClick={onUp} disabled={upDisabled} title="تحريك لأعلى" aria-label="تحريك لأعلى" className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"><IconArrowUp width={14} height={14} /></button>
-      <button type="button" onClick={onDown} disabled={downDisabled} title="تحريك لأسفل" aria-label="تحريك لأسفل" className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"><IconArrowDown width={14} height={14} /></button>
+      <button
+        type="button"
+        onClick={onUp}
+        disabled={upDisabled}
+        title="تحريك لأعلى"
+        aria-label="تحريك لأعلى"
+        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"
+      >
+        <IconArrowUp width={14} height={14} />
+      </button>
+      <button
+        type="button"
+        onClick={onDown}
+        disabled={downDisabled}
+        title="تحريك لأسفل"
+        aria-label="تحريك لأسفل"
+        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"
+      >
+        <IconArrowDown width={14} height={14} />
+      </button>
     </div>
   );
 }
@@ -60,7 +72,9 @@ function ReassignDelete({ itemLabel, usage, options, onConfirm, onCancel, busy }
           </SelectTrigger>
           <SelectContent>
             {options.map((o) => (
-              <SelectItem key={o} value={o}>{o}</SelectItem>
+              <SelectItem key={o} value={o}>
+                {o}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -96,6 +110,36 @@ function GuardConfirm({ text, confirmLabel = 'تأكيد', onConfirm, onCancel, 
   );
 }
 
+const TYPE_ICON = { binding: IconBook, size: IconRuler, paper: IconLayers };
+
+/**
+ * Usage pill: the visual weight of a term. Green = load-bearing books depend
+ * on it (guarded actions); gray = safe to delete. The page's whole job is
+ * this dependency, so it gets real chrome instead of faint gray text.
+ */
+function UsagePill({ n, emptyLabel }) {
+  if (n <= 0) {
+    return (
+      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold text-soft">
+        {emptyLabel}
+      </span>
+    );
+  }
+  return (
+    <span className="shrink-0 rounded-full bg-brand-light px-2 py-0.5 text-[11px] font-bold tabular-nums text-brand">
+      {booksWord(n)}
+    </span>
+  );
+}
+
+function CountBadge({ n }) {
+  return (
+    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-bold tabular-nums text-soft">
+      {n}
+    </span>
+  );
+}
+
 function AttributeManager({ type, items, usage, onReload }) {
   const { show } = useToast();
   const [value, setValue] = useState('');
@@ -126,11 +170,18 @@ function AttributeManager({ type, items, usage, onReload }) {
   };
 
   const move = async (id, dir) => {
-    const reordered = reorderList([...items].sort((a, b) => a.sort - b.sort), id, dir);
+    const reordered = reorderList(
+      [...items].sort((a, b) => a.sort - b.sort),
+      id,
+      dir
+    );
     if (!reordered) return;
     setBusy(true);
     try {
-      await adminReorderRows('attribute_options', reordered.map((r) => r.id));
+      await adminReorderRows(
+        'attribute_options',
+        reordered.map((r) => r.id)
+      );
       onReload();
     } catch (err) {
       show(err.message, 'error');
@@ -204,7 +255,13 @@ function AttributeManager({ type, items, usage, onReload }) {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-bold text-ink">{TYPE_LABEL[type] || type}</h3>
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+          {(() => { const I = TYPE_ICON[type]; return I ? <I width={15} height={15} /> : null; })()}
+        </span>
+        <h3 className="text-sm font-bold text-ink">{TYPE_LABEL[type] || type}</h3>
+        <CountBadge n={items.length} />
+      </div>
       <form onSubmit={add} className="flex flex-wrap gap-2">
         <Input
           value={value}
@@ -224,22 +281,29 @@ function AttributeManager({ type, items, usage, onReload }) {
         {ordered.map((a, ix) => {
           const n = usage[a.value_ar] || 0;
           return (
-            <li key={a.id} className="py-2">
+            <li key={a.id} className="-mx-2 rounded-lg px-2 py-2 transition hover:bg-gray-50">
               <div className="flex items-center justify-between gap-2">
                 {editId === a.id ? (
                   <div className="flex min-w-0 flex-1 gap-2">
-                    <Input value={draft} onChange={(e) => setDraft(e.target.value)} className="flex-1" aria-label="الاسم الجديد" />
-                    <Button size="sm" onClick={() => saveRename(a)}>حفظ</Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>إلغاء</Button>
+                    <Input
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      className="flex-1"
+                      aria-label="الاسم الجديد"
+                    />
+                    <Button size="sm" onClick={() => saveRename(a)}>
+                      حفظ
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>
+                      إلغاء
+                    </Button>
                   </div>
                 ) : (
                   <>
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
                       {a.value_ar}
-                      <span className="ms-2 text-[11px] font-normal text-soft">
-                        {n > 0 ? `مستعملة في ${booksWord(n)}` : 'غير مستعملة'}
-                      </span>
                     </span>
+                    <UsagePill n={n} emptyLabel="غير مستعملة" />
                     <div className="flex shrink-0 items-center gap-0.5">
                       <MoveButtons
                         onUp={() => move(a.id, -1)}
@@ -247,8 +311,25 @@ function AttributeManager({ type, items, usage, onReload }) {
                         upDisabled={busy || ix === 0}
                         downDisabled={busy || ix === ordered.length - 1}
                       />
-                      <button onClick={() => { setDraft(a.value_ar); setEditId(a.id); }} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-brand" title="إعادة تسمية" aria-label="إعادة تسمية"><IconEdit width={14} height={14} /></button>
-                      <button onClick={() => askDelete(a)} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-rose-50 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
+                      <button
+                        onClick={() => {
+                          setDraft(a.value_ar);
+                          setEditId(a.id);
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-brand"
+                        title="إعادة تسمية"
+                        aria-label="إعادة تسمية"
+                      >
+                        <IconEdit width={14} height={14} />
+                      </button>
+                      <button
+                        onClick={() => askDelete(a)}
+                        className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-rose-50 hover:text-danger"
+                        title="حذف"
+                        aria-label="حذف"
+                      >
+                        <IconTrash width={14} height={14} />
+                      </button>
                     </div>
                   </>
                 )}
@@ -269,7 +350,11 @@ function AttributeManager({ type, items, usage, onReload }) {
                   confirmLabel="حذف"
                   busy={busy}
                   onCancel={() => setGuardDelete(null)}
-                  onConfirm={() => { const g = guardDelete; setGuardDelete(null); remove(g, null); }}
+                  onConfirm={() => {
+                    const g = guardDelete;
+                    setGuardDelete(null);
+                    remove(g, null);
+                  }}
                 />
               )}
               {guardRename && guardRename.item.id === a.id && (
@@ -304,7 +389,7 @@ export default function CatalogData() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [cList, ...aLists] = await Promise.all([
@@ -328,14 +413,14 @@ export default function CatalogData() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [show]);
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [load]);
 
   const orderedCats = [...cats].sort((a, b) => a.sort - b.sort);
+  const totalAttrs = TYPES.reduce((s, t) => s + (attrs[t] || []).length, 0);
 
   const addCat = async (e) => {
     e.preventDefault();
@@ -360,7 +445,10 @@ export default function CatalogData() {
     if (!reordered) return;
     setBusy(true);
     try {
-      await adminReorderRows('categories', reordered.map((r) => r.id));
+      await adminReorderRows(
+        'categories',
+        reordered.map((r) => r.id)
+      );
       load();
     } catch (err) {
       show(err.message, 'error');
@@ -449,8 +537,16 @@ export default function CatalogData() {
 
       {/* Categories */}
       <section className="card border border-line/70 p-5">
-        <h2 className="admin-section-title mb-1">التصنيفات</h2>
-        <p className="mb-4 text-xs text-soft">تُضاف في الآخر — رتّبها بالأسهم. إعادة التسمية تُحدّث الكتب تلقائياً.</p>
+        <div className="mb-1 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
+            <IconGrid width={15} height={15} />
+          </span>
+          <h2 className="admin-section-title">التصنيفات</h2>
+          <CountBadge n={orderedCats.length} />
+        </div>
+        <p className="mb-4 text-xs text-soft">
+          تُضاف في الآخر — رتّبها بالأسهم. إعادة التسمية تُحدّث الكتب تلقائياً.
+        </p>
         <form onSubmit={addCat} className="mb-4 flex flex-wrap gap-2">
           <Input
             value={catName}
@@ -465,27 +561,36 @@ export default function CatalogData() {
         </form>
         <ul className="divide-y divide-line/60">
           {orderedCats.length === 0 && (
-            <li className="py-6 text-center text-sm text-soft">لا توجد تصنيفات بعد — أضف أول تصنيف من الأعلى.</li>
+            <li className="py-6 text-center text-sm text-soft">
+              لا توجد تصنيفات بعد — أضف أول تصنيف من الأعلى.
+            </li>
           )}
           {orderedCats.map((c, ix) => {
             const n = (usage.category || {})[c.name_ar] || 0;
             return (
-              <li key={c.id} className="py-2">
+              <li key={c.id} className="-mx-2 rounded-lg px-2 py-2 transition hover:bg-gray-50">
                 <div className="flex items-center justify-between gap-2">
                   {editCatId === c.id ? (
                     <div className="flex min-w-0 flex-1 gap-2">
-                      <Input value={editCatDraft} onChange={(e) => setEditCatDraft(e.target.value)} className="flex-1" aria-label="الاسم الجديد" />
-                      <Button size="sm" onClick={() => saveCatRename(c)}>حفظ</Button>
-                      <Button size="sm" variant="ghost" onClick={() => setEditCatId(null)}>إلغاء</Button>
+                      <Input
+                        value={editCatDraft}
+                        onChange={(e) => setEditCatDraft(e.target.value)}
+                        className="flex-1"
+                        aria-label="الاسم الجديد"
+                      />
+                      <Button size="sm" onClick={() => saveCatRename(c)}>
+                        حفظ
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditCatId(null)}>
+                        إلغاء
+                      </Button>
                     </div>
                   ) : (
                     <>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">
                         {c.name_ar}
-                        <span className="ms-2 text-[11px] font-normal text-soft">
-                          {n > 0 ? `مستعمل في ${booksWord(n)}` : 'غير مستعمل'}
-                        </span>
                       </span>
+                      <UsagePill n={n} emptyLabel="غير مستعمل" />
                       <div className="flex shrink-0 items-center gap-0.5">
                         <MoveButtons
                           onUp={() => moveCat(c.id, -1)}
@@ -493,8 +598,25 @@ export default function CatalogData() {
                           upDisabled={busy || ix === 0}
                           downDisabled={busy || ix === orderedCats.length - 1}
                         />
-                        <button onClick={() => { setEditCatDraft(c.name_ar); setEditCatId(c.id); }} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-brand" title="إعادة تسمية" aria-label="إعادة تسمية"><IconEdit width={14} height={14} /></button>
-                        <button onClick={() => askDeleteCat(c)} className="flex h-9 w-9 items-center justify-center rounded-md text-gray-400 transition hover:bg-rose-50 hover:text-danger" title="حذف" aria-label="حذف"><IconTrash width={14} height={14} /></button>
+                        <button
+                          onClick={() => {
+                            setEditCatDraft(c.name_ar);
+                            setEditCatId(c.id);
+                          }}
+                          className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-brand"
+                          title="إعادة تسمية"
+                          aria-label="إعادة تسمية"
+                        >
+                          <IconEdit width={14} height={14} />
+                        </button>
+                        <button
+                          onClick={() => askDeleteCat(c)}
+                          className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-rose-50 hover:text-danger"
+                          title="حذف"
+                          aria-label="حذف"
+                        >
+                          <IconTrash width={14} height={14} />
+                        </button>
                       </div>
                     </>
                   )}
@@ -515,7 +637,11 @@ export default function CatalogData() {
                     confirmLabel="حذف"
                     busy={busy}
                     onCancel={() => setGuardCatDelete(null)}
-                    onConfirm={() => { const g = guardCatDelete; setGuardCatDelete(null); removeCat(g, null); }}
+                    onConfirm={() => {
+                      const g = guardCatDelete;
+                      setGuardCatDelete(null);
+                      removeCat(g, null);
+                    }}
                   />
                 )}
                 {guardCatRename && guardCatRename.cat.id === c.id && (
@@ -535,8 +661,13 @@ export default function CatalogData() {
 
       {/* Attributes */}
       <section className="card border border-line/70 p-5">
-        <h2 className="admin-section-title mb-1">خيارات الطبعة (التجليد / المقاس / الورق)</h2>
-        <p className="mb-4 text-xs text-soft">القيم التي يختار منها نموذج الكتاب. إعادة التسمية تُحدّث الكتب تلقائياً.</p>
+        <div className="mb-1 flex items-center gap-2">
+          <h2 className="admin-section-title">خيارات الطبعة (التجليد / المقاس / الورق)</h2>
+          <CountBadge n={totalAttrs} />
+        </div>
+        <p className="mb-4 text-xs text-soft">
+          القيم التي يختار منها نموذج الكتاب. إعادة التسمية تُحدّث الكتب تلقائياً.
+        </p>
         <div className="space-y-6">
           {TYPES.map((t) => (
             <AttributeManager
