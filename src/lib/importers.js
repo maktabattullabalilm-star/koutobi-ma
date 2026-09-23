@@ -137,6 +137,11 @@ const SPEC_KEYS = [
   'Auteur',
   'Édition',
   'Couverture',
+  // Arabic locale pages (/ar/) use Arabic labels.
+  'مؤلف',
+  'الصفحات',
+  'طبعة',
+  'غلاف',
 ];
 
 /**
@@ -162,9 +167,16 @@ export function parseSifatusafwa(html) {
     cover_url: '',
   };
 
-  const specRe = new RegExp(`^[-•\\s]*(${SPEC_KEYS.join('|')})\\b\\s*:?\\s*(.+?)\\s*$`, 'i');
+  // Latin/French keys: values may be glued ("- Titleالصحيح…"), but a trailing
+  // Latin letter means a longer word ("AUTHORS", "Auteurs") — never a value.
+  // Arabic keys always stand alone ("مؤلف …"), so a glued word ("مؤلفات …",
+  // a breadcrumb) must never match — require space/colon/end after the key.
+  const AR_KEYS = ['مؤلف', 'الصفحات', 'طبعة', 'غلاف'];
+  const LATIN_KEYS = SPEC_KEYS.filter((k) => !AR_KEYS.includes(k));
+  const latinRe = new RegExp(`^[-•\\s]*(${LATIN_KEYS.join('|')})(?![A-Za-z])\\s*:?\\s*(.+?)\\s*$`, 'i');
+  const arRe = new RegExp(`^[-•\\s]*(${AR_KEYS.join('|')})(?=[\\s:]|$)\\s*:?\\s*(.+?)\\s*$`);
   for (const line of htmlToTextLines(html)) {
-    const m = line.match(specRe);
+    const m = line.match(latinRe) || line.match(arRe);
     if (!m) continue;
     const key = m[1].toLowerCase();
     const val = m[2].trim();
@@ -172,13 +184,15 @@ export function parseSifatusafwa(html) {
     // a real value carries at least one letter or digit.
     if (!/[\p{L}\p{N}]/u.test(val)) continue;
     if ((key === 'title' || key === 'titre') && !out.title) out.title = val;
-    else if ((key === 'author' || key === 'auteur') && !out.author) out.author = val;
-    else if ((key === 'edition' || key === 'édition') && !out.publisher) out.publisher = val;
-    else if (key === 'pages' && out.pages == null) {
-      const n = parseInt(val.replace(/[^\d]/g, ''), 10);
-      if (Number.isFinite(n) && n > 0) out.pages = n;
+    else if ((key === 'author' || key === 'auteur' || key === 'مؤلف') && !out.author) out.author = val;
+    else if ((key === 'edition' || key === 'édition' || key === 'طبعة') && !out.publisher) out.publisher = val;
+    else if (key === 'pages' || key === 'الصفحات') {
+      if (out.pages == null) {
+        const n = parseInt(val.replace(/[^\d]/g, ''), 10);
+        if (Number.isFinite(n) && n > 0) out.pages = n;
+      }
     } else if (key === 'format' && !out.size) out.size = val;
-    else if ((key === 'cover' || key === 'couverture') && !out.binding) out.binding = val;
+    else if ((key === 'cover' || key === 'couverture' || key === 'غلاف') && !out.binding) out.binding = val;
     else if (key === 'volumes' && !out.volumes) out.volumes = val;
     else if (key === 'checking and preparation' && !out.checker) out.checker = val;
     else if (key === 'reference' && !out.reference) out.reference = val;
@@ -199,17 +213,18 @@ export function formatSifaSize(v) {
   return `${m[1]} × ${m[2]} سم`;
 }
 
-/** "Hard" → مجلد فني, soft/paperback → غلاف ورقي, else ''. */
+/** "Hard" → مجلد فني, soft/paperback → غلاف ورقي, else ''. Arabic values included. */
 export function mapSifaCover(v) {
   const s = String(v || '').toLowerCase();
   if (!s) return '';
-  if (/hard|rigid|cartonn|reli/i.test(s)) return 'مجلد فني';
-  if (/soft|paperback|broch|souple|flexible/i.test(s)) return 'غلاف ورقي';
+  if (/hard|rigid|cartonn|reli|مجلد|فني/i.test(s)) return 'مجلد فني';
+  if (/soft|paperback|broch|souple|flexible|ورقي/i.test(s)) return 'غلاف ورقي';
   return '';
 }
 
 /** Neutral sifatusafwa parse → BookForm field names (price never imported). */
 export function sifaToBookFields(p) {
+
   const editionBits = [];
   if (p.checker) editionBits.push(`تحقيق: ${p.checker}`);
   if (p.volumes) editionBits.push(`${p.volumes} مجلدات`);
@@ -225,6 +240,45 @@ export function sifaToBookFields(p) {
     isbn: '',
     description_ar: p.description || '',
   };
+}
+
+/**
+ * Alternate-locale URLs declared by the page itself
+ * (<link rel="alternate" hreflang=".." href="..">). The reliable way to
+ * "switch language": slugs differ per locale, so guessing URLs 404s —
+ * follow what the page advertises instead.
+ */
+export function getAlternateLocales(html) {
+  const src = String(html || '');
+  const out = [];
+  const seen = new Set();
+  const patterns = [
+    /<link[^>]+rel=["']alternate["'][^>]+hreflang=["']([^"']+)["'][^>]+href=["']([^"']+)["'][^>]*>/gi,
+    /<link[^>]+rel=["']alternate["'][^>]+href=["']([^"']+)["'][^>]+hreflang=["']([^"']+)["'][^>]*>/gi,
+    /<link[^>]+hreflang=["']([^"']+)["'][^>]+rel=["']alternate["'][^>]+href=["']([^"']+)["'][^>]*>/gi,
+  ];
+  for (const re of patterns) {
+    for (const m of src.matchAll(re)) {
+      // patterns 0/2 capture (lang, url); pattern 1 captures (url, lang).
+      const lang = re === patterns[1] ? m[2] : m[1];
+      const url = re === patterns[1] ? m[1] : m[2];
+      const key = `${lang}|${url}`;
+      if (url && !seen.has(key)) {
+        seen.add(key);
+        out.push({ lang: String(lang).toLowerCase(), url });
+      }
+    }
+  }
+  return out;
+}
+
+/** Fill empty string/null fields of `base` from `extra`. Never overwrites. */
+export function mergeMissingFields(base, extra) {
+  const merged = { ...base };
+  for (const [k, v] of Object.entries(extra || {})) {
+    if ((merged[k] === '' || merged[k] == null) && v !== '' && v != null) merged[k] = v;
+  }
+  return merged;
 }
 
 // ---------------- ISBN lookup chain ----------------

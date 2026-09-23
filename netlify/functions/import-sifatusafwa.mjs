@@ -1,6 +1,8 @@
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { createClient } from '@supabase/supabase-js';
-import { parseSifatusafwa, sifaToBookFields } from '../../src/lib/importers.js';
+import { getAlternateLocales, parseSifatusafwa, sifaToBookFields } from '../../src/lib/importers.js';
+import { requireAdmin } from './_lib/auth.mjs';
+import { r2Client } from './_lib/r2.mjs';
+import { fetchSafe } from './_lib/fetch-safe.mjs';
+import { downloadCoverToR2 } from './_lib/covers.mjs';
 
 /**
  * POST /api/import-sifatusafwa
@@ -17,83 +19,24 @@ export const config = {
   path: '/api/import-sifatusafwa',
 };
 
-const MAX_BYTES = 6 * 1024 * 1024;
+const HTML_MAX_BYTES = 500 * 1024;
 const FETCH_TIMEOUT_MS = 20000;
-const BROWSER_UA =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
+const SIFA_HOSTS = ['sifatusafwa.com'];
 
-async function requireAdmin(req) {
-  const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '');
-  if (!token) return { error: 'غير مصرّح به', status: 401 };
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !anonKey) {
-    return { error: 'Supabase server variables غير مضبوطة (SUPABASE_URL / SUPABASE_ANON_KEY)', status: 500 };
-  }
-
-  const client = createClient(supabaseUrl, anonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  });
-  const {
-    data: { user },
-    error: userErr,
-  } = await client.auth.getUser();
-  if (userErr || !user) return { error: 'جلسة غير صالحة', status: 401 };
-
-  const { data: profile } = await client
-    .from('profiles')
-    .select('id, role')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (!profile || profile.role !== 'admin') return { error: 'صلاحيات غير كافية', status: 403 };
-  return { ok: true };
+/** Arabic first (richest Arabic data for our catalog), then English. */
+function rankLocale(lang) {
+  const l = String(lang || '').toLowerCase();
+  if (l.startsWith('ar')) return 0;
+  if (l.startsWith('en')) return 1;
+  return 2;
 }
 
-function r2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID;
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const bucket = process.env.R2_BUCKET;
-  const publicUrl = process.env.R2_PUBLIC_URL || process.env.VITE_R2_PUBLIC_URL;
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket || !publicUrl) return null;
-  const s3 = new S3Client({
-    region: 'auto',
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId, secretAccessKey },
-  });
-  return { s3, bucket, publicUrl: publicUrl.replace(/\/+$/, '') };
-}
-
-function extFromContentType(ct) {
-  const m = String(ct || '').match(/image\/(jpeg|jpg|png|webp|gif|avif)/i);
-  if (!m) return null;
-  return m[1].toLowerCase() === 'jpeg' ? 'jpg' : m[1].toLowerCase();
-}
-
-/** Download a remote cover into our R2. Returns { url, r2_key } or throws. */
-async function downloadCoverToR2(coverUrl) {
-  const r2 = r2Client();
-  if (!r2) throw new Error('R2 غير مضبوط');
-  const res = await fetch(coverUrl, { headers: { 'User-Agent': BROWSER_UA } });
-  if (!res.ok) throw new Error(`cover HTTP ${res.status}`);
-  const ct = res.headers.get('content-type') || '';
-  const ext = extFromContentType(ct);
-  if (!ext) throw new Error('صيغة الغلاف غير مدعومة');
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (!buf.length || buf.length > MAX_BYTES) throw new Error('حجم الغلاف غير صالح');
-  const key = `covers/imported-${Date.now()}.${ext}`;
-  await r2.s3.send(
-    new PutObjectCommand({
-      Bucket: r2.bucket,
-      Key: key,
-      Body: buf,
-      ContentType: ct.split(';')[0],
-      CacheControl: 'public, max-age=31536000, immutable',
-    })
-  );
-  return { url: `${r2.publicUrl}/${key}`, r2_key: key };
+function localeLabel(lang) {
+  const l = String(lang || '').toLowerCase();
+  if (l.startsWith('ar')) return 'العربية';
+  if (l.startsWith('en')) return 'الإنجليزية';
+  if (l.startsWith('fr')) return 'الفرنسية';
+  return 'الأخرى';
 }
 
 export default async function handler(req) {
@@ -107,34 +50,29 @@ export default async function handler(req) {
 
     const body = await req.json().catch(() => ({}));
     let html = body?.html || '';
+    // Paste mode cap: regex parsing on unbounded input = ReDoS/DoS sink.
+    if (html && html.length > HTML_MAX_BYTES) {
+      return Response.json({ error: 'حجم HTML كبير جدًا (الحد 500KB)' }, { status: 413 });
+    }
     const url = (body?.url || '').trim();
 
     if (!html) {
-      // --- URL mode: fetch server-side ---
+      // --- URL mode: fetch server-side (SSRF-guarded) ---
       if (!url) return Response.json({ error: 'الرابط مطلوب' }, { status: 400 });
-      let hostname = '';
       try {
-        hostname = new URL(url).hostname.toLowerCase();
-      } catch {
-        return Response.json({ error: 'الرابط غير صالح' }, { status: 400 });
-      }
-      if (hostname !== 'sifatusafwa.com' && !hostname.endsWith('.sifatusafwa.com')) {
-        return Response.json({ error: 'الرابط يجب أن يكون من sifatusafwa.com' }, { status: 400 });
-      }
-      try {
-        const ctl = new AbortController();
-        const timer = setTimeout(() => ctl.abort(), FETCH_TIMEOUT_MS);
-        const res = await fetch(url, {
-          signal: ctl.signal,
+        const res = await fetchSafe(url, {
+          allowedHosts: SIFA_HOSTS,
+          timeoutMs: FETCH_TIMEOUT_MS,
           headers: {
-            'User-Agent': BROWSER_UA,
             Accept: 'text/html,application/xhtml+xml',
             'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
           },
         });
-        clearTimeout(timer);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         html = await res.text();
+        if (html.length > HTML_MAX_BYTES) {
+          return Response.json({ error: 'حجم الصفحة كبير جدًا' }, { status: 413 });
+        }
       } catch (e) {
         return Response.json(
           {
@@ -148,6 +86,46 @@ export default async function handler(req) {
     }
 
     const parsed = parseSifatusafwa(html);
+    const warnings = [];
+
+    // --- Language fallback: the same product exists in /en /fr /ar with
+    // per-locale slugs, so never guess URLs — follow the page's own
+    // hreflang alternates (Arabic first) and fill only missing fields. ---
+    const needsMore = !parsed.author || !parsed.publisher;
+    if (!body?.html && needsMore) {
+      const alternates = getAlternateLocales(html).filter((a) => a.url && a.url !== url);
+      const ranked = [...alternates].sort((a, b) => rankLocale(a.lang) - rankLocale(b.lang));
+      for (const alt of ranked) {
+        try {
+          const res = await fetchSafe(alt.url, {
+            allowedHosts: SIFA_HOSTS,
+            timeoutMs: FETCH_TIMEOUT_MS,
+            headers: {
+              Accept: 'text/html,application/xhtml+xml',
+              'Accept-Language': 'en-US,en;q=0.9,ar;q=0.8',
+            },
+          });
+          if (!res.ok) continue;
+          const altHtml = await res.text();
+          if (!altHtml || altHtml.length > HTML_MAX_BYTES) continue;
+          const altParsed = parseSifatusafwa(altHtml);
+          const before = JSON.stringify(parsed);
+          for (const k of ['title', 'author', 'publisher', 'pages', 'size', 'binding', 'cover_url']) {
+            if (!parsed[k] && altParsed[k]) parsed[k] = altParsed[k];
+          }
+          if (JSON.stringify(parsed) !== before) {
+            warnings.push(
+              `أُكملت البيانات الناقصة من النسخة ${localeLabel(alt.lang)} لنفس المنتج`
+            );
+            break;
+          }
+        } catch {
+          // Alternate unreachable — the primary parse still stands.
+        }
+        if (parsed.author && parsed.publisher) break;
+      }
+    }
+
     if (!parsed.title && !parsed.author && !parsed.pages) {
       return Response.json(
         { error: 'لم يتم العثور على بيانات كتاب في هذه الصفحة — تأكد من أنها صفحة منتج' },
@@ -155,7 +133,6 @@ export default async function handler(req) {
       );
     }
 
-    const warnings = [];
     if (!parsed.title) warnings.push('لم يُعثر على العنوان');
     if (!parsed.author) warnings.push('لم يُعثر على المؤلف');
     if (!parsed.pages) warnings.push('لم يُعثر على عدد الصفحات');
@@ -163,7 +140,7 @@ export default async function handler(req) {
     let cover = null;
     if (parsed.cover_url) {
       try {
-        cover = await downloadCoverToR2(parsed.cover_url);
+        cover = await downloadCoverToR2(r2Client(), parsed.cover_url);
       } catch {
         cover = { url: parsed.cover_url, r2_key: null };
         warnings.push('تعذّر نسخ الغلاف إلى التخزين — سيُستخدم الرابط الأصلي');
@@ -175,6 +152,6 @@ export default async function handler(req) {
     return Response.json({ fields: sifaToBookFields(parsed), cover, warnings });
   } catch (err) {
     console.error('import-sifatusafwa error:', err);
-    return Response.json({ error: `حدث خطأ أثناء الاستيراد: ${err.message || err}` }, { status: 500 });
+    return Response.json({ error: 'حدث خطأ أثناء الاستيراد — حاول مجددًا' }, { status: 500 });
   }
 }

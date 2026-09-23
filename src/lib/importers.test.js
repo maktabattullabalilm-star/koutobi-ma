@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   formatSifaSize,
+  getAlternateLocales,
   googleBooksToFields,
   htmlToTextLines,
   isbnToBookFields,
   isValidIsbn,
   lookupIsbn,
   mapSifaCover,
+  mergeMissingFields,
   metaContent,
   normalizeIsbn,
   openLibraryToFields,
@@ -106,6 +108,39 @@ describe('parseSifatusafwa', () => {
     expect(p.publisher).toBe('دار التقوى');
     expect(p.pages).toBe(375);
     expect(sifaToBookFields(p).binding_ar).toBe('مجلد فني');
+  });
+
+  it('parses Arabic-locale spec labels and skips glued breadcrumb words', () => {
+    const html = `<html><body><div>مؤلفات الفقه المقارن والخلاف</div><ul><li>- مؤلف الإمام ابن كثير</li><li>- الصفحات 375</li><li>- طبعة دار التقوى</li><li>- غلاف مجلد</li></ul></body></html>`;
+    const p = parseSifatusafwa(html);
+    expect(p.author).toBe('الإمام ابن كثير');
+    expect(p.publisher).toBe('دار التقوى');
+    expect(p.pages).toBe(375);
+    expect(sifaToBookFields(p).binding_ar).toBe('مجلد فني');
+  });
+});
+
+describe('getAlternateLocales + mergeMissingFields', () => {
+  it('reads hreflang alternates regardless of attribute order', () => {
+    const html = `<html><head>
+      <link rel="alternate" href="https://www.sifatusafwa.com/en/x.html" hreflang="en-us">
+      <link rel="alternate" hreflang="ar" href="https://www.sifatusafwa.com/ar/x.html">
+    </head></html>`;
+    const alts = getAlternateLocales(html);
+    expect(alts).toContainEqual({ lang: 'en-us', url: 'https://www.sifatusafwa.com/en/x.html' });
+    expect(alts).toContainEqual({ lang: 'ar', url: 'https://www.sifatusafwa.com/ar/x.html' });
+  });
+
+  it('returns [] when the page declares no alternates', () => {
+    expect(getAlternateLocales('<html><body>hi</body></html>')).toEqual([]);
+  });
+
+  it('fills only empty fields and never overwrites', () => {
+    const merged = mergeMissingFields(
+      { title: 'موجود', author: '', pages: null },
+      { title: 'جديد', author: 'مؤلف', pages: 100 }
+    );
+    expect(merged).toEqual({ title: 'موجود', author: 'مؤلف', pages: 100 });
   });
 });
 
