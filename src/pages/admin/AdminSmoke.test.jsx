@@ -3,24 +3,45 @@ import { cleanup, render, screen } from '@testing-library/react';
 
 vi.mock('../../lib/admin', () => ({
   adminStats: vi.fn(async () => ({ books: 2, orders: 1, pending: 1, revenue: 100 })),
-  adminGetOrders: vi.fn(async () => ([
+  adminGetOrders: vi.fn(async () => [
     {
-      id: 'o1', customer_name: 'زبون اختبار', phone: '0600000000',
-      total: 140, status: 'new', created_at: '2026-01-01T10:00:00Z', order_items: [],
+      id: 'o1',
+      customer_name: 'زبون اختبار',
+      phone: '0600000000',
+      total: 140,
+      status: 'new',
+      created_at: '2026-01-01T10:00:00Z',
+      order_items: [],
     },
-  ])),
-  adminGetBooks: vi.fn(async () => ([
+  ]),
+  adminGetBooks: vi.fn(async () => [
     {
-      id: 'b1', title_ar: 'كتاب متوفر', author_ar: 'مؤلف', category: 'الفقه وأصوله',
-      price: 60, old_price: null, stock_qty: 3, is_active: true,
-      is_featured: false, is_out_of_stock: false, cover_image: '',
+      id: 'b1',
+      title_ar: 'كتاب متوفر',
+      author_ar: 'مؤلف',
+      category: 'الفقه وأصوله',
+      price: 60,
+      old_price: null,
+      stock_qty: 3,
+      is_active: true,
+      is_featured: false,
+      is_out_of_stock: false,
+      cover_image: '',
     },
     {
-      id: 'b2', title_ar: 'كتاب نافد', author_ar: '', category: 'الفقه وأصوله',
-      price: 15, old_price: 20, stock_qty: 0, is_active: false,
-      is_featured: true, is_out_of_stock: true, cover_image: '',
+      id: 'b2',
+      title_ar: 'كتاب نافد',
+      author_ar: '',
+      category: 'الفقه وأصوله',
+      price: 15,
+      old_price: 20,
+      stock_qty: 0,
+      is_active: false,
+      is_featured: true,
+      is_out_of_stock: true,
+      cover_image: '',
     },
-  ])),
+  ]),
   adminCreateBook: vi.fn(),
   adminCreateBookImage: vi.fn(),
   adminDeleteBookImage: vi.fn(),
@@ -68,29 +89,39 @@ vi.mock('../../context/AuthContext', () => ({
   })),
 }));
 
+const { mockNavigate, mockShow, mockLocation } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+  mockShow: vi.fn(),
+  // stable identity across renders (like the real router) so mount effects run once
+  mockLocation: { pathname: '/admin/books/new', state: {} },
+}));
+
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
+    useLocation: () => mockLocation,
     useParams: () => ({}),
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     Link: ({ to, children, ...rest }) => (
-      <a href={typeof to === 'string' ? to : '#'} {...rest}>{children}</a>
+      <a href={typeof to === 'string' ? to : '#'} {...rest}>
+        {children}
+      </a>
     ),
   };
 });
 
 vi.mock('../../components/Toast', () => ({
-  useToast: () => ({ show: vi.fn() }),
+  useToast: () => ({ show: mockShow }),
 }));
 
 const { default: Dashboard } = await import('./Dashboard');
 const { default: BooksAdmin } = await import('./BooksAdmin');
-const { default: PageHeader } = await import('./PageHeader');
+const { default: PageHeader } = await import('../../components/admin/PageHeader');
 const { default: Settings } = await import('./Settings');
 const { default: AdminLogin } = await import('./AdminLogin');
 const { default: BookForm } = await import('./BookForm');
+const { default: BookImport } = await import('./BookImport');
 
 afterEach(cleanup);
 
@@ -184,10 +215,35 @@ describe('BookForm (new book)', () => {
     expect(await screen.findByText('إضافة كتاب جديد 📚')).toBeTruthy();
     expect(await screen.findByText('معلومات الكتاب')).toBeTruthy();
     expect(await screen.findByText('بيانات الطبعة والمخزون')).toBeTruthy();
-    expect(await screen.findByText(/استيراد بيانات الكتاب/)).toBeTruthy();
     expect(await screen.findByText(/صور الكتاب/)).toBeTruthy();
     expect(await screen.findByText('الحالة والعرض')).toBeTruthy();
     expect(await screen.findByText('نشر الكتاب')).toBeTruthy();
+    // import lives on its own page now — never inside the form
+    expect(screen.queryByText(/استيراد بيانات الكتاب/)).toBeNull();
+  });
+
+  it('prefills from the standalone import handoff (location state)', async () => {
+    mockLocation.state = {
+      importData: {
+        fields: { title_ar: 'كتاب مستورد', author_ar: 'مؤلف مستورد' },
+        cover: { url: 'https://example.com/cover.jpg' },
+        sourceLabel: 'ISBN',
+      },
+    };
+    render(<BookForm />);
+    expect(await screen.findByDisplayValue('كتاب مستورد')).toBeTruthy();
+    expect(await screen.findByDisplayValue('مؤلف مستورد')).toBeTruthy();
+    expect(mockShow).toHaveBeenCalledWith(expect.stringMatching(/تم جلب البيانات/));
+    mockLocation.state = {};
+  });
+});
+
+describe('BookImport (standalone import flow)', () => {
+  it('renders the source tabs without crashing', async () => {
+    render(<BookImport />);
+    expect(await screen.findByText(/استيراد بيانات الكتاب/)).toBeTruthy();
+    expect(await screen.findByText('رابط sifatusafwa')).toBeTruthy();
+    expect(await screen.findByText('رقم ISBN')).toBeTruthy();
   });
 });
 

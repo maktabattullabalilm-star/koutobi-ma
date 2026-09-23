@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   adminCreateBook,
@@ -17,11 +17,10 @@ import {
 import { FALLBACK_CATEGORIES, warnFallback } from '../../lib/site';
 import { blobToBase64, IMAGE_MAX_COUNT } from '../../lib/images';
 import { validateBook } from '../../lib/validators';
-import { useBookImport } from '../../hooks/useBookImport';
 import { pluralImg, useGallery } from '../../hooks/useGallery';
 import { useToast } from '../../components/Toast';
 import { Spinner } from '@/components/ui/spinner';
-import { IconBook, IconCamera, IconCheck, IconChevronLeft, IconChevronRight, IconCopy, IconDownload, IconEye, IconImage, IconLayers, IconStar, IconTrash } from '../../components/icons';
+import { IconBook, IconCamera, IconCheck, IconChevronLeft, IconChevronRight, IconCopy, IconEye, IconImage, IconLayers, IconStar, IconTrash } from '../../components/icons';
 import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -62,7 +61,6 @@ const FALLBACK_SIZES = ['17×24 سم', '14×20 سم', '12×17 سم', '24×17 س�
 const FORM_TABS = [
   { id: 'sec-info', label: 'المعلومات' },
   { id: 'sec-edition', label: 'الطبعة والمخزون' },
-  { id: 'sec-import', label: 'استيراد' },
   { id: 'sec-gallery', label: 'الصور' },
   { id: 'sec-status', label: 'النشر' },
 ];
@@ -73,6 +71,7 @@ export default function BookForm() {
   const { session } = useAuth();
   const { show } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState(EMPTY);
   // Gallery working set lives in a hook (images, staging, drop/paste/URL).
@@ -104,8 +103,6 @@ export default function BookForm() {
   const [paperOpts, setPaperOpts] = useState([]);
   const [bindingOpts, setBindingOpts] = useState([]);
   const [sizeOpts, setSizeOpts] = useState([]);
-  // Import panel state
-  const [importTab, setImportTab] = useState('sifa'); // sifa | isbn
 
   useEffect(() => {
     // Fetch dropdown options (public reads — no admin check needed)
@@ -132,6 +129,21 @@ export default function BookForm() {
 
     if (!isEdit) {
       setForm({ ...EMPTY, cover_image: '' });
+      // One-shot handoff from the standalone import page (new books only —
+      // the import flow never runs while editing). Cleared after applying.
+      const data = location.state?.importData;
+      if (data) {
+        setForm((f) => {
+          const next = { ...f };
+          for (const [k, v] of Object.entries(data.fields || {})) {
+            if (v !== '' && v != null && k in next) next[k] = v;
+          }
+          return next;
+        });
+        if (data.cover?.url) attachCover(data.cover);
+        show(`تم جلب البيانات (${data.sourceLabel}) — راجعها قبل الحفظ ✓`);
+        navigate(location.pathname, { replace: true, state: {} });
+      }
       return;
     }
     Promise.all([adminGetBooks(), adminGetBookImages(id)])
@@ -154,39 +166,9 @@ export default function BookForm() {
       })
       .catch((e) => show(e.message, 'error'))
       .finally(() => setLoading(false));
-  }, [id, isEdit, navigate, resetGallery, show]);
+  }, [attachCover, id, isEdit, location, navigate, resetGallery, show]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  /** Merge imported fields into the form (only non-empty) + attach cover. Review = this form. */
-  const applyImport = (fields, cover, sourceLabel, warnings = []) => {
-    setForm((f) => {
-      const next = { ...f };
-      for (const [k, v] of Object.entries(fields || {})) {
-        if (v !== '' && v != null && k in next) next[k] = v;
-      }
-      return next;
-    });
-    if (cover?.url) attachCover(cover);
-    if (warnings.length) show(`ملاحظات: ${warnings.join('؛ ')}`, 'error');
-    show(`تم جلب البيانات (${sourceLabel}) — راجعها قبل الحفظ ✓`);
-  };
-
-  // Import panel logic lives in a hook (state + endpoint calls);
-  // merging stays here because it touches form/gallery state.
-  const {
-    sifaUrl,
-    setSifaUrl,
-    sifaHtml,
-    setSifaHtml,
-    isbnInput,
-    setIsbnInput,
-    importing,
-    showHtmlFallback,
-    importFromSifaUrl,
-    importFromSifaHtml,
-    importFromIsbn,
-  } = useBookImport({ accessToken: session?.access_token, onApply: applyImport });
 
   const save = async (e) => {
     e.preventDefault();
@@ -477,106 +459,6 @@ export default function BookForm() {
               { value: 'hide', label: 'إخفاء الكمية' },
             ])}
           </div>
-        </section>
-
-        {/* قسم الاستيراد */}
-        <section id="sec-import" className="card scroll-mt-24 border border-line/70 p-5">
-          <div className="mb-1 flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
-              <IconDownload width={15} height={15} />
-            </span>
-            <h2 className="admin-section-title">استيراد بيانات الكتاب</h2>
-          </div>
-          <p className="mb-4 mt-1 text-xs leading-5 text-soft">
-            اجلب البيانات من مصدر خارجي ثم راجعها وعدّلها قبل الحفظ — لا يُنشأ أي كتاب تلقائياً، والسعر
-            يُحدَّد يدوياً دائماً (MAD).
-          </p>
-
-          <div className="mb-4 flex gap-2">
-            {[
-              { id: 'sifa', label: 'رابط sifatusafwa' },
-              { id: 'isbn', label: 'رقم ISBN' },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setImportTab(t.id)}
-                className={`flex-1 rounded-md px-3 py-2 text-sm font-semibold transition ${
-                  importTab === t.id ? 'bg-brand text-white' : 'bg-gray-100 text-ink hover:bg-gray-200'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {importTab === 'sifa' ? (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Input
-                  value={sifaUrl}
-                  onChange={(e) => setSifaUrl(e.target.value)}
-                  dir="ltr"
-                  placeholder="https://www.sifatusafwa.com/…/product.html"
-                  className="flex-1 text-right"
-                  aria-label="رابط sifatusafwa"
-                />
-                <Button type="button" onClick={importFromSifaUrl} disabled={importing} className="shrink-0">
-                  {importing ? 'جارٍ الجلب…' : 'جلب'}
-                </Button>
-              </div>
-              {showHtmlFallback && (
-                <div className="rounded-md border border-amber-300 bg-amber-50 p-3">
-                  <p className="text-xs font-bold leading-5 text-amber-800">
-                    تعذّر الجلب التلقائي — انسخ محتوى الصفحة يدوياً بهذه الخطوات:
-                  </p>
-                  <ol className="mt-1.5 list-decimal space-y-1 ps-5 text-xs leading-5 text-amber-800">
-                    <li>افتح صفحة الكتاب في متصفحك (Chrome أو غيره)</li>
-                    <li>اضغط على Ctrl+U لعرض محتوى الصفحة</li>
-                    <li>حدّد الكل بـ Ctrl+A ثم انسخه بـ Ctrl+C</li>
-                    <li>الصق ما نسخته في المربع أسفله ثم اضغط «تحليل»</li>
-                  </ol>
-                  <Textarea
-                    value={sifaHtml}
-                    onChange={(e) => setSifaHtml(e.target.value)}
-                    rows={4}
-                    dir="ltr"
-                    placeholder="الصق محتوى الصفحة هنا…"
-                    className="mt-2 bg-white font-mono text-xs"
-                    aria-label="محتوى الصفحة المنسوخ"
-                  />
-                  <Button
-                    type="button"
-                    onClick={importFromSifaHtml}
-                    disabled={importing}
-                    className="mt-2 w-full"
-                  >
-                    {importing ? 'جارٍ التحليل…' : 'تحليل المحتوى الملصق'}
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Input
-                  value={isbnInput}
-                  onChange={(e) => setIsbnInput(e.target.value)}
-                  dir="ltr"
-                  placeholder="978-…"
-                  className="flex-1 text-right"
-                  aria-label="رقم ISBN"
-                />
-                <Button type="button" onClick={importFromIsbn} disabled={importing} className="shrink-0">
-                  {importing ? 'جارٍ البحث…' : 'بحث'}
-                </Button>
-              </div>
-              <p className="text-[11px] leading-5 text-soft">
-                نبحث في مكتبتين عالميتين — الكتب العربية غالباً غائبة منهما، وستُكمل الإدخال يدوياً عندها.
-                ستجد الرقم على الغلاف الخلفي للكتاب بجانب الباركود.
-              </p>
-            </div>
-          )}
         </section>
 
         {/* قسم الصور */}
