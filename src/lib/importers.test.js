@@ -88,6 +88,15 @@ describe('parseSifatusafwa', () => {
     expect(p.title).toBe('');
     expect(p.cover_url).toBe('');
   });
+
+  it('ignores nav prefix hits and label-only rows before the real spec row', () => {
+    // Live-site shape: a nav "AUTHORS" header and a bare "Author:" <dt> label
+    // appear before the real "Author <name>" row. First-real-wins must skip both.
+    const html = `<html><body><div>AUTHORS</div><div>Author:</div><ul><li>- Author جهاد الترباني</li><li>- Title كتاب الاختبار</li></ul></body></html>`;
+    const p = parseSifatusafwa(html);
+    expect(p.author).toBe('جهاد الترباني');
+    expect(p.title).toBe('كتاب الاختبار');
+  });
 });
 
 describe('htmlToTextLines + metaContent', () => {
@@ -122,14 +131,25 @@ describe('sifa size/cover mapping', () => {
 
   it('sifaToBookFields maps to form names and never includes price', () => {
     const f = sifaToBookFields({
-      title: 'ت', author: 'م', publisher: 'د', pages: 100,
-      size: '17x24cm', binding: 'Hard', volumes: '2', checker: 'فلان',
+      title: 'ت',
+      author: 'م',
+      publisher: 'د',
+      pages: 100,
+      size: '17x24cm',
+      binding: 'Hard',
+      volumes: '2',
+      checker: 'فلان',
       description: 'وصف',
     });
     expect(f).toMatchObject({
-      title_ar: 'ت', author_ar: 'م', publisher_ar: 'د', pages: 100,
-      size_ar: '17 × 24 سم', binding_ar: 'مجلد فني',
-      edition_ar: 'تحقيق: فلان، 2 مجلدات', description_ar: 'وصف',
+      title_ar: 'ت',
+      author_ar: 'م',
+      publisher_ar: 'د',
+      pages: 100,
+      size_ar: '17 × 24 سم',
+      binding_ar: 'مجلد فني',
+      edition_ar: 'تحقيق: فلان، 2 مجلدات',
+      description_ar: 'وصف',
     });
     expect(f).not.toHaveProperty('price');
   });
@@ -137,8 +157,11 @@ describe('sifa size/cover mapping', () => {
 
 describe('lookupIsbn chain', () => {
   const OL_BOOK = {
-    title: 'Ryad As-Salihin', publishers: ['Dar Ibn Kathir'],
-    number_of_pages: 1200, publish_date: '2020', covers: [111],
+    title: 'Ryad As-Salihin',
+    publishers: ['Dar Ibn Kathir'],
+    number_of_pages: 1200,
+    publish_date: '2020',
+    covers: [111],
     authors: [{ key: '/authors/OL1A' }],
   };
 
@@ -160,13 +183,18 @@ describe('lookupIsbn chain', () => {
       return {
         ok: true,
         json: async () => ({
-          items: [{
-            volumeInfo: {
-              title: 'T', authors: ['A'], publisher: 'P', pageCount: 50,
-              industryIdentifiers: [{ type: 'ISBN_13', identifier: '9780131103627' }],
-              imageLinks: { thumbnail: 'http://img/x.jpg' },
+          items: [
+            {
+              volumeInfo: {
+                title: 'T',
+                authors: ['A'],
+                publisher: 'P',
+                pageCount: 50,
+                industryIdentifiers: [{ type: 'ISBN_13', identifier: '9780131103627' }],
+                imageLinks: { thumbnail: 'http://img/x.jpg' },
+              },
             },
-          }],
+          ],
         }),
       };
     });
@@ -199,8 +227,13 @@ describe('field mappers', () => {
 
   it('googleBooksToFields prefers ISBN-13 and reads pageCount', () => {
     const f = googleBooksToFields({
-      title: 'T', authors: ['A'], pageCount: 9,
-      industryIdentifiers: [{ type: 'ISBN_10', identifier: '0306406152' }, { type: 'ISBN_13', identifier: '9780131103627' }],
+      title: 'T',
+      authors: ['A'],
+      pageCount: 9,
+      industryIdentifiers: [
+        { type: 'ISBN_10', identifier: '0306406152' },
+        { type: 'ISBN_13', identifier: '9780131103627' },
+      ],
     });
     expect(f).toMatchObject({ isbn: '9780131103627', pages: 9 });
   });

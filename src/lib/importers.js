@@ -10,7 +10,9 @@
 
 /** Strip hyphens/spaces, uppercase. Returns the cleaned string (may be invalid). */
 export function normalizeIsbn(value) {
-  return String(value || '').replace(/[\s-]+/g, '').toUpperCase();
+  return String(value || '')
+    .replace(/[\s-]+/g, '')
+    .toUpperCase();
 }
 
 export function isValidIsbn10(v) {
@@ -90,7 +92,12 @@ export function metaContent(html, key) {
 function firstLongParagraph(html, minLen = 80) {
   const paras = [...String(html || '').matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)];
   for (const [, inner] of paras) {
-    const text = decodeEntities(inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+    const text = decodeEntities(
+      inner
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
     if (text.length >= minLen) return text.slice(0, 2000);
   }
   return '';
@@ -99,10 +106,18 @@ function firstLongParagraph(html, minLen = 80) {
 function firstH1Arabic(html) {
   const m = String(html || '').match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
   if (!m) return '';
-  const text = decodeEntities(m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+  const text = decodeEntities(
+    m[1]
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
   const runs = text.match(/[\u0600-\u06FF][\u0600-\u06FF\s:؛،\-()]{3,}/g);
   if (!runs) return '';
-  return runs.sort((a, b) => b.length - a.length)[0].trim().slice(0, 200);
+  return runs
+    .sort((a, b) => b.length - a.length)[0]
+    .trim()
+    .slice(0, 200);
 }
 
 const SPEC_KEYS = [
@@ -142,15 +157,15 @@ export function parseSifatusafwa(html) {
     cover_url: '',
   };
 
-  const specRe = new RegExp(
-    `^[-•\\s]*(${SPEC_KEYS.join('|')})\\s*:?\\s*(.+?)\\s*$`,
-    'i'
-  );
+  const specRe = new RegExp(`^[-•\\s]*(${SPEC_KEYS.join('|')})\\b\\s*:?\\s*(.+?)\\s*$`, 'i');
   for (const line of htmlToTextLines(html)) {
     const m = line.match(specRe);
     if (!m) continue;
     const key = m[1].toLowerCase();
     const val = m[2].trim();
+    // Skip label-only rows ("Author:") and prefix hits ("AUTHORS" nav header):
+    // a real value carries at least one letter or digit.
+    if (!/[\p{L}\p{N}]/u.test(val)) continue;
     if (key === 'title' && !out.title) out.title = val;
     else if (key === 'author' && !out.author) out.author = val;
     else if (key === 'edition' && !out.publisher) out.publisher = val;
