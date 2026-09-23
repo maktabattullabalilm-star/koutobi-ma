@@ -5,11 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "netlify dev",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:local": "npm test && npm run build",
+    "lint": "eslint src netlify/functions",
+    "format": "prettier --write src netlify/functions/_lib index.html",
+    "format:check": "prettier --check src netlify/functions/_lib index.html",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run check:no-secrets && npm run lint && npm run typecheck && npm test",
+    "check:no-secrets": "bash scripts/check-no-secrets.sh",
     "functions:dev": "netlify functions:invoke --name upload-image"
   },
   "dependencies": {
@@ -26,14 +34,26 @@
     "tw-animate-css": "^1.4.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
+    "@types/react": "^18.3.31",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.3",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^15.15.0",
     "jsdom": "^29.1.1",
     "postcss": "^8.4.49",
+    "prettier": "^3.9.8",
     "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
     "vite": "^5.4.11",
-    "vitest": "^2.1.9"
+    "vite-plugin-pwa": "^0.21.2",
+    "vitest": "^2.1.9",
+    "workbox-window": "^7.4.1"
   }
 }
