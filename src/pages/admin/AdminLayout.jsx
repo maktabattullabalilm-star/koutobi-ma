@@ -4,13 +4,19 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { IconBook, IconClose, IconGrid, IconInbox, IconLogout, IconMenu, IconWrench, IconShield } from '../../components/icons';
+  IconBook,
+  IconClose,
+  IconGrid,
+  IconInbox,
+  IconLogout,
+  IconMenu,
+  IconWrench,
+  IconShield,
+  IconEdit,
+} from '../../components/icons';
+import { Boxes, FileText } from 'lucide-react';
 
 const LINKS = [
   { to: '/admin/dashboard', label: 'نظرة عامة', Icon: IconInbox, end: true },
@@ -18,6 +24,9 @@ const LINKS = [
   { to: '/admin/catalog', label: 'التصنيفات والخيارات', Icon: IconGrid },
   { to: '/admin/orders', label: 'الطلبات', Icon: IconWrench },
   { to: '/admin/settings', label: 'الإعدادات', Icon: IconShield },
+  { to: '/admin/content', label: 'محتوى المتجر', Icon: IconEdit },
+  { to: '/admin/pages', label: 'صفحات المتجر', Icon: FileText },
+  { to: '/admin/stock', label: 'إدارة المخزون', Icon: Boxes },
 ];
 
 export default function AdminLayout() {
@@ -55,7 +64,9 @@ export default function AdminLayout() {
 
   const brand = (
     <NavLink to="/" className="flex items-center gap-2 border-b border-line px-5 py-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand font-display text-lg font-bold text-white">ك</span>
+      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand font-display text-lg font-bold text-white">
+        ك
+      </span>
       <div>
         <div className="font-display text-base font-bold leading-tight text-ink">لوحة التحكم</div>
         <div className="text-[11px] text-soft">مكتبة كُتُبِي.ما</div>
@@ -66,8 +77,10 @@ export default function AdminLayout() {
   const profileBox = (
     <div className="border-t border-line p-3">
       <div className="mb-2 truncate px-3 text-xs text-soft">
-        {profile?.email}
-        <span className="mt-0.5 block rounded-sm bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">مدير المتجر</span>
+        <bdi dir="ltr" className="block text-start">{profile?.email}</bdi>
+        <span className="mt-0.5 block rounded-sm bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">
+          مدير المتجر
+        </span>
       </div>
       <button
         onClick={doSignOut}
@@ -110,7 +123,10 @@ export default function AdminLayout() {
                 <l.Icon width={18} height={18} /> {l.label}
               </NavLink>
             ))}
-            <NavLink to="/" className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand">
+            <NavLink
+              to="/"
+              className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-brand"
+            >
               معاينة المتجر ↗
             </NavLink>
           </nav>

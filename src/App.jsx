@@ -15,6 +15,7 @@ const Cart = lazy(() => import('./pages/Cart'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const ThankYou = lazy(() => import('./pages/ThankYou'));
 const NotFound = lazy(() => import('./pages/NotFound'));
+const StorePage = lazy(() => import('./pages/StorePage'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const AdminSetup = lazy(() => import('./pages/admin/AdminSetup'));
 const ResetPassword = lazy(() => import('./pages/admin/ResetPassword'));
@@ -25,6 +26,9 @@ const BookForm = lazy(() => import('./pages/admin/BookForm'));
 const OrdersAdmin = lazy(() => import('./pages/admin/OrdersAdmin'));
 const CatalogData = lazy(() => import('./pages/admin/CatalogData'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
+const StorefrontContent = lazy(() => import('./pages/admin/StorefrontContent'));
+const PagesAdmin = lazy(() => import('./pages/admin/PagesAdmin'));
+const StockAdmin = lazy(() => import('./pages/admin/StockAdmin'));
 
 function RouteFallback() {
   return (
@@ -54,6 +58,7 @@ export default function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/thank-you" element={<ThankYou />} />
+            <Route path=":slug" element={<StorePage />} />
             <Route path="*" element={<NotFound />} />
           </Route>
 
@@ -75,6 +80,9 @@ export default function App() {
               <Route path="orders" element={<OrdersAdmin />} />
               <Route path="catalog" element={<CatalogData />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="content" element={<StorefrontContent />} />
+              <Route path="pages" element={<PagesAdmin />} />
+              <Route path="stock" element={<StockAdmin />} />
             </Route>
           </Route>
         </Routes>

@@ -11,17 +11,28 @@ export const ATTRIBUTE_COLUMNS = {
 };
 
 /**
+ * Swap the item with `id` one step in `dir` (+1 down, -1 up).
+ * Returns the swapped list, or null when the move is impossible.
+ * Pure — the single home for reorder math (docs/backlog/22).
+ */
+export function swapAdjacent(list, id, dir, key = 'id') {
+  const ix = list.findIndex((r) => r[key] === id);
+  const jx = ix + dir;
+  if (ix < 0 || jx < 0 || jx >= list.length) return null;
+  const next = [...list];
+  [next[ix], next[jx]] = [next[jx], next[ix]];
+  return next;
+}
+
+/**
  * Reorder helper for admin lists (categories, attribute options).
  * Moves the item with `id` one step in `dir` (+1 down, -1 up) and
  * returns the full list with normalized sorts (10, 20, 30…).
  * Returns null when the move is impossible (edges, unknown id).
  */
 export function reorderList(list, id, dir) {
-  const ix = list.findIndex((r) => r.id === id);
-  const jx = ix + dir;
-  if (ix < 0 || jx < 0 || jx >= list.length) return null;
-  const next = [...list];
-  [next[ix], next[jx]] = [next[jx], next[ix]];
+  const next = swapAdjacent(list, id, dir);
+  if (!next) return null;
   return next.map((r, i) => ({ ...r, sort: (i + 1) * 10 }));
 }
 

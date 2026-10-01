@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
+if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = vi.fn();
 
 vi.mock('../../lib/admin', () => ({
   adminStats: vi.fn(async () => ({ books: 2, orders: 1, pending: 1, revenue: 100 })),
@@ -49,7 +51,6 @@ vi.mock('../../lib/admin', () => ({
   adminUpdateBook: vi.fn(async () => ({})),
   adminUpdateBookImage: vi.fn(),
   adminDeleteBookWithImages: vi.fn(async () => ({})),
-  adminDecrementStock: vi.fn(),
   adminGetCategories: vi.fn(async () => []),
   adminCreateCategory: vi.fn(),
   adminUpdateCategory: vi.fn(),
@@ -58,7 +59,11 @@ vi.mock('../../lib/admin', () => ({
   adminCreateAttributeOption: vi.fn(),
   adminUpdateAttributeOption: vi.fn(),
   adminDeleteAttributeOption: vi.fn(),
-  getCategoriesForForm: vi.fn(async () => []),
+  getCategoriesForForm: vi.fn(async () => ['العقيدة والتوحيد', 'الفقه وأصوله']),
+  getAuthorsForForm: vi.fn(async () => ['عبد الرحمن بن ناصر السعدي']),
+  getPublishersForForm: vi.fn(async () => ['دار ابن حزم']),
+  ensureAuthor: vi.fn(async (name) => name),
+  ensurePublisher: vi.fn(async (name) => name),
   getAttributeOptionsForForm: vi.fn(async () => []),
   getAppSetting: vi.fn(async () => 'hide'),
   adminUpdateAppSetting: vi.fn(async () => ({})),
@@ -210,7 +215,8 @@ describe('BookForm (new book)', () => {
     render(<BookForm />);
     expect(await screen.findByText('إضافة كتاب جديد 📚')).toBeTruthy();
     expect(await screen.findByText('معلومات الكتاب')).toBeTruthy();
-    expect(await screen.findByText('بيانات الطبعة والمخزون')).toBeTruthy();
+    expect((await screen.findAllByText('بيانات الطبعة')).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByLabelText('المخزون (عدد النسخ)')).toBeNull();
     expect(await screen.findByText(/صور الكتاب/)).toBeTruthy();
     expect(await screen.findByText('الحالة والعرض')).toBeTruthy();
     expect(await screen.findByText('نشر الكتاب')).toBeTruthy();
@@ -218,18 +224,20 @@ describe('BookForm (new book)', () => {
 });
 
 describe('BooksAdmin (responsive + filters)', () => {
-  it('renders search, filters, badges and steppers', async () => {
+  it('renders search, filters, badges and links stock management separately', async () => {
     render(<BooksAdmin />);
     expect(await screen.findByPlaceholderText(/ابحث بالعنوان/)).toBeTruthy();
     expect(await screen.findByText('كل التصنيفات')).toBeTruthy();
+    fireEvent.click(screen.getByLabelText('التصنيف'));
+    expect(await screen.findByText('العقيدة والتوحيد')).toBeTruthy();
     expect(await screen.findAllByText('كتاب متوفر')).not.toHaveLength(0);
     expect(await screen.findAllByText('كتاب نافد')).not.toHaveLength(0);
     // low-stock + out-of-stock badges
-    expect(await screen.findAllByText(/بقي 3/)).not.toHaveLength(0);
+    expect(await screen.findAllByText('3')).not.toHaveLength(0);
     expect(await screen.findAllByText('نفد')).not.toHaveLength(0);
-    // stock steppers (table + mobile card each render one)
-    expect(await screen.findAllByLabelText('زيادة المخزون')).not.toHaveLength(0);
-    expect(await screen.findAllByLabelText('نقص المخزون')).not.toHaveLength(0);
+    expect(screen.queryByLabelText('زيادة المخزون')).toBeNull();
+    expect(screen.queryByLabelText('نقص المخزون')).toBeNull();
+    expect(await screen.findAllByText('إدارة')).not.toHaveLength(0);
     // match count line
     expect(await screen.findByText('2 كتاب')).toBeTruthy();
   });

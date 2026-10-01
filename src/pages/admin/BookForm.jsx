@@ -10,8 +10,12 @@ import {
   adminUpdateBook,
   adminUpdateBookImage,
   deleteR2Object,
+  ensureAuthor,
+  ensurePublisher,
   getAttributeOptionsForForm,
+  getAuthorsForForm,
   getCategoriesForForm,
+  getPublishersForForm,
   uploadR2File,
 } from '../../lib/admin';
 import { FALLBACK_CATEGORIES, warnFallback } from '../../lib/site';
@@ -45,11 +49,9 @@ const EMPTY = {
   edition_ar: '',
   isbn: '',
   cover_image: '',
-  stock_qty: '',
   show_quantity: 'inherit',
   is_new: true,
   is_featured: false,
-  is_out_of_stock: false,
   is_active: true,
 };
 
@@ -60,7 +62,7 @@ const FALLBACK_SIZES = ['17×24 سم', '14×20 سم', '12×17 سم', '24×17 س�
 
 const FORM_TABS = [
   { id: 'sec-info', label: 'المعلومات' },
-  { id: 'sec-edition', label: 'الطبعة والمخزون' },
+  { id: 'sec-edition', label: 'بيانات الطبعة' },
   { id: 'sec-gallery', label: 'الصور' },
   { id: 'sec-status', label: 'النشر' },
 ];
@@ -101,6 +103,8 @@ export default function BookForm() {
   const [paperOpts, setPaperOpts] = useState([]);
   const [bindingOpts, setBindingOpts] = useState([]);
   const [sizeOpts, setSizeOpts] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [publishers, setPublishers] = useState([]);
 
   useEffect(() => {
     // Fetch dropdown options (public reads — no admin check needed)
@@ -109,13 +113,17 @@ export default function BookForm() {
       getAttributeOptionsForForm('paper'),
       getAttributeOptionsForForm('binding'),
       getAttributeOptionsForForm('size'),
+      getAuthorsForForm(),
+      getPublishersForForm(),
     ])
-      .then(([c, p, b, s]) => {
+      .then(([c, p, b, s, a, publishersList]) => {
         if (!c.length) warnFallback('categories');
         setCats(c.length ? c : FALLBACK_CATS);
         setPaperOpts(p.length ? p : FALLBACK_PAPER);
         setBindingOpts(b.length ? b : FALLBACK_BINDING);
         setSizeOpts(s.length ? s : FALLBACK_SIZES);
+        setAuthors(a);
+        setPublishers(publishersList);
       })
       .catch(() => {
         warnFallback('catalog options');
@@ -123,6 +131,8 @@ export default function BookForm() {
         setPaperOpts(FALLBACK_PAPER);
         setBindingOpts(FALLBACK_BINDING);
         setSizeOpts(FALLBACK_SIZES);
+        setAuthors([]);
+        setPublishers([]);
       });
 
     if (!isEdit) {
@@ -137,9 +147,10 @@ export default function BookForm() {
           navigate('/admin/books');
           return;
         }
+        const { stock_qty: _stockQty, is_out_of_stock: _outOfStock, ...bookFields } = b;
         setForm({
           ...EMPTY,
-          ...b,
+          ...bookFields,
           price: b.price ?? '',
           old_price: b.old_price ?? '',
           pages: b.pages ?? '',
@@ -198,17 +209,18 @@ export default function BookForm() {
       const primary = finalImages.find((i) => i.is_primary) || null;
 
       // 2. Save the book (primary URL mirrored into legacy cover_image).
+      const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...editableForm } = form;
       const payload = {
-        ...form,
+        ...editableForm,
+        author_ar: await ensureAuthor(form.author_ar),
+        publisher_ar: await ensurePublisher(form.publisher_ar),
         price,
         old_price: form.old_price === '' ? null : Number(form.old_price),
         pages: form.pages === '' ? null : Number(form.pages),
-        stock_qty: form.stock_qty === '' ? 0 : Number(form.stock_qty),
         show_quantity: form.show_quantity,
         cover_image: primary?.url || '',
         is_new: !!form.is_new,
         is_featured: !!form.is_featured,
-        is_out_of_stock: !!form.is_out_of_stock,
         is_active: !!form.is_active,
       };
 
@@ -299,7 +311,7 @@ export default function BookForm() {
   const field = (label, name, extra = {}) => (
     <Field>
       <FieldLabel htmlFor={name}>{label}</FieldLabel>
-      <Input id={name} value={form[name]} onChange={set(name)} {...extra} />
+      <Input id={name} dir="auto" value={form[name]} onChange={set(name)} {...extra} />
       {errors[name] && <FieldError>{errors[name][0]}</FieldError>}
     </Field>
   );
@@ -322,6 +334,16 @@ export default function BookForm() {
         </SelectContent>
       </Select>
     </div>
+  );
+
+  const directoryField = (label, name, options, listId, placeholder) => (
+    <Field>
+      <FieldLabel htmlFor={name}>{label}</FieldLabel>
+      <Input id={name} dir="auto" value={form[name]} onChange={set(name)} list={listId} placeholder={placeholder} />
+      <datalist id={listId}>
+        {options.map((option) => <option key={option} value={option} />)}
+      </datalist>
+    </Field>
   );
 
   if (loading) {
@@ -388,8 +410,8 @@ export default function BookForm() {
           <div className="grid gap-4 sm:grid-cols-2">
             {field('العنوان *', 'title_ar', { placeholder: 'مثال: الداء والدواء' })}
             {field('العنوان الفرعي', 'subtitle_ar', { placeholder: 'اختياري' })}
-            {field('المؤلف', 'author_ar', { placeholder: 'مثال: ابن القيم الجوزية' })}
-            {field('الناشر', 'publisher_ar', { placeholder: 'مثال: دار ابن كثير' })}
+            {directoryField('المؤلف', 'author_ar', authors, 'author-suggestions', 'مثال: ابن القيم الجوزية')}
+            {directoryField('الناشر', 'publisher_ar', publishers, 'publisher-suggestions', 'مثال: دار ابن كثير')}
             {selectField('التصنيف *', 'category', cats)}
             {field('السعر (درهم) *', 'price', {
               type: 'number',
@@ -425,17 +447,16 @@ export default function BookForm() {
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-light text-brand">
               <IconLayers width={15} height={15} />
             </span>
-            <h2 className="admin-section-title">بيانات الطبعة والمخزون</h2>
+            <h2 className="admin-section-title">بيانات الطبعة</h2>
           </div>
-          <p className="mb-4 text-xs text-soft">مواصفات النسخة المعروضة وكمية المخزون.</p>
+          <p className="mb-4 text-xs text-soft">مواصفات النسخة المعروضة. إدارة الكميات وسجل الحركات من صفحة إدارة المخزون.</p>
           <div className="grid gap-4 sm:grid-cols-2">
             {field('عدد الصفحات', 'pages', { type: 'number', min: 0, placeholder: 'مثال: 480' })}
-            {field('رقم ISBN', 'isbn', { placeholder: 'مثال: 978-2-7451-...' })}
+            {field('رقم ISBN', 'isbn', { dir: 'ltr', className: 'text-left font-mono', placeholder: 'مثال: 978-2-7451-...' })}
             {field('الطبعة', 'edition_ar', { placeholder: 'مثال: الطبعة الخامسة' })}
             {selectField('الورق', 'paper_ar', paperOpts)}
             {selectField('التجليد', 'binding_ar', bindingOpts)}
             {selectField('المقاس', 'size_ar', sizeOpts)}
-            {field('المخزون (عدد النسخ)', 'stock_qty', { type: 'number', min: 0, placeholder: 'مثال: 50' })}
             {selectField('إظهار الكمية في المتجر', 'show_quantity', [
               { value: 'inherit', label: 'مثل الإعداد العام للمتجر' },
               { value: 'show', label: 'إظهار الكمية الدقيقة' },
@@ -482,12 +503,12 @@ export default function BookForm() {
                       </div>
                     )}
                     {img.is_primary && (
-                      <span className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-sm bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      <span className="absolute end-1.5 top-1.5 flex items-center gap-1 rounded-sm bg-brand px-1.5 py-0.5 text-[10px] font-bold text-white">
                         <IconStar filled width={10} height={10} /> الرئيسية
                       </span>
                     )}
                     {img.blob && (
-                      <span className="absolute left-1.5 top-1.5 rounded-sm bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
+                      <span className="absolute start-1.5 top-1.5 rounded-sm bg-amber-400 px-1.5 py-0.5 text-[10px] font-bold text-brand-dark">
                         ستُرفع عند الحفظ
                       </span>
                     )}
@@ -636,7 +657,7 @@ export default function BookForm() {
                   onChange={(e) => setUrlInput(e.target.value)}
                   dir="ltr"
                   placeholder="https://…/cover.jpg"
-                  className="flex-1 text-right"
+                  className="flex-1 text-left"
                   aria-label="رابط صورة"
                 />
                 <Button
@@ -665,7 +686,6 @@ export default function BookForm() {
           <div className="flex flex-wrap gap-3">
             {check('is_new', 'كتاب جديد')}
             {check('is_featured', (<span className="flex items-center gap-1.5"><IconStar filled width={14} height={14} className="text-amber-500" /> كتاب مميز</span>))}
-            {check('is_out_of_stock', 'نفدت الكمية')}
             {check('is_active', 'منشور في المتجر')}
           </div>
         </section>

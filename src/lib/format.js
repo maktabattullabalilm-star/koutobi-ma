@@ -1,12 +1,19 @@
+import { CURRENCY, LOCALE } from './i18n';
+
+const CURRENCY_SUFFIX = { MAD: 'درهم' };
+
 export function formatPrice(n) {
   if (n == null || Number.isNaN(Number(n))) return '—';
-  return new Intl.NumberFormat('ar-MA', { maximumFractionDigits: 2 }).format(Number(n)) + ' درهم';
+  return (
+    new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 2 }).format(Number(n)) +
+    ` ${CURRENCY_SUFFIX[CURRENCY] || CURRENCY}`
+  );
 }
 
 export function formatDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
-  return new Intl.DateTimeFormat('ar-MA', { dateStyle: 'medium', timeStyle: 'short' }).format(d);
+  return new Intl.DateTimeFormat(LOCALE, { dateStyle: 'medium', timeStyle: 'short' }).format(d);
 }
 
 export function isImagePath(v) {

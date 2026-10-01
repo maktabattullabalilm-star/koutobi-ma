@@ -1,0 +1,13 @@
+# gitleaks config — block Supabase service-role + R2/AWS secrets.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-service-role"
+description = "Supabase service_role key"
+regex = '''(?i)service_role[^a-z0-9]{0,20}eyJ[A-Za-z0-9_-]{10,}'''
+
+[[rules]]
+id = "r2-secret"
+description = "R2 / S3 secret access key assignment"
+regex = '''(?i)R2_SECRET_ACCESS_KEY\s*=\s*['"]?[A-Za-z0-9/+=]{16,}'''

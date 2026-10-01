@@ -3,29 +3,13 @@ import { Link } from 'react-router-dom';
 import { adminGetBooks, adminGetOrders, adminStats } from '../../lib/admin';
 import { supabase } from '../../lib/supabase';
 import { getVerifiedTotpFactor } from '../../lib/mfa';
-import { useToast } from '../../components/Toast';
-import { formatPrice, formatDate } from '../../lib/format';
+import { formatPrice, formatDate, isSoldOut } from '../../lib/format';
+import { LOW_STOCK_AT, ORDER_STATUS } from '../../lib/constants';
 import { IconBook, IconCart, IconInbox, IconCash } from '../../components/icons';
-import PageHeader from './PageHeader';
-import StatusPill from './StatusPill';
+import PageHeader from '../../components/admin/PageHeader';
+import StatusPill from '../../components/admin/StatusPill';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-const STATUS_LABEL = {
-  new: 'جديد',
-  contacted: 'تم التواصل',
-  delivered: 'تم التوصيل',
-  cancelled: 'ملغى',
-};
-
-const LOW_STOCK_AT = 5;
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -33,7 +17,6 @@ export default function AdminDashboard() {
   const [lowStock, setLowStock] = useState([]);
   const [error, setError] = useState('');
   const [mfaOff, setMfaOff] = useState(false);
-  const { show } = useToast();
 
   useEffect(() => {
     Promise.all([adminStats(), adminGetOrders(), adminGetBooks()])
@@ -46,22 +29,45 @@ export default function AdminDashboard() {
     getVerifiedTotpFactor(supabase)
       .then((f) => setMfaOff(!f))
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const cards = stats
     ? [
-        { label: 'إجمالي الكتب', value: String(stats.books), Icon: IconBook, color: 'bg-brand-light text-brand', to: '/admin/books' },
-        { label: 'إجمالي الطلبات', value: String(stats.orders), Icon: IconCart, color: 'bg-sky-100 text-sky-700', to: '/admin/orders' },
-        { label: 'طلبات قيد المعالجة', value: String(stats.pending), Icon: IconInbox, color: 'bg-amber-100 text-amber-700', to: '/admin/orders' },
-        { label: 'إيرادات (تم التوصيل)', value: formatPrice(stats.revenue), Icon: IconCash, color: 'bg-rose-100 text-rose-700', to: '/admin/orders' },
+        {
+          label: 'إجمالي الكتب',
+          value: String(stats.books),
+          Icon: IconBook,
+          color: 'bg-brand-light text-brand',
+          to: '/admin/books',
+        },
+        {
+          label: 'إجمالي الطلبات',
+          value: String(stats.orders),
+          Icon: IconCart,
+          color: 'bg-sky-100 text-sky-700',
+          to: '/admin/orders',
+        },
+        {
+          label: 'طلبات قيد المعالجة',
+          value: String(stats.pending),
+          Icon: IconInbox,
+          color: 'bg-amber-100 text-amber-700',
+          to: '/admin/orders',
+        },
+        {
+          label: 'إيرادات (تم التوصيل)',
+          value: formatPrice(stats.revenue),
+          Icon: IconCash,
+          color: 'bg-rose-100 text-rose-700',
+          to: '/admin/orders',
+        },
       ]
     : [];
 
   const attentionCount = (stats?.pending || 0) + lowStock.length + (mfaOff ? 1 : 0);
   // Triage order: fully out of stock (red) → pending orders → low stock → security nudge.
-  const outOfStock = lowStock.filter((b) => (b.stock_qty ?? 0) <= 0);
-  const runningLow = lowStock.filter((b) => (b.stock_qty ?? 0) > 0);
+  const outOfStock = lowStock.filter((b) => isSoldOut(b));
+  const runningLow = lowStock.filter((b) => !isSoldOut(b));
 
   return (
     <div>
@@ -105,7 +111,10 @@ export default function AdminDashboard() {
         <ul className="mt-3 space-y-2 text-sm">
           {outOfStock.map((b) => (
             <li key={b.id}>
-              <Link to={`/admin/books/${b.id}/edit`} className="flex items-center justify-between gap-3 rounded-md bg-rose-50/60 px-3 py-2.5 text-ink ring-1 ring-inset ring-rose-200/60 hover:bg-rose-50">
+              <Link
+                to={`/admin/stock?book=${b.id}`}
+                className="flex items-center justify-between gap-3 rounded-md bg-rose-50/60 px-3 py-2.5 text-ink ring-1 ring-inset ring-rose-200/60 hover:bg-rose-50"
+              >
                 <span className="min-w-0 truncate">«{b.title_ar}» — نفد المخزون</span>
                 <StatusPill tone="red">نفد ←</StatusPill>
               </Link>
@@ -113,7 +122,10 @@ export default function AdminDashboard() {
           ))}
           {stats && stats.pending > 0 && (
             <li>
-              <Link to="/admin/orders" className="flex items-center justify-between gap-3 rounded-md bg-amber-50 px-3 py-2.5 text-amber-800 ring-1 ring-inset ring-amber-200 hover:bg-amber-100">
+              <Link
+                to="/admin/orders"
+                className="flex items-center justify-between gap-3 rounded-md bg-amber-50 px-3 py-2.5 text-amber-800 ring-1 ring-inset ring-amber-200 hover:bg-amber-100"
+              >
                 <span>لديك {stats.pending} طلب قيد المعالجة — اتصل بالعملاء للتأكيد</span>
                 <StatusPill tone="amber">طلبات ←</StatusPill>
               </Link>
@@ -121,22 +133,32 @@ export default function AdminDashboard() {
           )}
           {runningLow.map((b) => (
             <li key={b.id}>
-              <Link to={`/admin/books/${b.id}/edit`} className="flex items-center justify-between gap-3 rounded-md bg-amber-50/50 px-3 py-2.5 text-ink ring-1 ring-inset ring-amber-200/60 hover:bg-amber-50">
-                <span className="min-w-0 truncate">«{b.title_ar}» — المخزون {(b.stock_qty ?? 0)}</span>
+              <Link
+                to={`/admin/stock?book=${b.id}`}
+                className="flex items-center justify-between gap-3 rounded-md bg-amber-50/50 px-3 py-2.5 text-ink ring-1 ring-inset ring-amber-200/60 hover:bg-amber-50"
+              >
+                <span className="min-w-0 truncate">
+                  «{b.title_ar}» — المخزون <bdi dir="ltr">{b.stock_qty ?? 0}</bdi>
+                </span>
                 <StatusPill tone="amber">قارب ←</StatusPill>
               </Link>
             </li>
           ))}
           {mfaOff && (
             <li>
-              <Link to="/admin/settings" className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2.5 text-ink ring-1 ring-inset ring-line hover:bg-gray-100">
+              <Link
+                to="/admin/settings"
+                className="flex items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2.5 text-ink ring-1 ring-inset ring-line hover:bg-gray-100"
+              >
                 <span>الحساب محمي بكلمة المرور فقط — فعّل التحقق بخطوتين من الإعدادات</span>
                 <StatusPill tone="gray">أمان ←</StatusPill>
               </Link>
             </li>
           )}
           {attentionCount === 0 && (
-            <li className="rounded-md bg-gray-50 px-3 py-2.5 text-xs text-soft">لا طلبات معلقة، ولا نقص مخزون، والحماية مفعّلة.</li>
+            <li className="rounded-md bg-gray-50 px-3 py-2.5 text-xs text-soft">
+              لا طلبات معلقة، ولا نقص مخزون، والحماية مفعّلة.
+            </li>
           )}
         </ul>
       </Card>
@@ -160,13 +182,15 @@ export default function AdminDashboard() {
                 <li key={o.id} className="flex flex-wrap items-center gap-3 py-3">
                   <span className="h-2.5 w-2.5 rounded-full bg-brand" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-ink">{o.customer_name}</div>
-                    <div className="text-xs tabular-nums text-soft" dir="ltr">{o.phone}</div>
+                    <div dir="auto" className="truncate text-sm font-semibold text-ink">{o.customer_name}</div>
+                    <div className="text-xs tabular-nums text-soft" dir="ltr">
+                      {o.phone}
+                    </div>
                   </div>
                   <span className="text-xs text-soft">{formatDate(o.created_at)}</span>
                   <span className="text-sm font-bold tabular-nums text-brand">{formatPrice(o.total)}</span>
-                  <StatusPill tone="blue">
-                    {STATUS_LABEL[o.status] || o.status}
+                  <StatusPill tone={ORDER_STATUS[o.status]?.tone || 'gray'}>
+                    {ORDER_STATUS[o.status]?.label || o.status}
                   </StatusPill>
                 </li>
               ))}
@@ -194,7 +218,9 @@ export default function AdminDashboard() {
               <Link to="/admin/settings">الإعدادات ⚙️</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
-              <a href="/" target="_blank" rel="noreferrer">معاينة المتجر ↗</a>
+              <a href="/" target="_blank" rel="noreferrer noopener">
+                معاينة المتجر ↗
+              </a>
             </Button>
           </CardContent>
         </Card>

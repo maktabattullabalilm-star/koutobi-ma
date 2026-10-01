@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../lib/format';
-import { whatsappLink } from '../lib/config';
+import { generalInquiryLink } from '../lib/whatsapp';
+import { useSiteContact } from '../hooks/useSiteContact';
 import BookCover from '../components/BookCover';
 import { IconCart, IconClose, IconTruck } from '../components/icons';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Card } from '@/components/ui/card';
 
 export default function Cart() {
   const { items, remove, setQty, count, total } = useCart();
+  const { whatsapp } = useSiteContact();
 
   if (items.length === 0) {
     return (
@@ -23,7 +25,12 @@ export default function Cart() {
         </Button>
         <div className="mt-6 text-sm text-soft">
           أو اطلب مباشرة عبر{' '}
-          <a href={whatsappLink('السلام عليكم، أريد طلب كتاب من مكتبة كُتُبِي 📚')} target="_blank" rel="noreferrer" className="font-semibold text-brand hover:text-brand-dark">
+          <a
+            href={generalInquiryLink('book', whatsapp)}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-semibold text-brand hover:text-brand-dark"
+          >
             واتساب
           </a>
         </div>
@@ -34,35 +41,65 @@ export default function Cart() {
   return (
     <div className="container-x py-8">
       <h1 className="mb-1 text-2xl font-bold text-ink sm:text-3xl">سلة التسوق</h1>
-      <p className="mb-6 text-sm text-soft">لديك {count} كتاب في السلة · الدفع عند الاستلام</p>
+      <p className="mb-6 text-sm text-soft">لديك <bdi dir="ltr">{count}</bdi> كتاب في السلة · الدفع عند الاستلام</p>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* items */}
         <div className="space-y-3 lg:col-span-2">
           {items.map((it) => (
             <Card key={it.id} className="flex-row gap-4 border-line/60 p-3.5">
-              <Link to={`/book/${it.id}`} className="shrink-0 overflow-hidden rounded-md border border-line/50 bg-gray-100">
-                <BookCover src={it.cover} alt={it.title} className="h-28 w-20 sm:h-32 sm:w-24" imgClassName="h-full w-full object-cover" />
+              <Link
+                to={`/book/${it.id}`}
+                className="shrink-0 overflow-hidden rounded-md border border-line/50 bg-gray-100"
+              >
+                <BookCover
+                  src={it.cover}
+                  alt={it.title}
+                  className="h-28 w-20 sm:h-32 sm:w-24"
+                  imgClassName="h-full w-full object-cover"
+                />
               </Link>
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <Link to={`/book/${it.id}`} className="text-sm font-bold leading-6 text-ink hover:text-brand">
+                    <Link
+                      to={`/book/${it.id}`}
+                      dir="auto"
+                      className="text-sm font-bold leading-6 text-ink hover:text-brand"
+                    >
                       {it.title}
                     </Link>
-                    {it.author && <div className="text-xs text-soft">{it.author}</div>}
+                    {it.author && <div dir="auto" className="text-xs text-soft">{it.author}</div>}
                   </div>
-                  <button onClick={() => remove(it.id)} className="rounded-md p-1.5 text-gray-300 transition hover:bg-rose-50 hover:text-danger" aria-label="إزالة">
+                  <button
+                    onClick={() => remove(it.id)}
+                    className="rounded-md p-2.5 text-gray-500 transition hover:bg-rose-50 hover:text-danger"
+                    aria-label={`إزالة ${it.title} من السلة`}
+                  >
                     <IconClose width={16} height={16} />
                   </button>
                 </div>
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
                   <div className="flex items-center rounded-md border border-line">
-                    <button onClick={() => setQty(it.id, it.qty + 1)} className="px-3 py-1.5 text-sm font-bold text-brand hover:bg-brand-pale" aria-label="زيادة">
+                    <button
+                      onClick={() => setQty(it.id, it.qty + 1)}
+                      className="min-h-11 min-w-11 px-3 py-1.5 text-sm font-bold text-brand hover:bg-brand-pale"
+                      aria-label={`زيادة كمية ${it.title}`}
+                    >
                       ＋
                     </button>
-                    <span className="min-w-8 border-x border-line px-2 py-1.5 text-center text-sm font-semibold text-ink">{it.qty}</span>
-                    <button onClick={() => setQty(it.id, it.qty - 1)} className="px-3 py-1.5 text-sm font-bold text-brand hover:bg-brand-pale" aria-label="إنقاص">
+                    <span
+                      className="min-w-8 border-x border-line px-2 py-1.5 text-center text-sm font-semibold text-ink"
+                      aria-live="polite"
+                      aria-label={`الكمية: ${it.qty}`}
+                    >
+                      <bdi dir="ltr">{it.qty}</bdi>
+                    </span>
+                    <button
+                      onClick={() => setQty(it.id, it.qty - 1)}
+                      className="min-h-11 min-w-11 px-3 py-1.5 text-sm font-bold text-brand hover:bg-brand-pale"
+                      aria-label={`إنقاص كمية ${it.title}`}
+                    >
                       −
                     </button>
                   </div>
@@ -91,7 +128,7 @@ export default function Cart() {
                 <dd className="font-medium text-soft">يُتحقق هاتفياً</dd>
               </div>
             </dl>
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex items-center justify-between" aria-live="polite">
               <span className="text-sm font-bold text-ink">الإجمالي</span>
               <span className="text-xl font-bold text-brand">{formatPrice(total)}</span>
             </div>

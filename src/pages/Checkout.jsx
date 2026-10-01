@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { createOrder } from '../lib/api';
+import { CART_MAX_QTY, STORAGE_KEYS } from '../lib/constants';
+import { validateOrder } from '../lib/validators';
 import { formatPrice } from '../lib/format';
-import { whatsappLink } from '../lib/config';
+import { checkoutOrderLink } from '../lib/whatsapp';
+import { useSiteContact } from '../hooks/useSiteContact';
 import { useToast } from '../components/Toast';
 import { IconCart, IconCash, IconHeadset } from '../components/icons';
 import BookCover from '../components/BookCover';
@@ -14,6 +17,7 @@ import { Input } from '@/components/ui/input';
 
 export default function Checkout() {
   const { items, total, count, clear } = useCart();
+  const { whatsapp } = useSiteContact();
   const { show } = useToast();
   const navigate = useNavigate();
 
@@ -23,19 +27,17 @@ export default function Checkout() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const validate = () => {
-    const e = {};
-    if (form.name.trim().length < 3) e.name = 'الرجاء إدخال الاسم كاملاً';
-    if (!/^[0-9+\s-]{9,15}$/.test(form.phone.trim())) e.phone = 'أدخل رقم هاتف صحيح (مثال: 0612345678)';
-    if (form.address.trim().length < 8) e.address = 'أدخل عنواناً تفصيلياً لضمان التوصيل';
-    return e;
-  };
+  const validate = () => validateOrder(form);
 
   const submit = async (ev) => {
     ev.preventDefault();
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      show('لا يوجد اتصال بالإنترنت — تحقق من الشبكة ثم أعد المحاولة', 'error');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -48,12 +50,20 @@ export default function Checkout() {
         items: items.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty })),
       });
       sessionStorage.setItem(
-        'koutobi_last_order',
-        JSON.stringify({ id: res.id, total: res.total, name: form.name.trim(), phone: form.phone.trim(), demo: !!res.demo })
+        STORAGE_KEYS.lastOrder,
+        JSON.stringify({
+          id: res.id,
+          total: res.total,
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          demo: !!res.demo,
+        })
       );
       clear();
       if (res.adjusted?.length) {
-        show(`تم تعديل الكمية حسب المتوفر: ${res.adjusted.map((a) => `«${a.title}» أصبحت ${a.given}`).join('، ')}`);
+        show(
+          `تم تعديل الكمية حسب المتوفر: ${res.adjusted.map((a) => `«${a.title}» أصبحت ${a.given}`).join('، ')}`
+        );
       } else {
         show('تم استلام طلبك');
       }
@@ -65,17 +75,25 @@ export default function Checkout() {
     }
   };
 
-  const field = (label, name, placeholder, type = 'text') => (
+  const field = (label, name, placeholder, type = 'text', maxLength, opts = {}) => (
     <Field>
       <FieldLabel htmlFor={name}>{label}</FieldLabel>
       <Input
         id={name}
+        name={name}
         type={type}
+        dir={opts.dir || (name === 'phone' ? 'ltr' : 'auto')}
         placeholder={placeholder}
         value={form[name]}
         onChange={set(name)}
+        maxLength={maxLength}
+        autoComplete={opts.autoComplete}
+        inputMode={opts.inputMode}
+        required={opts.required}
+        aria-invalid={errors[name] ? true : undefined}
+        aria-describedby={errors[name] ? `${name}-error` : undefined}
       />
-      {errors[name] && <FieldError>{errors[name]}</FieldError>}
+      {errors[name] && <FieldError id={`${name}-error`}>{errors[name]}</FieldError>}
     </Field>
   );
 
@@ -107,14 +125,26 @@ export default function Checkout() {
               <IconHeadset width={18} height={18} className="text-brand" /> بيانات التوصيل
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
-              {field('الاسم الكامل *', 'name', 'مثال: محمد الأحمدي')}
-              {field('رقم الهاتف *', 'phone', 'مثال: 0612345678', 'tel')}
-              {field('المدينة', 'city', 'مثال: الدار البيضاء')}
+              {field('الاسم الكامل *', 'name', 'مثال: محمد الأحمدي', 'text', 100, {
+                autoComplete: 'name',
+                required: true,
+              })}
+              {field('رقم الهاتف *', 'phone', 'مثال: 0612345678', 'tel', 20, {
+                autoComplete: 'tel',
+                inputMode: 'tel',
+                required: true,
+              })}
+              {field('المدينة', 'city', 'مثال: الدار البيضاء', 'text', 100, {
+                autoComplete: 'address-level2',
+              })}
               <div className="sm:col-span-2">
-                {field('العنوان التفصيلي *', 'address', 'الحي، الشارع، رقم المنزل…')}
+                {field('العنوان التفصيلي *', 'address', 'الحي، الشارع، رقم المنزل…', 'text', 500, {
+                  autoComplete: 'street-address',
+                  required: true,
+                })}
               </div>
               <div className="sm:col-span-2">
-                {field('ملاحظات (اختياري)', 'notes', 'أي تفاصيل إضافية لمساعدتنا')}
+                {field('ملاحظات (اختياري)', 'notes', 'أي تفاصيل إضافية لمساعدتنا', 'text', 1000)}
               </div>
             </div>
           </Card>
@@ -136,22 +166,29 @@ export default function Checkout() {
         {/* summary */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Card className="border-line/60 bg-white p-5">
-            <h2 className="text-base font-bold text-ink">طلبك ({count})</h2>
+            <h2 className="text-base font-bold text-ink">طلبك (<bdi dir="ltr">{count}</bdi>)</h2>
             <ul className="mt-3 space-y-2.5 border-b border-line pb-4">
               {items.map((it) => {
-                const stock = it.stock ?? 99;
+                const stock = it.stock ?? CART_MAX_QTY;
                 const clamped = stock < it.qty;
                 return (
                   <li key={it.id} className="flex items-center gap-3 text-sm">
-                    <BookCover src={it.cover} alt={it.title} className="h-12 w-9 rounded-sm border border-line" imgClassName="h-full w-full rounded-sm object-cover" />
-                    <span className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
-                    <span className="shrink-0 text-xs text-soft">×{it.qty}</span>
+                    <BookCover
+                      src={it.cover}
+                      alt={it.title}
+                      className="h-12 w-9 rounded-sm border border-line"
+                      imgClassName="h-full w-full rounded-sm object-cover"
+                    />
+                    <span dir="auto" className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
+                    <span className="shrink-0 text-xs text-soft"><bdi dir="ltr">×{it.qty}</bdi></span>
                     {clamped && (
                       <span className="shrink-0 text-xs text-danger bg-rose-50 px-2 py-0.5 rounded-sm">
-                        تم تقليص الكمية إلى المخزون ({stock})
+                        تم تقليص الكمية إلى المخزون (<bdi dir="ltr">{stock}</bdi>)
                       </span>
                     )}
-                    <span className="shrink-0 font-semibold text-brand">{formatPrice(it.price * it.qty)}</span>
+                    <span className="shrink-0 font-semibold text-brand">
+                      {formatPrice(it.price * it.qty)}
+                    </span>
                   </li>
                 );
               })}
@@ -168,11 +205,18 @@ export default function Checkout() {
           <Card className="mt-4 border-line/60 bg-gray-50 p-4 text-center text-sm text-soft">
             تفضّل الطلب مباشرة؟{' '}
             <a
-              href={whatsappLink(
-                `السلام عليكم، أريد تأكيد الطلب التالي:\n${items.map((it) => `• ${it.title} (×${it.qty}) — ${formatPrice(it.price * it.qty)}`).join('\n')}\nالإجمالي: ${formatPrice(total)}\nالاسم: ${form.name}\nالهاتف: ${form.phone}\nالعنوان: ${form.address}`
+              href={checkoutOrderLink(
+                {
+                  items,
+                  total,
+                  name: form.name,
+                  phone: form.phone,
+                  address: form.address,
+                },
+                whatsapp
               )}
               target="_blank"
-              rel="noreferrer"
+              rel="noreferrer noopener"
               className="font-semibold text-brand hover:text-brand-dark"
             >
               تواصل عبر واتساب

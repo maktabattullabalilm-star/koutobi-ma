@@ -1,32 +1,40 @@
-import { createContext, useCallback, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import { IconCheck } from './icons';
 
 const ToastCtx = createContext(null);
 
-export function ToastProvider({ children }) {
-  const [toast, setToast] = useState(null);
-  const [timer, setTimer] = useState(null);
+const TONE_CLASS = {
+  ok: 'bg-ink text-white',
+  error: 'bg-danger text-white',
+};
 
-  const show = useCallback(
-    (message) => {
-      setToast(message);
-      if (timer) clearTimeout(timer);
-      const t = setTimeout(() => setToast(null), 2600);
-      setTimer(t);
-    },
-    [timer]
-  );
+export function ToastProvider({ children }) {
+  const [toast, setToast] = useState(null); // { message, tone }
+  const timer = useRef(null);
+
+  const show = useCallback((message, tone = 'ok') => {
+    setToast({ message, tone: tone === 'error' ? 'error' : 'ok' });
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setToast(null), tone === 'error' ? 5000 : 2600);
+  }, []);
 
   return (
     <ToastCtx.Provider value={{ show }}>
       {children}
       {toast && (
         <div className="fixed bottom-20 inset-x-0 z-50 flex justify-center px-4">
-          <div className="flex items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-medium text-white shadow-lift">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white">
+          <div
+            role="status"
+            aria-live="polite"
+            className={`flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium shadow-lift ${TONE_CLASS[toast.tone]}`}
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-white"
+            >
               <IconCheck width={12} height={12} />
             </span>
-            {toast}
+            <span dir="auto">{toast.message}</span>
           </div>
         </div>
       )}

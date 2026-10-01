@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { extractImageFiles, fitDimensions, isDeletableR2Key, IMAGE_MAX_COUNT, IMAGE_MAX_KB } from './images';
+import {
+  coverSrcSet,
+  extractImageFiles,
+  fitDimensions,
+  isDeletableR2Key,
+  IMAGE_MAX_COUNT,
+  IMAGE_MAX_KB,
+} from './images';
 
 describe('fitDimensions', () => {
   it('never upscales small images', () => {
@@ -65,5 +72,12 @@ describe('extractImageFiles', () => {
     expect(extractImageFiles([])).toEqual([]);
     expect(extractImageFiles(null)).toEqual([]);
     expect(extractImageFiles(undefined)).toEqual([]);
+  });
+});
+
+describe('coverSrcSet (docs/backlog/18)', () => {
+  it('returns undefined without a CDN (single-file R2 origin)', () => {
+    expect(coverSrcSet('https://pub-xxx.r2.dev/covers/a.webp')).toBeUndefined();
+    expect(coverSrcSet('')).toBeUndefined();
   });
 });

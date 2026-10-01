@@ -3,13 +3,38 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="كُتُبي.ما — مكتبة إسلامية متخصصة. كتب عربية | الدفع عند الاستلام والتوصيل لجميع المدن" />
+    <meta
+      name="description"
+      content="كُتُبي.ما — مكتبة إسلامية متخصصة. كتب عربية | الدفع عند الاستلام والتوصيل لجميع المدن"
+    />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="theme-color" content="#35724e" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ar_MA" />
+    <meta property="og:site_name" content="كُتُبِي.ما" />
+    <meta name="twitter:card" content="summary" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BookStore",
+        "name": "كُتُبِي.ما",
+        "description": "مكتبة إسلامية متخصصة — الدفع عند الاستلام والتوصيل لجميع المدن المغربية",
+        "inLanguage": "ar",
+        "paymentAccepted": "Cash on Delivery",
+        "currenciesAccepted": "MAD"
+      }
+    </script>
     <title>كُتُبِي.ما — مكتبة الكتب الإسلامية</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Fonts: only the weights actually used (Plex 400/500/600/700, Amiri 700 for admin display).
+         300/Amiri-400 removed (see docs/backlog/20). Self-hosting tracked as follow-up. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Amiri:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Amiri:wght@700&display=swap"
       rel="stylesheet"
     />
   </head>

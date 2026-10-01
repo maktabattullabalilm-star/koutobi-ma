@@ -388,6 +388,7 @@ export default function CatalogData() {
   const [guardCatRename, setGuardCatRename] = useState(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeType, setActiveType] = useState(TYPES[0]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -668,17 +669,25 @@ export default function CatalogData() {
         <p className="mb-4 text-xs text-soft">
           القيم التي يختار منها نموذج الكتاب. إعادة التسمية تُحدّث الكتب تلقائياً.
         </p>
-        <div className="space-y-6">
-          {TYPES.map((t) => (
-            <AttributeManager
-              key={t}
-              type={t}
-              items={[...(attrs[t] || [])].sort((a, b) => a.sort - b.sort)}
-              usage={usage[t] || {}}
-              onReload={load}
-            />
-          ))}
-        </div>
+        <Select value={activeType} onValueChange={setActiveType}>
+          <SelectTrigger className="mb-4 max-w-xs" aria-label="نوع الخيارات">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TYPES.map((t) => (
+              <SelectItem key={t} value={t}>
+                {TYPE_LABEL[t]} ({(attrs[t] || []).length})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <AttributeManager
+          key={activeType}
+          type={activeType}
+          items={[...(attrs[activeType] || [])].sort((a, b) => a.sort - b.sort)}
+          usage={usage[activeType] || {}}
+          onReload={load}
+        />
       </section>
     </div>
   );

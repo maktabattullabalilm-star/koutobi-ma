@@ -11,13 +11,27 @@ function builder(table) {
       state.calls.push([table, op, args]);
       return b;
     },
-    select(...a) { return b._push('select', a); },
-    eq(...a) { return b._push('eq', a); },
-    order(...a) { return b._push('order', a); },
-    ilike(...a) { return b._push('ilike', a); },
-    or(...a) { return b._push('or', a); },
-    in(...a) { return b._push('in', a); },
-    insert(...a) { return b._push('insert', a); },
+    select(...a) {
+      return b._push('select', a);
+    },
+    eq(...a) {
+      return b._push('eq', a);
+    },
+    order(...a) {
+      return b._push('order', a);
+    },
+    ilike(...a) {
+      return b._push('ilike', a);
+    },
+    or(...a) {
+      return b._push('or', a);
+    },
+    in(...a) {
+      return b._push('in', a);
+    },
+    insert(...a) {
+      return b._push('insert', a);
+    },
     maybeSingle() {
       const rows = state.tables[table] || [];
       return Promise.resolve({ data: rows[0] ?? null, error: null });
@@ -47,8 +61,26 @@ vi.mock('./supabase', () => ({
 const { createOrder, getBook, getBooks, getCategories, getRelatedBooks } = await import('./api');
 
 const ROWS = [
-  { id: '1', title_ar: 'الداء والدواء', category: 'الرقائق والأخلاق', price: '70.00', old_price: '85.00', stock_qty: 10, is_active: true, created_at: '2026-01-02' },
-  { id: '2', title_ar: 'حصن المسلم', category: 'الأذكار والأدعية', price: '15.00', old_price: null, stock_qty: 10, is_active: true, created_at: '2026-01-03' },
+  {
+    id: '1',
+    title_ar: 'الداء والدواء',
+    category: 'الرقائق والأخلاق',
+    price: '70.00',
+    old_price: '85.00',
+    stock_qty: 10,
+    is_active: true,
+    created_at: '2026-01-02',
+  },
+  {
+    id: '2',
+    title_ar: 'حصن المسلم',
+    category: 'الأذكار والأدعية',
+    price: '15.00',
+    old_price: null,
+    stock_qty: 10,
+    is_active: true,
+    created_at: '2026-01-03',
+  },
 ];
 
 beforeEach(() => {
@@ -130,7 +162,7 @@ describe('getRelatedBooks (live)', () => {
   });
 });
 
-describe('createOrder (live)', () => {
+describe('createOrder (live, server-priced RPC)', () => {
   const payload = {
     name: 'اختبار',
     phone: '0600000000',
@@ -140,70 +172,58 @@ describe('createOrder (live)', () => {
     items: [{ id: '1', title: 'الداء والدواء', price: 70, qty: 2 }],
   };
 
-  it('computes the total and inserts order + items without any SELECT', async () => {
-    const res = await createOrder(payload);
-    expect(res.total).toBe(140);
-    expect(res.id).toBeTruthy();
+  beforeEach(() => {
+    mockClient.__rpcImpl = null;
+  });
 
-    const orderInserts = callsFor('orders', 'insert');
-    expect(orderInserts).toHaveLength(1);
-    expect(orderInserts[0][0]).toMatchObject({
-      id: res.id,
-      customer_name: 'اختبار',
-      city: 'الرباط',
-      total: 140,
-    });
-    // Privacy: guests must never SELECT orders (RLS allows INSERT only).
-    expect(callsFor('orders', 'select')).toHaveLength(0);
+  function mockRpc(data, error = null) {
+    mockClient.rpc = (...a) => {
+      state.calls.push(['rpc', 'rpc', a]);
+      return Promise.resolve({ data, error });
+    };
+  }
 
-    const itemInserts = callsFor('order_items', 'insert');
-    expect(itemInserts).toHaveLength(1);
-    expect(itemInserts[0][0]).toEqual([
-      { order_id: res.id, book_id: '1', title_ar: 'الداء والدواء', price: 70, quantity: 2 },
+  it('sends only id+qty and returns the server total (never trusts cart price)', async () => {
+    mockRpc({ id: 'order-1', total: '140.00' });
+    const res = await createOrder({ ...payload, items: [{ id: '1', title: 'X', price: 1, qty: 2 }] });
+    expect(res).toEqual({ id: 'order-1', total: 140, adjusted: [] });
+
+    const rpcCalls = state.calls.filter(([t]) => t === 'rpc');
+    expect(rpcCalls).toHaveLength(1);
+    expect(rpcCalls[0][2]).toEqual([
+      'create_order',
+      {
+        p_name: 'اختبار',
+        p_phone: '0600000000',
+        p_address: 'شارع الاختبار رقم 1',
+        p_city: 'الرباط',
+        p_notes: null,
+        p_items: [{ book_id: '1', qty: 2 }],
+      },
     ]);
-  });
-
-  it('throws when the order insert fails', async () => {
-    state.tables.orders = new Error('rls denied');
-    await expect(createOrder(payload)).rejects.toThrow('rls denied');
-  });
-
-  it('throws when the items insert fails', async () => {
-    state.tables.order_items = new Error('fk violation');
-    await expect(createOrder(payload)).rejects.toThrow('fk violation');
-  });
-
-  it('refuses items with zero fresh stock and names the book', async () => {
-    state.tables.books = [{ ...ROWS[0], stock_qty: 0 }];
-    await expect(createOrder(payload)).rejects.toThrow('نفدت كمية');
-    await expect(createOrder(payload)).rejects.toThrow('الداء والدواء');
+    // Privacy + integrity: no direct table inserts/reads from the browser.
     expect(callsFor('orders', 'insert')).toHaveLength(0);
+    expect(callsFor('order_items', 'insert')).toHaveLength(0);
+    expect(callsFor('orders', 'select')).toHaveLength(0);
   });
 
-  it('clamps quantity to fresh stock and reports the adjustment', async () => {
-    state.tables.books = [{ ...ROWS[0], stock_qty: 1 }];
-    const res = await createOrder(payload);
-    expect(res.total).toBe(70);
-    expect(res.adjusted).toEqual([{ title: 'الداء والدواء', asked: 2, given: 1 }]);
-    expect(callsFor('order_items', 'insert')[0][0]).toEqual([
-      { order_id: res.id, book_id: '1', title_ar: 'الداء والدواء', price: 70, quantity: 1 },
-    ]);
+  it('maps server errors to Arabic (rate limit)', async () => {
+    mockRpc(null, { message: 'rate limited' });
+    await expect(createOrder(payload)).rejects.toThrow('عدد المحاولات');
   });
 
-  it('decrements stock per ordered item via RPC', async () => {
-    state.calls = [];
-    const res = await createOrder(payload);
-    const rpcCalls = state.calls.filter(([t, o]) => t === 'rpc');
-    expect(rpcCalls).toContainEqual(['rpc', 'rpc', ['decrement_stock', { p_book_id: '1', p_qty: 2 }]]);
-    expect(res.id).toBeTruthy();
+  it('maps out-of-stock with the book name', async () => {
+    mockRpc(null, { message: 'out of stock: الداء والدواء' });
+    await expect(createOrder(payload)).rejects.toThrow('نفدت كمية «الداء والدواء»');
   });
 
-  it('fails open when the stock read errors', async () => {
-    state.tables.books = new Error('db down');
-    // stock read throws → attachImages... no: createOrder catches read errors
-    // but the books select error surfaces via `error` field? mock returns error
-    // object → stockById stays empty → trusts cart.
-    const res = await createOrder(payload);
-    expect(res.total).toBe(140);
+  it('maps over-stock with available quantity', async () => {
+    mockRpc(null, { message: 'over stock: الداء والدواء asked 2 have 1' });
+    await expect(createOrder(payload)).rejects.toThrow('هي 1 فقط');
+  });
+
+  it('maps bad phone to the MA hint', async () => {
+    mockRpc(null, { message: 'bad phone' });
+    await expect(createOrder(payload)).rejects.toThrow('مغربي');
   });
 });

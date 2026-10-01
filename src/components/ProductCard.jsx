@@ -22,14 +22,15 @@ export default function ProductCard({ book }) {
           alt={book.title_ar}
           className="absolute inset-0 h-full w-full"
           imgClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          soldOut={soldOut}
         />
         {discounted && (
-          <span className="absolute right-2 top-2 rounded-md bg-danger px-2 py-0.5 text-xs font-bold text-white">
-            خصم {discountPct}٪
+          <span className="absolute start-2 top-2 rounded-md bg-danger px-2 py-0.5 text-xs font-bold text-white">
+            خصم <bdi dir="ltr">{discountPct}٪</bdi>
           </span>
         )}
         {book.is_new && (
-          <span className="absolute left-2 top-2 rounded-md bg-brand px-2 py-0.5 text-xs font-bold text-white">
+          <span className="absolute end-2 top-2 rounded-md bg-brand px-2 py-0.5 text-xs font-bold text-white">
             جديد
           </span>
         )}
@@ -42,15 +43,21 @@ export default function ProductCard({ book }) {
 
       {/* body */}
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        <span className="text-[11px] font-medium text-brand">{book.category}</span>
-        <Link to={`/book/${book.id}`} className="clamp-2 text-[14px] font-semibold leading-6 text-ink hover:text-brand">
+        <span dir="auto" className="text-[11px] font-medium text-brand">{book.category}</span>
+        <Link
+          to={`/book/${book.id}`}
+          dir="auto"
+          className="clamp-2 text-[14px] font-semibold leading-6 text-ink hover:text-brand"
+        >
           {book.title_ar}
         </Link>
-        {book.author_ar && <span className="text-xs text-soft">{book.author_ar}</span>}
+        {book.author_ar && <span dir="auto" className="text-xs text-soft">{book.author_ar}</span>}
 
         <div className="mt-auto flex items-center gap-2 pt-2">
           <span className="text-base font-bold text-brand">{formatPrice(book.price)}</span>
-          {discounted && <span className="text-xs text-soft line-through">{formatPrice(book.old_price)}</span>}
+          {discounted && (
+            <span className="text-xs text-soft line-through">{formatPrice(book.old_price)}</span>
+          )}
         </div>
 
         <Button

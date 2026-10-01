@@ -9,7 +9,13 @@ const BOOK_A = {
   price: 70,
   cover_image: 'https://example.com/a.jpg',
 };
-const BOOK_B = { id: 'book-b', title_ar: 'حصن المسلم', author_ar: 'القحطاني', price: '15', cover_image: '/b.svg' };
+const BOOK_B = {
+  id: 'book-b',
+  title_ar: 'حصن المسلم',
+  author_ar: 'القحطاني',
+  price: '15',
+  cover_image: '/b.svg',
+};
 
 let api;
 function Probe() {
@@ -97,12 +103,13 @@ describe('CartProvider', () => {
     expect(api.items[0].qty).toBe(2);
   });
 
-  it('persists to localStorage and restores on mount', () => {
+  it('persists versioned payloads to localStorage and restores on mount', () => {
     renderCart();
     act(() => api.add(BOOK_A, 2));
-    const stored = JSON.parse(localStorage.getItem('koutobi_cart_v1'));
-    expect(stored).toHaveLength(1);
-    expect(stored[0].qty).toBe(2);
+    const stored = JSON.parse(localStorage.getItem('koutobi_cart_v2'));
+    expect(stored.version).toBe(2);
+    expect(stored.items).toHaveLength(1);
+    expect(stored.items[0].qty).toBe(2);
 
     // Remount reads the persisted cart back.
     const cart2 = renderCart();
@@ -110,10 +117,46 @@ describe('CartProvider', () => {
     expect(cart2.count).toBe(2);
   });
 
+  it('migrates the legacy v1 shape once, then drops it', () => {
+    localStorage.setItem(
+      'koutobi_cart_v1',
+      JSON.stringify([{ id: 'book-a', title: 'أ', price: 10, qty: 1 }])
+    );
+    const cart = renderCart();
+    expect(cart.items).toHaveLength(1);
+    expect(localStorage.getItem('koutobi_cart_v1')).toBeNull();
+  });
+
+  it('drops malformed items instead of crashing', () => {
+    localStorage.setItem(
+      'koutobi_cart_v2',
+      JSON.stringify({ version: 2, items: [{ id: 'x' }, null, { id: 'y', title: 'ب', price: 5, qty: 99 }] })
+    );
+    const cart = renderCart();
+    expect(cart.items).toEqual([{ id: 'y', title: 'ب', price: 5, qty: 99 }]);
+  });
+
   it('recovers from corrupt localStorage', () => {
-    localStorage.setItem('koutobi_cart_v1', '{not-json');
+    localStorage.setItem('koutobi_cart_v2', '{not-json');
     const cart = renderCart();
     expect(cart.items).toEqual([]);
+  });
+
+  it('syncs across tabs via storage events', () => {
+    renderCart();
+    expect(api.items).toEqual([]);
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: 'koutobi_cart_v2',
+          newValue: JSON.stringify({
+            version: 2,
+            items: [{ id: 'book-b', title: 'حصن المسلم', price: 15, qty: 3 }],
+          }),
+        })
+      );
+    });
+    expect(api.items).toEqual([{ id: 'book-b', title: 'حصن المسلم', price: 15, qty: 3 }]);
   });
 
   it('throws outside a provider', () => {

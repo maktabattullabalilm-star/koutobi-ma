@@ -8,7 +8,15 @@ import {
   verifyFactorCode,
 } from './mfa';
 
-function mockClient({ totp = [], enrollData = null, enrollError = null, challengeData = null, verifyData = null, verifyError = null, unenrollError = null } = {}) {
+function mockClient({
+  totp = [],
+  enrollData = null,
+  enrollError = null,
+  challengeData = null,
+  verifyData = null,
+  verifyError = null,
+  unenrollError = null,
+} = {}) {
   return {
     auth: {
       mfa: {
@@ -58,7 +66,10 @@ describe('enroll + challenge + verify + unenroll', () => {
     const client = mockClient({ enrollData: { id: 'f1', totp: { qr_code: '<svg/>', secret: 'ABC' } } });
     const data = await enrollTotpFactor(client);
     expect(data.id).toBe('f1');
-    expect(client.auth.mfa.enroll).toHaveBeenCalledWith({ factorType: 'totp', friendlyName: 'admin-authenticator' });
+    expect(client.auth.mfa.enroll).toHaveBeenCalledWith({
+      factorType: 'totp',
+      friendlyName: 'admin-authenticator',
+    });
   });
 
   it('surfaces enroll errors', async () => {
@@ -80,14 +91,20 @@ describe('enroll + challenge + verify + unenroll', () => {
 
   it('rejects malformed codes before any network call', async () => {
     const client = mockClient({ verifyData: {} });
-    await expect(verifyFactorCode(client, { factorId: 'f', challengeId: 'c', code: '12' })).rejects.toThrow('6 أرقام');
-    await expect(verifyFactorCode(client, { factorId: 'f', challengeId: 'c', code: 'abcdef' })).rejects.toThrow('6 أرقام');
+    await expect(verifyFactorCode(client, { factorId: 'f', challengeId: 'c', code: '12' })).rejects.toThrow(
+      '6 أرقام'
+    );
+    await expect(
+      verifyFactorCode(client, { factorId: 'f', challengeId: 'c', code: 'abcdef' })
+    ).rejects.toThrow('6 أرقام');
     expect(client.auth.mfa.verify).not.toHaveBeenCalled();
   });
 
   it('surfaces verify errors (e.g. expired challenge)', async () => {
     const client = mockClient({ verifyData: null, verifyError: new Error('invalid code') });
-    await expect(verifyFactorCode(client, { factorId: 'f', challengeId: 'c', code: '123456' })).rejects.toThrow('invalid code');
+    await expect(
+      verifyFactorCode(client, { factorId: 'f', challengeId: 'c', code: '123456' })
+    ).rejects.toThrow('invalid code');
   });
 
   it('unenrolls by factor id', async () => {

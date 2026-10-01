@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { PASSWORD_MIN } from '../../lib/constants';
 import { useToast } from '../../components/Toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,8 +33,8 @@ export default function ResetPassword() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
-    if (form.password.length < 8) {
-      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+    if (form.password.length < PASSWORD_MIN) {
+      setError(`كلمة المرور يجب أن تكون ${PASSWORD_MIN} حرفًا على الأقل`);
       return;
     }
     if (form.password !== form.confirm) {
@@ -61,49 +62,57 @@ export default function ResetPassword() {
             <CardTitle className="text-lg">تعيين كلمة مرور جديدة 🔑</CardTitle>
           </CardHeader>
           <CardContent>
-        <form onSubmit={submit} noValidate>
-          {!ready || loading ? (
-            <p className="mt-4 text-center text-sm text-soft">جارٍ التحقق من رابط الاستعادة…</p>
-          ) : !session ? (
-            <div className="mt-4">
-              <div className="rounded-md bg-rose-50 px-3 py-2 text-sm leading-6 text-danger">
-                الرابط غير صالح أو منتهي الصلاحية — اطلب رابط استعادة جديداً من صفحة الدخول.
-              </div>
-              <Button asChild className="mt-4 w-full">
-                <Link to="/admin">العودة لتسجيل الدخول</Link>
-              </Button>
-            </div>
-          ) : (
-            <>
-              {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
-              <Label className="mt-4 block" htmlFor="new-password">كلمة المرور الجديدة</Label>
-              <Input
-                id="new-password"
-                type="password"
-                required
-                dir="ltr"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="8 أحرف على الأقل"
-                className="mt-1.5 text-right"
-              />
-              <Label className="mt-4 block" htmlFor="confirm-password">تأكيد كلمة المرور</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                required
-                dir="ltr"
-                value={form.confirm}
-                onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                placeholder="أعد كتابتها"
-                className="mt-1.5 text-right"
-              />
-              <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
-                {busy ? 'جارٍ الحفظ…' : 'تعيين كلمة المرور'}
-              </Button>
-            </>
-          )}
-        </form>
+            <form onSubmit={submit} noValidate>
+              {!ready || loading ? (
+                <p className="mt-4 text-center text-sm text-soft">جارٍ التحقق من رابط الاستعادة…</p>
+              ) : !session ? (
+                <div className="mt-4">
+                  <div className="rounded-md bg-rose-50 px-3 py-2 text-sm leading-6 text-danger">
+                    الرابط غير صالح أو منتهي الصلاحية — اطلب رابط استعادة جديداً من صفحة الدخول.
+                  </div>
+                  <Button asChild className="mt-4 w-full">
+                    <Link to="/admin">العودة لتسجيل الدخول</Link>
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {error && (
+                    <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>
+                  )}
+                  <Label className="mt-4 block" htmlFor="new-password">
+                    كلمة المرور الجديدة
+                  </Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    required
+                    dir="ltr"
+                    autoComplete="new-password"
+                    minLength={PASSWORD_MIN}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="••••••••••••"
+                    className="mt-1.5 text-left"
+                  />
+                  <Label className="mt-4 block" htmlFor="confirm-password">
+                    تأكيد كلمة المرور
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    required
+                    dir="ltr"
+                    value={form.confirm}
+                    onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                    placeholder="••••••••••••"
+                    className="mt-1.5 text-left"
+                  />
+                  <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
+                    {busy ? 'جارٍ الحفظ…' : 'تعيين كلمة المرور'}
+                  </Button>
+                </>
+              )}
+            </form>
           </CardContent>
         </Card>
       </div>

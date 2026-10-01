@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatPrice } from '../lib/format';
-import { whatsappLink } from '../lib/config';
+import { STORAGE_KEYS } from '../lib/constants';
+import { thankYouConfirmLink } from '../lib/whatsapp';
+import { useSiteContact } from '../hooks/useSiteContact';
 import { IconWhatsApp } from '../components/icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
 export default function ThankYou() {
   const [order, setOrder] = useState(null);
+  const { whatsapp } = useSiteContact();
 
   useEffect(() => {
     try {
-      const raw = sessionStorage.getItem('koutobi_last_order');
+      const raw = sessionStorage.getItem(STORAGE_KEYS.lastOrder);
       if (raw) setOrder(JSON.parse(raw));
     } catch {
       /* ignore */
+    } finally {
+      // PII minimization: confirmation data lives in memory only from here.
+      sessionStorage.removeItem(STORAGE_KEYS.lastOrder);
     }
-    window.scrollTo(0, 0);
+    // Scroll + focus reset is handled by <ScrollToTop /> on route change.
   }, []);
 
   const orderId = order?.id;
@@ -24,7 +30,17 @@ export default function ThankYou() {
   return (
     <div className="container-x py-14 text-center">
       <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-light text-brand">
-        <svg viewBox="0 0 24 24" width={44} height={44} fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width={44}
+          height={44}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M20 6L9 17l-5-5" />
         </svg>
       </span>
@@ -42,32 +58,31 @@ export default function ThankYou() {
       {orderId && (
         <Card className="mx-auto mt-6 inline-flex flex-row items-center gap-2 border-line/70 bg-gray-50 px-5 py-3 text-sm">
           <span className="text-soft">رقم الطلب: </span>
-          <span className="font-bold tabular-nums text-brand" dir="ltr">{orderId}</span>
+          <span className="font-bold tabular-nums text-brand" dir="ltr">
+            {orderId}
+          </span>
         </Card>
       )}
 
       {order?.total != null && (
         <p className="mt-3 text-sm text-soft">
-          الإجمالي المطلوب عند الاستلام: <span className="font-bold text-ink">{formatPrice(order.total)}</span>
+          الإجمالي المطلوب عند الاستلام:{' '}
+          <span className="font-bold text-ink">{formatPrice(order.total)}</span>
         </p>
       )}
 
       <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
         <Button asChild className="bg-[#25D366] hover:bg-[#1eb856] sm:flex-1">
           <a
-            href={whatsappLink(
-              `السلام عليكم، أؤكد طلبي رقم ${orderId || ''} ${order?.name ? `باسم ${order.name}` : ''} ${order?.phone ? `(${order.phone})` : ''}.`
-            )}
+            href={thankYouConfirmLink({ orderId, name: order?.name, phone: order?.phone }, whatsapp)}
             target="_blank"
-            rel="noreferrer"
+            rel="noreferrer noopener"
           >
             <IconWhatsApp /> تأكيد أسرع عبر واتساب
           </a>
         </Button>
         <Button asChild variant="outline" className="sm:flex-1">
-          <Link to="/catalog">
-            متابعة التسوق
-          </Link>
+          <Link to="/catalog">متابعة التسوق</Link>
         </Button>
       </div>
 

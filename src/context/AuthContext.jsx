@@ -9,8 +9,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (userId) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-    setProfile(data);
+    try {
+      const { data } = await supabase.from('profiles').select('id, role').eq('id', userId).maybeSingle();
+      setProfile(data ?? null);
+    } catch {
+      setProfile(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -47,7 +51,16 @@ export function AuthProvider({ children }) {
 
   const isAdmin = Boolean(profile && profile.role === 'admin');
   const value = useMemo(
-    () => ({ supabaseEnabled: SUPABASE_ENABLED, session, profile, loading, isAdmin, signIn, signUp, signOut }),
+    () => ({
+      supabaseEnabled: SUPABASE_ENABLED,
+      session,
+      profile,
+      loading,
+      isAdmin,
+      signIn,
+      signUp,
+      signOut,
+    }),
     [session, profile, loading, isAdmin, signIn, signUp, signOut]
   );
 

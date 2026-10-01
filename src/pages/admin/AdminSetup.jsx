@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { PASSWORD_MIN } from '../../lib/constants';
 import { useToast } from '../../components/Toast';
 import { IconWrench } from '../../components/icons';
 import { Button } from '@/components/ui/button';
@@ -70,8 +71,8 @@ export default function AdminSetup() {
     e.preventDefault();
     setError('');
     setNeedsConfirm(false);
-    if (form.password.length < 8) {
-      setError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+    if (form.password.length < PASSWORD_MIN) {
+      setError(`كلمة المرور يجب أن تكون ${PASSWORD_MIN} حرفًا على الأقل — استخدم عبارة مرور طويلة`);
       return;
     }
     if (form.password !== form.confirm) {
@@ -95,7 +96,7 @@ export default function AdminSetup() {
             email,
             password: form.password,
           });
-          if (signInErr) throw new Error('هذا البريد مسجّل مسبقاً — سجّل الدخول بكلمة مرورك من صفحة الإدارة.');
+          if (signInErr) throw new Error('تعذّر المتابعة بهذا البريد — تحقق من البيانات وحاول مجددًا.');
           userId = signInData.user?.id;
         } else {
           throw signUpErr;
@@ -129,7 +130,9 @@ export default function AdminSetup() {
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <span className="inline-flex items-center gap-2">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-white">ك</span>
+            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-white">
+              ك
+            </span>
             <span className="text-2xl font-bold">
               <span className="text-brand">كُتُبِي</span>
               <span className="text-ink">.ما</span>
@@ -142,8 +145,8 @@ export default function AdminSetup() {
           <Card className="border-line p-6 text-center shadow-card">
             <h1 className="text-lg font-bold text-ink">تحقق من بريدك 📧</h1>
             <p className="mt-2 text-sm leading-7 text-soft">
-              تم إنشاء الحساب. أكّد بريدك الإلكتروني عبر الرابط المرسل إليك،
-              ثم <b>أعد فتح رابط الدعوة نفسه</b> لإتمام التفعيل (الرابط ما زال صالحاً).
+              تم إنشاء الحساب. أكّد بريدك الإلكتروني عبر الرابط المرسل إليك، ثم{' '}
+              <b>أعد فتح رابط الدعوة نفسه</b> لإتمام التفعيل (الرابط ما زال صالحاً).
             </p>
             <Button asChild variant="outline" className="mt-5">
               <Link to="/admin">صفحة تسجيل الدخول</Link>
@@ -155,52 +158,62 @@ export default function AdminSetup() {
               <CardTitle className="text-lg">إنشاء حساب المدير</CardTitle>
             </CardHeader>
             <CardContent>
-          <form onSubmit={submit} noValidate>
-            {error && <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>}
+              <form onSubmit={submit} noValidate>
+                {error && (
+                  <div className="mt-3 rounded-md bg-rose-50 px-3 py-2 text-sm text-danger">{error}</div>
+                )}
 
-            <Label className="mt-4 block" htmlFor="su-email">البريد الإلكتروني</Label>
-            <Input
-              id="su-email"
-              type="email"
-              required
-              dir="ltr"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="you@example.com"
-              className="mt-1.5 text-right"
-            />
+                <Label className="mt-4 block" htmlFor="su-email">
+                  البريد الإلكتروني
+                </Label>
+                <Input
+                  id="su-email"
+                  type="email"
+                  required
+                  dir="ltr"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="you@example.com"
+                  className="mt-1.5 text-left"
+                />
 
-            <Label className="mt-4 block" htmlFor="su-pass">كلمة المرور (8 أحرف على الأقل)</Label>
-            <Input
-              id="su-pass"
-              type="password"
-              required
-              dir="ltr"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="••••••••"
-              className="mt-1.5 text-right"
-            />
+                <Label className="mt-4 block" htmlFor="su-pass">
+                  كلمة المرور ({PASSWORD_MIN} حرفًا على الأقل — عبارة مرور طويلة أفضل)
+                </Label>
+                <Input
+                  id="su-pass"
+                  type="password"
+                  required
+                  dir="ltr"
+                  autoComplete="new-password"
+                  minLength={PASSWORD_MIN}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="mt-1.5 text-left"
+                />
 
-            <Label className="mt-4 block" htmlFor="su-confirm">تأكيد كلمة المرور</Label>
-            <Input
-              id="su-confirm"
-              type="password"
-              required
-              dir="ltr"
-              value={form.confirm}
-              onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-              placeholder="••••••••"
-              className="mt-1.5 text-right"
-            />
+                <Label className="mt-4 block" htmlFor="su-confirm">
+                  تأكيد كلمة المرور
+                </Label>
+                <Input
+                  id="su-confirm"
+                  type="password"
+                  required
+                  dir="ltr"
+                  value={form.confirm}
+                  onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                  placeholder="••••••••"
+                  className="mt-1.5 text-left"
+                />
 
-            <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
-              {busy ? 'جارٍ التفعيل…' : 'تفعيل حساب المدير'}
-            </Button>
-            <p className="mt-3 text-center text-xs text-gray-400">
-              يعمل هذا الرابط مرة واحدة فقط، ويُعطّل نهائياً بعد نجاح التفعيل.
-            </p>
-          </form>
+                <Button type="submit" disabled={busy} className="mt-6 w-full py-3">
+                  {busy ? 'جارٍ التفعيل…' : 'تفعيل حساب المدير'}
+                </Button>
+                <p className="mt-3 text-center text-xs text-gray-500">
+                  يعمل هذا الرابط مرة واحدة فقط، ويُعطّل نهائياً بعد نجاح التفعيل.
+                </p>
+              </form>
             </CardContent>
           </Card>
         )}

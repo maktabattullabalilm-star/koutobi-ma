@@ -3,10 +3,30 @@
  * - fitDimensions / isDeletableR2Key are pure (unit-tested).
  * - resizeImageToLimit needs canvas (browser only, hand-tested per TESTING.md).
  */
+import { R2_PREFIX } from './constants';
 
 export const IMAGE_MAX_KB = 180;
 export const IMAGE_MAX_DIM = 1600;
 export const IMAGE_MAX_COUNT = 5;
+
+/**
+ * Optional image-CDN base for responsive variants (docs/backlog/18).
+ * Empty = R2 origin serves single-size files; `coverSrcSet` then returns
+ * undefined and browsers download `src` only. Set VITE_IMAGE_CDN to a
+ * transform endpoint (e.g. Cloudflare Images or /cdn-cgi/image on a custom
+ * domain) shaped `${base}/w=<width>,f=auto/<path>` to activate srcset
+ * with zero call-site churn.
+ */
+const IMAGE_CDN = (import.meta.env.VITE_IMAGE_CDN || '').replace(/\/+$/, '');
+
+export const COVER_WIDTHS = [400, 800, 1200];
+export const DEFAULT_COVER_SIZES = '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw';
+
+export function coverSrcSet(src, widths = COVER_WIDTHS) {
+  if (!src || !IMAGE_CDN) return undefined;
+  const path = String(src).replace(/^https?:\/\/[^/]+/, '');
+  return widths.map((w) => `${IMAGE_CDN}/w=${w},f=auto${path} ${w}w`).join(', ');
+}
 
 /** Scale (w,h) to fit inside maxDim on the longest side. Never upscales. */
 export function fitDimensions(width, height, maxDim = IMAGE_MAX_DIM) {
@@ -20,10 +40,11 @@ export function fitDimensions(width, height, maxDim = IMAGE_MAX_DIM) {
 /**
  * Only keys we created may be deleted: exactly `covers/<filename>`,
  * no subfolders, no `..`, safe filename characters.
- * Mirrors the KEY_RE check in netlify/functions/delete-image.mjs.
+ * Server enforces the same pattern via R2_KEY_RE in _lib/media.mjs.
  */
+const R2_KEY_RE = new RegExp(`^${R2_PREFIX}[A-Za-z0-9._-]+$`);
 export function isDeletableR2Key(key) {
-  return typeof key === 'string' && /^covers\/[A-Za-z0-9._-]+$/.test(key);
+  return typeof key === 'string' && R2_KEY_RE.test(key);
 }
 
 /**
@@ -65,11 +86,7 @@ function loadImage(file) {
 
 function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('تعذّر معالجة الصورة'))),
-      type,
-      quality
-    );
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('تعذّر معالجة الصورة'))), type, quality);
   });
 }
 

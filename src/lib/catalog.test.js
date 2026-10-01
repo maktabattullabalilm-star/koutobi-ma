@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ATTRIBUTE_COLUMNS, countByColumn, nextSort, reorderList } from './catalog';
+import { ATTRIBUTE_COLUMNS, countByColumn, nextSort, reorderList, swapAdjacent } from './catalog';
 
 const ROWS = [
   { id: 'a', value_ar: 'أ', sort: 10 },
@@ -32,6 +32,23 @@ describe('reorderList', () => {
   });
 });
 
+describe('swapAdjacent', () => {
+  it('swaps by uid key (gallery use-case) without touching sorts', () => {
+    const gallery = [
+      { uid: 'u1', sort: 5 },
+      { uid: 'u2', sort: 5 },
+    ];
+    const out = swapAdjacent(gallery, 'u1', 1, 'uid');
+    expect(out.map((r) => r.uid)).toEqual(['u2', 'u1']);
+    expect(out.map((r) => r.sort)).toEqual([5, 5]);
+  });
+
+  it('returns null on impossible moves', () => {
+    expect(swapAdjacent(ROWS, 'a', -1)).toBeNull();
+    expect(swapAdjacent(ROWS, 'zzz', 1)).toBeNull();
+  });
+});
+
 describe('nextSort', () => {
   it('appends after the max sort', () => {
     expect(nextSort(ROWS)).toBe(40);
@@ -42,13 +59,7 @@ describe('nextSort', () => {
 
 describe('countByColumn', () => {
   it('counts books per column value, skipping empties', () => {
-    const books = [
-      { category: 'فقه' },
-      { category: 'فقه' },
-      { category: 'توحيد' },
-      { category: '' },
-      {},
-    ];
+    const books = [{ category: 'فقه' }, { category: 'فقه' }, { category: 'توحيد' }, { category: '' }, {}];
     expect(countByColumn(books, 'category')).toEqual({ فقه: 2, توحيد: 1 });
   });
 

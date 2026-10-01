@@ -9,17 +9,19 @@ import {
   verifyFactorCode,
 } from '../../lib/mfa';
 import { useToast } from '../../components/Toast';
-import PageHeader from './PageHeader';
+import { PASSWORD_MIN } from '../../lib/constants';
+import { isValidMaPhone, normalizePhoneDigits } from '../../lib/validators';
+import {
+  PHONE_SETTING_KEY,
+  WHATSAPP_SETTING_KEY,
+  formatPhoneDisplay,
+  telHref,
+} from '../../lib/siteSettings';
+import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 /**
  * Store + account settings (sensitive area, separate from the overview):
@@ -36,6 +38,11 @@ export default function Settings() {
   const [qtyDefault, setQtyDefault] = useState('hide');
   const [qtyBusy, setQtyBusy] = useState(false);
 
+  const [phone, setPhone] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [contactBusy, setContactBusy] = useState(false);
+  const [contactMsg, setContactMsg] = useState('');
+
   // 2FA state: 'unknown' | 'off' | 'on' | 'enrolling'
   const [mfaState, setMfaState] = useState('unknown');
   const [mfaFactorId, setMfaFactorId] = useState(null);
@@ -50,15 +57,24 @@ export default function Settings() {
         if (v === 'show' || v === 'hide') setQtyDefault(v);
       })
       .catch(() => {});
+    getAppSetting(PHONE_SETTING_KEY)
+      .then((v) => {
+        if (v && /[0-9]/.test(String(v))) setPhone(String(v));
+      })
+      .catch(() => {});
+    getAppSetting(WHATSAPP_SETTING_KEY)
+      .then((v) => {
+        if (v && /[0-9]/.test(String(v))) setWhatsapp(String(v));
+      })
+      .catch(() => {});
     refreshMfa();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const changePassword = async (e) => {
     e.preventDefault();
     setPassMsg('');
-    if (newPass.length < 8) {
-      setPassMsg('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+    if (newPass.length < PASSWORD_MIN) {
+      setPassMsg(`كلمة المرور يجب أن تكون ${PASSWORD_MIN} حرفًا على الأقل`);
       return;
     }
     setPassBusy(true);
@@ -139,6 +155,36 @@ export default function Settings() {
     }
   };
 
+  const saveContacts = async (e) => {
+    e.preventDefault();
+    setContactMsg('');
+    const p = normalizePhoneDigits(phone);
+    const w = normalizePhoneDigits(whatsapp);
+    if (p && !isValidMaPhone(p)) {
+      setContactMsg('رقم الهاتف غير صالح — مثال: 0624182004');
+      return;
+    }
+    if (w && !isValidMaPhone(w)) {
+      setContactMsg('رقم واتساب غير صالح — مثال: 0624182004');
+      return;
+    }
+    if (!p && !w) {
+      setContactMsg('أدخل رقم الهاتف ورقم واتساب أولاً');
+      return;
+    }
+    setContactBusy(true);
+    try {
+      if (p) await adminUpdateAppSetting(PHONE_SETTING_KEY, p);
+      if (w) await adminUpdateAppSetting(WHATSAPP_SETTING_KEY, w);
+      setContactMsg('تم حفظ أرقام التواصل ✓ — تظهر مباشرة في الموقع');
+      show('تم حفظ أرقام التواصل ✓');
+    } catch (err) {
+      setContactMsg(err?.message || 'تعذّر حفظ الأرقام');
+    } finally {
+      setContactBusy(false);
+    }
+  };
+
   const saveQtyDefault = async (value) => {
     setQtyDefault(value);
     setQtyBusy(true);
@@ -166,15 +212,19 @@ export default function Settings() {
 
         <form onSubmit={changePassword} className="mt-4">
           <h3 className="text-sm font-bold text-ink">تغيير كلمة المرور 🔒</h3>
-          <p className="mt-1 text-xs leading-5 text-soft">8 أحرف على الأقل.</p>
+          <p className="mt-1 text-xs leading-5 text-soft">
+            {PASSWORD_MIN} أحرف على الأقل — عبارة مرور طويلة أفضل.
+          </p>
           <div className="mt-2 flex gap-2">
             <Input
               type="password"
               dir="ltr"
+              autoComplete="new-password"
+              minLength={PASSWORD_MIN}
               value={newPass}
               onChange={(e) => setNewPass(e.target.value)}
-              placeholder="كلمة مرور جديدة"
-              className="flex-1 py-2 text-right"
+              placeholder="••••••••••••"
+              className="flex-1 py-2 text-left"
             />
             <Button type="submit" variant="outline" disabled={passBusy} className="shrink-0 px-4 py-2">
               {passBusy ? '…' : 'حفظ'}
@@ -191,30 +241,51 @@ export default function Settings() {
               <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
                 مفعّل ✓ — الدخول يتطلب رمز المصادقة
               </p>
-              <Button variant="link" onClick={disableMfa} disabled={mfaBusy} className="mt-1 h-auto p-0 text-xs font-medium text-danger">
+              <Button
+                variant="link"
+                onClick={disableMfa}
+                disabled={mfaBusy}
+                className="mt-1 h-auto p-0 text-xs font-medium text-danger"
+              >
                 {mfaBusy ? '…' : 'إلغاء التفعيل'}
               </Button>
             </div>
           )}
           {mfaState === 'off' && (
             <div className="mt-2">
-              <p className="text-xs leading-5 text-soft">حماية إضافية لحسابك: رمز متغير من تطبيق في هاتفك عند كل دخول. حمّل تطبيق Google Authenticator من متجر التطبيقات أولاً.</p>
-              <Button onClick={startEnroll} variant="outline" disabled={mfaBusy} className="mt-2 w-full py-2 text-xs">
+              <p className="text-xs leading-5 text-soft">
+                حماية إضافية لحسابك: رمز متغير من تطبيق في هاتفك عند كل دخول. حمّل تطبيق Google Authenticator
+                من متجر التطبيقات أولاً.
+              </p>
+              <Button
+                onClick={startEnroll}
+                variant="outline"
+                disabled={mfaBusy}
+                className="mt-2 w-full py-2 text-xs"
+              >
                 {mfaBusy ? '…' : 'تفعيل بخطوتين'}
               </Button>
             </div>
           )}
           {mfaState === 'enrolling' && enroll && (
             <form onSubmit={confirmEnroll} className="mt-2 space-y-2">
-              <p className="text-xs leading-5 text-soft">افتح تطبيق المصادقة في هاتفك، امسح رمز المربعات أعلاه، ثم أدخل الأرقام الستة الظاهرة فيه:</p>
+              <p className="text-xs leading-5 text-soft">
+                افتح تطبيق المصادقة في هاتفك، امسح رمز المربعات أعلاه، ثم أدخل الأرقام الستة الظاهرة فيه:
+              </p>
               {enroll.qr_code && (
-                <div
-                  className="mx-auto w-fit rounded-md border border-line bg-white p-2 [&>svg]:block [&>svg]:h-40 [&>svg]:w-40"
-                  dangerouslySetInnerHTML={{ __html: enroll.qr_code }}
-                />
+                <div className="mx-auto w-fit rounded-md border border-line bg-white p-2">
+                  <img
+                    src={`data:image/svg+xml;utf8,${encodeURIComponent(enroll.qr_code)}`}
+                    alt="رمز الاستجابة السريعة للتفعيل"
+                    className="block h-40 w-40"
+                  />
+                </div>
               )}
               {enroll.secret && (
-                <p className="break-all rounded-sm bg-gray-50 px-2 py-1.5 text-center font-mono text-[11px] text-soft" dir="ltr">
+                <p
+                  className="break-all rounded-sm bg-gray-50 px-2 py-1.5 text-center font-mono text-[11px] text-soft"
+                  dir="ltr"
+                >
                   {enroll.secret}
                 </p>
               )}
@@ -233,14 +304,23 @@ export default function Settings() {
                   {mfaBusy ? '…' : 'تأكيد'}
                 </Button>
               </div>
-              <Button type="button" variant="link" onClick={() => { setEnroll(null); setMfaState('off'); }} className="h-auto w-full p-0 text-xs text-soft hover:text-danger">
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => {
+                  setEnroll(null);
+                  setMfaState('off');
+                }}
+                className="h-auto w-full p-0 text-xs text-soft hover:text-danger"
+              >
                 إلغاء
               </Button>
             </form>
           )}
           {mfaMsg && <p className="mt-1.5 text-xs text-danger">{mfaMsg}</p>}
           <p className="mt-3 text-[11px] leading-5 text-soft">
-            فقدت هاتفك؟ ادخل إلى لوحة تحكم Supabase ← قسم الدخول (Authentication) ← المستخدمون (Users) ← احذف عامل المصادقة الخاص بحسابك، ثم ادخل بكلمة المرور فقط.
+            فقدت هاتفك؟ ادخل إلى لوحة تحكم Supabase ← قسم الدخول (Authentication) ← المستخدمون (Users) ← احذف
+            عامل المصادقة الخاص بحسابك، ثم ادخل بكلمة المرور فقط.
           </p>
         </div>
       </Card>
@@ -248,9 +328,58 @@ export default function Settings() {
       {/* store settings */}
       <Card className="border-line/70 p-5">
         <h2 className="admin-section-title">إعدادات المتجر</h2>
+        <form onSubmit={saveContacts} className="mt-4 border-b border-line pb-5">
+          <h3 className="text-sm font-bold text-ink">أرقام التواصل 📞</h3>
+          <p className="mt-1 text-xs leading-5 text-soft">
+            رقم الهاتف يظهر في الموقع وزر الاتصال، ورقم واتساب يُستخدم لجميع أزرار واتساب. التغيير يظهر
+            مباشرة في الموقع.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink">رقم الهاتف (للاتصال)</span>
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                dir="ltr"
+                inputMode="tel"
+                placeholder="0624182004"
+                className="py-2 text-left font-mono tabular-nums"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold text-ink">رقم واتساب</span>
+              <Input
+                value={whatsapp}
+                onChange={(e) => setWhatsapp(e.target.value)}
+                dir="ltr"
+                inputMode="tel"
+                placeholder="0624182004"
+                className="py-2 text-left font-mono tabular-nums"
+              />
+            </label>
+          </div>
+          {(phone || whatsapp) && (
+            <p className="mt-2 text-xs text-soft">
+              المعاينة:{' '}
+              <span dir="ltr" className="inline-block font-mono tabular-nums" style={{ unicodeBidi: 'isolate' }}>
+                {formatPhoneDisplay(phone || whatsapp)}
+              </span>{' '}
+              ·{' '}
+              <a href={telHref(phone || whatsapp)} className="text-brand hover:underline" dir="ltr">
+                تجربة الاتصال
+              </a>
+            </p>
+          )}
+          <Button type="submit" variant="outline" disabled={contactBusy} className="mt-3 px-4 py-2 text-xs">
+            {contactBusy ? 'جارٍ الحفظ…' : 'حفظ الأرقام'}
+          </Button>
+          {contactMsg && <p className="mt-1.5 text-xs text-soft">{contactMsg}</p>}
+        </form>
         <div className="mt-4">
           <h3 className="text-sm font-bold text-ink">إظهار الكمية (افتراضي) 🔢</h3>
-          <p className="mt-1 text-xs leading-5 text-soft">يُطبَّق على الكتب المضبوطة على «وراثة الإعداد العام».</p>
+          <p className="mt-1 text-xs leading-5 text-soft">
+            يُطبَّق على الكتب المضبوطة على «وراثة الإعداد العام».
+          </p>
           <Select value={qtyDefault} onValueChange={saveQtyDefault} disabled={qtyBusy}>
             <SelectTrigger className="mt-2 max-w-xs" aria-label="إظهار الكمية">
               <SelectValue />

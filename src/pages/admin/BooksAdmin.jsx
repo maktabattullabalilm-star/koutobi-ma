@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { adminDeleteBookWithImages, adminGetBooks, adminUpdateBook } from '../../lib/admin';
+import { adminDeleteBookWithImages, adminGetBooks, adminUpdateBook, getCategoriesForForm } from '../../lib/admin';
 import { formatPrice, isSoldOut } from '../../lib/format';
 import { LOW_STOCK_AT } from '../../lib/constants';
 import { useToast } from '../../components/Toast';
-import { IconCart, IconClose, IconEdit, IconMinus, IconPlus, IconStar } from '../../components/icons';
+import { IconCart, IconClose, IconEdit, IconStar } from '../../components/icons';
 import BookCover from '../../components/BookCover';
 import PageHeader from '../../components/admin/PageHeader';
 import StatusPill from '../../components/admin/StatusPill';
@@ -70,6 +70,7 @@ function Segmented({ options, value, onChange, label }) {
 export default function BooksAdmin() {
   const { session } = useAuth();
   const [books, setBooks] = useState(null);
+  const [categories, setCategories] = useState([]);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
@@ -81,17 +82,14 @@ export default function BooksAdmin() {
 
   const load = () => {
     setError('');
-    adminGetBooks()
-      .then(setBooks)
+    Promise.all([adminGetBooks(), getCategoriesForForm()])
+      .then(([nextBooks, nextCategories]) => {
+        setBooks(nextBooks);
+        setCategories(nextCategories);
+      })
       .catch((e) => setError(e.message));
   };
   useEffect(load, []);
-
-  const categories = useMemo(() => {
-    const set = new Set();
-    (books || []).forEach((b) => b.category && set.add(b.category));
-    return [...set].sort();
-  }, [books]);
 
   const filtered = useMemo(() => {
     if (!books) return [];
@@ -151,21 +149,6 @@ export default function BooksAdmin() {
     }
   };
 
-  const adjustStock = async (b, delta) => {
-    const newQty = Math.max(0, (b.stock_qty || 0) + delta);
-    const prev = { stock_qty: b.stock_qty, is_out_of_stock: b.is_out_of_stock };
-    patchLocal(b.id, { stock_qty: newQty, is_out_of_stock: newQty === 0 });
-    setBusy(b.id);
-    try {
-      await adminUpdateBook(b.id, { stock_qty: newQty, is_out_of_stock: newQty === 0 });
-    } catch (e) {
-      patchLocal(b.id, prev);
-      show(e.message, 'error');
-    } finally {
-      setBusy('');
-    }
-  };
-
   const confirmRemove = async () => {
     const b = pendingDelete;
     if (!b) return;
@@ -185,35 +168,13 @@ export default function BooksAdmin() {
   const soldOut = (b) => isSoldOut(b);
   const lowStock = (b) => !soldOut(b) && (b.stock_qty ?? 0) <= LOW_STOCK_AT;
 
-  const stockCell = (b, compact = false) => (
-    <div className={`flex items-center gap-1 ${compact ? '' : 'justify-center'}`} dir="ltr">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => adjustStock(b, -1)}
-        disabled={busy === b.id || (b.stock_qty || 0) <= 0}
-        className="text-gray-500 hover:bg-rose-50 hover:text-danger"
-        title="نقص"
-        aria-label="نقص المخزون"
-      >
-        <IconMinus width={14} height={14} />
-      </Button>
-      <span
-        className={`w-8 text-center text-sm font-bold tabular-nums ${(b.stock_qty ?? 0) <= 0 ? 'text-danger' : lowStock(b) ? 'text-amber-600' : 'text-brand'}`}
-      >
+  const stockCell = (b) => (
+    <div className="flex items-center justify-center gap-2">
+      <span className={`min-w-8 text-center text-sm font-bold tabular-nums ${(b.stock_qty ?? 0) <= 0 ? 'text-danger' : lowStock(b) ? 'text-amber-600' : 'text-brand'}`}>
         {b.stock_qty ?? 0}
       </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => adjustStock(b, 1)}
-        disabled={busy === b.id}
-        className="text-gray-500 hover:bg-brand-light hover:text-brand"
-        title="زيادة"
-        aria-label="زيادة المخزون"
-      >
-        <IconPlus width={14} height={14} />
-      </Button>
+      {soldOut(b) ? <StatusPill tone="red">نفد</StatusPill> : lowStock(b) ? <StatusPill tone="amber">قارب</StatusPill> : null}
+      <Link to={`/admin/stock?book=${b.id}`} className="text-[11px] font-semibold text-brand hover:underline">إدارة</Link>
     </div>
   );
 
@@ -375,13 +336,13 @@ export default function BooksAdmin() {
                       <div className="min-w-0">
                         <div className="clamp-2 max-w-56 font-semibold text-ink">
                           {b.is_featured && <span className="me-1 text-amber-500">★</span>}
-                          {b.title_ar}
+                          <bdi dir="auto">{b.title_ar}</bdi>
                         </div>
-                        <div className="text-xs text-soft">{b.author_ar || '—'}</div>
+                        <div dir="auto" className="text-xs text-soft">{b.author_ar || '—'}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap px-4 py-2.5 text-soft">
+                  <TableCell dir="auto" className="whitespace-nowrap px-4 py-2.5 text-soft">
                     {b.category || '—'}
                   </TableCell>
                   <TableCell className="whitespace-nowrap px-4 py-2.5">
@@ -393,14 +354,7 @@ export default function BooksAdmin() {
                     )}
                   </TableCell>
                   <TableCell className="px-4 py-2.5">
-                    <div className="flex items-center justify-center gap-2">
-                      {stockCell(b)}
-                      {soldOut(b) ? (
-                        <StatusPill tone="red">نفد</StatusPill>
-                      ) : lowStock(b) ? (
-                        <StatusPill tone="amber">قارب</StatusPill>
-                      ) : null}
-                    </div>
+                    {stockCell(b)}
                   </TableCell>
                   <TableCell className="px-4 py-2.5 text-center">{publishToggle(b)}</TableCell>
                   <TableCell className="px-4 py-2.5">
@@ -451,9 +405,9 @@ export default function BooksAdmin() {
                 <div className="min-w-0 flex-1">
                   <div className="clamp-2 text-[15px] font-bold leading-6 text-ink">
                     {b.is_featured && <span className="me-1 text-amber-500">★</span>}
-                    {b.title_ar}
+                    <bdi dir="auto">{b.title_ar}</bdi>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-soft">
+                  <div dir="auto" className="mt-0.5 truncate text-xs text-soft">
                     {b.author_ar || '—'} · {b.category || '—'}
                   </div>
                   <div className="mt-1.5 text-base font-bold tabular-nums text-brand">
@@ -464,7 +418,7 @@ export default function BooksAdmin() {
                     {soldOut(b) ? (
                       <StatusPill tone="red">نافد</StatusPill>
                     ) : lowStock(b) ? (
-                      <StatusPill tone="amber">بقي {b.stock_qty}</StatusPill>
+                      <StatusPill tone="amber">بقي <bdi dir="ltr">{b.stock_qty}</bdi></StatusPill>
                     ) : (
                       <StatusPill tone="green">متوفر</StatusPill>
                     )}
@@ -472,7 +426,7 @@ export default function BooksAdmin() {
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-line/60 pt-3">
-                {stockCell(b, true)}
+                <div className="flex items-center gap-2"><span className="text-xs text-soft">المخزون: <b className="tabular-nums text-ink">{b.stock_qty ?? 0}</b></span><Link to={`/admin/stock?book=${b.id}`} className="text-xs font-semibold text-brand">إدارة المخزون</Link></div>
                 {rowActions(b)}
               </div>
             </article>

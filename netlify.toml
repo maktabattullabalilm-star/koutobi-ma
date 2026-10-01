@@ -8,8 +8,44 @@
   # Allowed to be invoked from anywhere (frontend + admin dashboard).
   directory = "netlify/functions"
 
-# SPA fallback — all routes serve index.html
+# API is same-origin only (no CORS headers by design — see docs/backlog/13).
+# Must come BEFORE the SPA fallback so /api/* never serves index.html.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# SPA fallback — all other routes serve index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Long-lived immutable caching for hashed build assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Never cache the SPA shell (else stale app after deploy)
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+# API responses are never cached
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"
+
+# Security headers site-wide
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' https://*.r2.dev https: data:; connect-src 'self' https://*.supabase.co https://fonts.googleapis.com; frame-ancestors 'none'"

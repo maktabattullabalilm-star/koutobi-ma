@@ -5,12 +5,8 @@ import { getCategories } from '../lib/api';
 import { IconCart, IconClose, IconMenu, IconSearch, IconWrench } from './icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import StoreBrand from './StoreBrand';
 
 export default function Header() {
   const { count } = useCart();
@@ -39,38 +35,46 @@ export default function Header() {
       <div className="container-x">
         {/* top row */}
         <div className="flex h-16 items-center gap-3">
-          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(true)} aria-label="القائمة">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={() => setOpen(true)}
+            aria-label="القائمة"
+          >
             <IconMenu />
           </Button>
 
-          <Link to="/" className="flex shrink-0 items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-white">ك</span>
-            <span className="text-xl font-bold leading-none">
-              <span className="text-brand">كُتُبِي</span>
-              <span className="text-ink">.ما</span>
-            </span>
-          </Link>
+          <StoreBrand compact />
 
-          <form onSubmit={submitSearch} className="mx-auto hidden w-full max-w-md lg:block">
+          <form onSubmit={submitSearch} role="search" className="mx-auto hidden w-full max-w-md lg:block">
             <div className="flex items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line focus-within:ring-brand">
               <IconSearch className="shrink-0 text-soft" width={18} height={18} />
               <input
+                dir="auto"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="ابحث عن كتاب، مؤلف، تصنيف…"
-                className="w-full bg-transparent py-2.5 text-sm text-ink outline-hidden placeholder:text-gray-400"
+                aria-label="البحث في المكتبة"
+                type="search"
+                className="w-full bg-transparent py-2.5 text-sm text-ink outline-hidden placeholder:text-gray-500"
               />
             </div>
           </form>
 
           <div className="ms-auto flex items-center gap-1.5 lg:ms-0">
-            <Link to="/admin" className="rounded-md p-2 text-soft hover:text-brand" title="لوحة التحكم" aria-label="لوحة التحكم">
+            <Link
+              to="/admin"
+              className="rounded-md p-2 text-soft hover:text-brand"
+              title="لوحة التحكم"
+              aria-label="لوحة التحكم"
+            >
               <IconWrench width={19} height={19} />
             </Link>
             <Link to="/cart" className="relative rounded-md p-2 text-ink hover:text-brand" aria-label="السلة">
               <IconCart />
               {count > 0 && (
-                <span className="absolute -top-0.5 -left-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">
+                <span className="absolute -top-0.5 -start-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold text-white">
                   {count}
                 </span>
               )}
@@ -87,10 +91,13 @@ export default function Header() {
           </NavLink>
           {categories.map((c) => (
             <NavLink key={c.name} to={`/catalog?category=${encodeURIComponent(c.name)}`} className={navLink}>
-              {c.name}
+              <bdi dir="auto">{c.name}</bdi>
             </NavLink>
           ))}
-          <Link to="/#how" className="whitespace-nowrap px-3 py-2 text-[13px] font-medium text-brand hover:text-brand-dark">
+          <Link
+            to="/#how"
+            className="whitespace-nowrap px-3 py-2 text-[13px] font-medium text-brand hover:text-brand-dark"
+          >
             كيف أطلب؟
           </Link>
         </div>
@@ -102,7 +109,7 @@ export default function Header() {
           <SheetHeader className="border-b border-line px-4 py-4 text-start">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-lg font-bold">
-                <span className="text-brand">كُتُبِي</span>.ما
+                <StoreBrand compact onClick={() => setOpen(false)} />
               </SheetTitle>
               <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="إغلاق">
                 <IconClose />
@@ -110,17 +117,26 @@ export default function Header() {
             </div>
           </SheetHeader>
 
-          <form onSubmit={submitSearch} className="flex items-center gap-2 border-b border-line px-4 py-3">
+          <form
+            onSubmit={submitSearch}
+            role="search"
+            className="flex items-center gap-2 border-b border-line px-4 py-3"
+          >
             <div className="flex flex-1 items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line">
               <IconSearch className="text-soft" width={18} height={18} />
               <Input
+                dir="auto"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="ابحث…"
+                aria-label="البحث في المكتبة"
+                type="search"
                 className="border-0 bg-transparent shadow-none focus-visible:ring-0"
               />
             </div>
-            <Button type="submit" className="px-4 py-2">بحث</Button>
+            <Button type="submit" className="px-4 py-2">
+              بحث
+            </Button>
           </form>
 
           <nav className="flex-1 overflow-y-auto px-2 py-3">
@@ -131,16 +147,24 @@ export default function Header() {
                 onClick={() => setOpen(false)}
                 className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-brand-pale hover:text-brand"
               >
-                {c.name}
+                <bdi dir="auto">{c.name}</bdi>
               </Link>
             ))}
-            <Link to="/#how" onClick={() => setOpen(false)} className="block rounded-md px-3 py-3 text-sm font-semibold text-brand hover:bg-brand-pale">
+            <Link
+              to="/#how"
+              onClick={() => setOpen(false)}
+              className="block rounded-md px-3 py-3 text-sm font-semibold text-brand hover:bg-brand-pale"
+            >
               كيف أطلب؟
             </Link>
           </nav>
 
           <div className="border-t border-line p-4">
-            <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 text-sm text-soft hover:text-brand">
+            <Link
+              to="/admin"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 text-sm text-soft hover:text-brand"
+            >
               <IconWrench width={16} height={16} /> لوحة التحكم
             </Link>
           </div>

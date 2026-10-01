@@ -1,0 +1,17 @@
+{
+  "name": "كُتُبِي.ما — مكتبة الكتب الإسلامية",
+  "short_name": "كُتُبِي",
+  "description": "مكتبة إسلامية متخصصة — الدفع عند الاستلام والتوصيل لجميع المدن المغربية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f9f5",
+  "theme_color": "#35724e",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
