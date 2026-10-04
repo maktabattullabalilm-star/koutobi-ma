@@ -12,6 +12,7 @@ const books = Array.from({ length: 50 }, (_, index) => ({
 
 vi.mock('../hooks/useCatalog', () => ({
   useBooks: () => ({ books, loading: false, error: '' }),
+  useBundles: () => ({ bundles: [], loading: false, error: '' }),
   useCategories: () => ({ categories: [], loading: false, error: '' }),
 }));
 vi.mock('../hooks/useHead', () => ({ useHead: vi.fn() }));

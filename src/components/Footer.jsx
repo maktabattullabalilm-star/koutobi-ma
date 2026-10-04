@@ -7,6 +7,7 @@ import { useStorefrontContent } from '../hooks/useStorefrontContent';
 import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { openCookiePreferences } from '../lib/cookies';
+import { APP_VERSION } from '../lib/version';
 import { IconWhatsApp, IconPhone, IconPaperPlane } from './icons';
 import StoreBrand from './StoreBrand';
 import { Button } from '@/components/ui/button';
@@ -164,7 +165,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-line">
-        <div className="container-x flex flex-col items-center justify-between gap-2 py-5 text-center text-xs text-gray-500 sm:flex-row">
+        <div className="container-x flex flex-col items-center justify-between gap-3 py-5 text-center text-xs text-gray-500 sm:flex-row">
           <span>© {new Date().getFullYear()} مكتبة كُتُبِي.ما — جميع الحقوق محفوظة</span>
           <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             <span>الدفع عند الاستلام · توصيل لجميع المدن</span>
@@ -175,6 +176,10 @@ export default function Footer() {
             >
               إعدادات ملفات الارتباط
             </button>
+          </span>
+          <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <span dir="ltr" className="tabular-nums">v{APP_VERSION}</span>
+            <a href="https://www.instagram.com/minerva.guides/" target="_blank" rel="noreferrer noopener" className="hover:text-brand">© Minerva | DIGITAL Agency</a>
           </span>
         </div>
       </div>

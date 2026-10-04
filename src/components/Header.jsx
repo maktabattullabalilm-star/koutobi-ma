@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getCategories } from '../lib/api';
 import { IconCart, IconClose, IconMenu, IconSearch, IconWrench } from './icons';
@@ -27,8 +27,7 @@ export default function Header() {
     setOpen(false);
   };
 
-  const navLink = ({ isActive }) =>
-    `whitespace-nowrap px-3 py-2 text-[13px] font-medium transition ${isActive ? 'text-brand font-semibold' : 'text-ink hover:text-brand'}`;
+  const navLink = 'whitespace-nowrap px-3 py-2 text-[13px] font-medium text-ink transition hover:text-brand';
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-white/95 backdrop-blur-sm">
@@ -86,17 +85,17 @@ export default function Header() {
       {/* nav row */}
       <nav className="hidden border-t border-line/60 lg:block">
         <div className="container-x flex items-center gap-1 overflow-x-auto py-1.5">
-          <NavLink to="/catalog" className={navLink} end>
+          <Link to="/catalog" className={navLink}>
             كل الكتب
-          </NavLink>
+          </Link>
           {categories.map((c) => (
-            <NavLink key={c.name} to={`/catalog?category=${encodeURIComponent(c.name)}`} className={navLink}>
+            <Link key={c.name} to={`/catalog?category=${encodeURIComponent(c.name)}`} className={navLink}>
               <bdi dir="auto">{c.name}</bdi>
-            </NavLink>
+            </Link>
           ))}
           <Link
             to="/#how"
-            className="whitespace-nowrap px-3 py-2 text-[13px] font-medium text-brand hover:text-brand-dark"
+            className={navLink}
           >
             كيف أطلب؟
           </Link>
@@ -153,7 +152,7 @@ export default function Header() {
             <Link
               to="/#how"
               onClick={() => setOpen(false)}
-              className="block rounded-md px-3 py-3 text-sm font-semibold text-brand hover:bg-brand-pale"
+              className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-brand-pale hover:text-brand"
             >
               كيف أطلب؟
             </Link>

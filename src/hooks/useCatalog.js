@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getBook, getBooks, getCategories } from '../lib/api';
+import { getBook, getBooks, getBundles, getCategories } from '../lib/api';
 
 /**
  * Shared storefront data hooks (docs/backlog/21). One loading/error shape
@@ -41,6 +41,11 @@ export function useBooks({ category, q } = {}) {
 export function useBook(id) {
   const { data, error, loading, reload } = useAsync(getBook, [id]);
   return { book: data, error, loading, reload };
+}
+
+export function useBundles() {
+  const { data, error, loading, reload } = useAsync(getBundles, []);
+  return { bundles: data || [], error, loading, reload };
 }
 
 export function useCategories() {

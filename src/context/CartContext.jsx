@@ -79,6 +79,8 @@ export function CartProvider({ children }) {
           id: book.id,
           title: book.title_ar,
           author: book.author_ar,
+          product_type: book.product_type || 'book',
+          books: book.product_type === 'bundle' ? book.books : undefined,
           price: Number(book.price || 0),
           cover: book.cover_image,
           stock: stock,

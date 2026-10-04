@@ -16,7 +16,7 @@ import {
   IconShield,
   IconEdit,
 } from '../../components/icons';
-import { Boxes, FileText } from 'lucide-react';
+import { Boxes, FileText, Tags } from 'lucide-react';
 
 const LINKS = [
   { to: '/admin/dashboard', label: 'نظرة عامة', Icon: IconInbox, end: true },
@@ -27,6 +27,7 @@ const LINKS = [
   { to: '/admin/content', label: 'محتوى المتجر', Icon: IconEdit },
   { to: '/admin/pages', label: 'صفحات المتجر', Icon: FileText },
   { to: '/admin/stock', label: 'إدارة المخزون', Icon: Boxes },
+  { to: '/admin/offers', label: 'العروض والخصومات', Icon: Tags },
 ];
 
 export default function AdminLayout() {

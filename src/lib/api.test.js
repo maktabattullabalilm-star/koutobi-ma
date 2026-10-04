@@ -186,12 +186,12 @@ describe('createOrder (live, server-priced RPC)', () => {
   it('sends only id+qty and returns the server total (never trusts cart price)', async () => {
     mockRpc({ id: 'order-1', total: '140.00' });
     const res = await createOrder({ ...payload, items: [{ id: '1', title: 'X', price: 1, qty: 2 }] });
-    expect(res).toEqual({ id: 'order-1', total: 140, adjusted: [] });
+    expect(res).toEqual({ id: 'order-1', total: 140, adjusted: [], discountTotal: 0, bundleDiscountTotal: 0 });
 
     const rpcCalls = state.calls.filter(([t]) => t === 'rpc');
     expect(rpcCalls).toHaveLength(1);
     expect(rpcCalls[0][2]).toEqual([
-      'create_order',
+      'create_order_with_offers',
       {
         p_name: 'اختبار',
         p_phone: '0600000000',
@@ -199,6 +199,7 @@ describe('createOrder (live, server-priced RPC)', () => {
         p_city: 'الرباط',
         p_notes: null,
         p_items: [{ book_id: '1', qty: 2 }],
+        p_coupon_code: null,
       },
     ]);
     // Privacy + integrity: no direct table inserts/reads from the browser.

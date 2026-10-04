@@ -21,7 +21,7 @@ export default function Checkout() {
   const { show } = useToast();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({ name: '', phone: '', city: '', address: '', notes: '' });
+  const [form, setForm] = useState({ name: '', phone: '', city: '', address: '', notes: '', coupon: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,6 +47,7 @@ export default function Checkout() {
         city: form.city.trim(),
         address: form.address.trim(),
         notes: form.notes.trim(),
+        couponCode: form.coupon,
         items: items.map((it) => ({ id: it.id, title: it.title, price: it.price, qty: it.qty })),
       });
       sessionStorage.setItem(
@@ -145,6 +146,9 @@ export default function Checkout() {
               </div>
               <div className="sm:col-span-2">
                 {field('ملاحظات (اختياري)', 'notes', 'أي تفاصيل إضافية لمساعدتنا', 'text', 1000)}
+              </div>
+              <div className="sm:col-span-2">
+                {field('كوبون الخصم', 'coupon', 'مثال: KOUTOBI-10', 'text', 32, { dir: 'ltr' })}
               </div>
             </div>
           </Card>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useBooks, useCategories } from '../hooks/useCatalog';
+import { useBooks, useBundles, useCategories } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
 import { formatPrice } from '../lib/format';
 import { generalInquiryLink } from '../lib/whatsapp';
@@ -41,23 +41,24 @@ export default function Catalog() {
 
   const { whatsapp } = useSiteContact();
   const { books, error: booksError, loading: booksLoading } = useBooks({ category, q });
+  const { bundles, error: bundlesError, loading: bundlesLoading } = useBundles();
   useHead({
     title: q ? `نتائج البحث: ${q}` : category === 'all' ? 'جميع الكتب' : category,
     path: `/catalog${params.toString() ? `?${params.toString()}` : ''}`,
   });
   const { categories, error: catsError, loading: catsLoading } = useCategories();
-  const loading = booksLoading || catsLoading;
+  const loading = booksLoading || bundlesLoading || catsLoading;
   const [sort, setSort] = useState('newest');
-  const error = booksError || catsError;
+  const error = booksError || bundlesError || catsError;
 
   const sorted = useMemo(() => {
-    const list = [...books];
+    const list = [...books, ...(category === 'all' && !q ? bundles : [])];
     if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
     else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
     else if (sort === 'title') list.sort((a, b) => (a.title_ar || '').localeCompare(b.title_ar || '', 'ar'));
     else list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return list;
-  }, [books, sort]);
+  }, [books, bundles, category, q, sort]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
@@ -94,7 +95,7 @@ export default function Catalog() {
         </h1>
         <p className="mt-1.5 text-sm text-soft">
           {q && <>نتائج البحث عن: «<bdi>{q}</bdi>» — </>}
-          <bdi dir="ltr">{sorted.length}</bdi> كتاب متاح · الدفع عند الاستلام
+          <bdi dir="ltr">{sorted.length}</bdi> منتج متاح · الدفع عند الاستلام
         </p>
       </div>
 

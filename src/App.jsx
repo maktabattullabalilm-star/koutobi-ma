@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 const Home = lazy(() => import('./pages/Home'));
 const Catalog = lazy(() => import('./pages/Catalog'));
 const BookDetail = lazy(() => import('./pages/BookDetail'));
+const PackDetail = lazy(() => import('./pages/PackDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const ThankYou = lazy(() => import('./pages/ThankYou'));
@@ -29,6 +30,7 @@ const Settings = lazy(() => import('./pages/admin/Settings'));
 const StorefrontContent = lazy(() => import('./pages/admin/StorefrontContent'));
 const PagesAdmin = lazy(() => import('./pages/admin/PagesAdmin'));
 const StockAdmin = lazy(() => import('./pages/admin/StockAdmin'));
+const OffersAdmin = lazy(() => import('./pages/admin/OffersAdmin'));
 
 function RouteFallback() {
   return (
@@ -55,6 +57,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/book/:id" element={<BookDetail />} />
+            <Route path="/pack/:id" element={<PackDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/thank-you" element={<ThankYou />} />
@@ -83,6 +86,7 @@ export default function App() {
               <Route path="content" element={<StorefrontContent />} />
               <Route path="pages" element={<PagesAdmin />} />
               <Route path="stock" element={<StockAdmin />} />
+              <Route path="offers" element={<OffersAdmin />} />
             </Route>
           </Route>
         </Routes>
