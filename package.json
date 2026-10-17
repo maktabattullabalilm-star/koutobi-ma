@@ -7,14 +7,16 @@
     "dev": "vite",
     "dev:api": "netlify dev",
     "build": "vite build",
+    "build:cf": "vite build && cp cf/_headers dist/",
+    "cf:deploy": "npm run build:cf && wrangler deploy",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:local": "npm test && npm run build",
-    "lint": "eslint src netlify/functions",
-    "format": "prettier --write src netlify/functions/_lib index.html",
-    "format:check": "prettier --check src netlify/functions/_lib index.html",
+    "lint": "eslint src netlify/functions worker",
+    "format": "prettier --write src netlify/functions/_lib worker index.html",
+    "format:check": "prettier --check src netlify/functions/_lib worker index.html",
     "typecheck": "tsc --noEmit",
     "verify": "npm run check:no-secrets && npm run lint && npm run typecheck && npm test",
     "check:no-secrets": "bash scripts/check-no-secrets.sh",
@@ -23,6 +25,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1136.0",
     "@supabase/supabase-js": "^2.45.6",
+    "aws4fetch": "^1.0.20",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "lucide-react": "^1.47.0",
@@ -56,6 +59,7 @@
     "vite": "^5.4.11",
     "vite-plugin-pwa": "^0.21.2",
     "vitest": "^2.1.9",
-    "workbox-window": "^7.4.1"
+    "workbox-window": "^7.4.1",
+    "wrangler": "^4.151.1"
   }
 }

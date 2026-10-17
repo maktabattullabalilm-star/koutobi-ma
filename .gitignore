@@ -10,3 +10,6 @@ dist
 supabase/.temp
 # throwaway frontend audit snapshots
 .audit/
+
+# Wrangler local state
+.wrangler/

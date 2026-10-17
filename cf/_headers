@@ -1,0 +1,23 @@
+# Cloudflare Pages headers — copied into dist/ by `npm run build:cf`.
+# Mirrors netlify.toml so both hosts behave identically.
+
+# Long-lived immutable caching for hashed build assets
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Never cache the SPA shell (else stale app after deploy)
+/index.html
+  Cache-Control: no-cache
+
+# API responses are never cached
+/api/*
+  Cache-Control: no-store
+
+# Security headers site-wide
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' https://*.r2.dev https: data:; connect-src 'self' https://*.supabase.co https://fonts.googleapis.com; frame-ancestors 'none'
