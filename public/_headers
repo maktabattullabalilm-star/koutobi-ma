@@ -1,5 +1,6 @@
-# Cloudflare Pages headers — copied into dist/ by `npm run build:cf`.
-# Mirrors netlify.toml so both hosts behave identically.
+# Custom HTTP headers for both hosts (Netlify reads this file from the publish
+# directory; Cloudflare reads it from the static-asset directory).
+# Kept byte-for-byte in sync with the [[headers]] blocks in netlify.toml.
 
 # Long-lived immutable caching for hashed build assets
 /assets/*
