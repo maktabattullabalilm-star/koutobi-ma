@@ -24,7 +24,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1136.0",
     "@supabase/supabase-js": "^2.45.6",
-    "aws4fetch": "^1.0.20",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
     "lucide-react": "^1.47.0",

@@ -6,6 +6,12 @@
   "observability": {
     "enabled": true
   },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "koutobi-ma"
+    }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

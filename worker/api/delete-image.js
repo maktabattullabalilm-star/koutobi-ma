@@ -1,5 +1,5 @@
 import { requireAdmin } from '../lib/auth.js';
-import { r2Client, deleteObject } from '../lib/r2.js';
+import { bucket, deleteObject } from '../lib/r2.js';
 import { R2_KEY_RE } from '../lib/media.js';
 
 /**
@@ -12,7 +12,7 @@ import { R2_KEY_RE } from '../lib/media.js';
  * 1. Verifies the caller is a Supabase user with role = 'admin'
  *    (same anon-key + RLS pattern as upload-image — no service-role key).
  * 2. Validates the key lives under our `covers/` prefix (no `..`, no extra `/`).
- * 3. Deletes the object from Cloudflare R2.
+ * 3. Deletes the object from Cloudflare R2 via the native bucket binding.
  */
 export async function handleDeleteImage(request, env) {
   try {
@@ -31,20 +31,14 @@ export async function handleDeleteImage(request, env) {
       return Response.json({ error: 'مفتاح الصورة غير صالح' }, { status: 400 });
     }
 
-    // ---------- 3. R2 configuration (shared, server-only env) ----------
-    const r2 = r2Client(env);
-    if (!r2) {
-      return Response.json(
-        {
-          error:
-            'متغيرات R2 غير مضبوطة — عيّن R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET',
-        },
-        { status: 500 }
-      );
+    // ---------- 3. R2 configuration (bucket binding) ----------
+    const bkt = bucket(env);
+    if (!bkt) {
+      return Response.json({ error: 'R2 غير مضبوط — تحقق من ربط الحاوية (r2_buckets)' }, { status: 500 });
     }
 
     // ---------- 4. Delete from R2 ----------
-    await deleteObject(r2, key);
+    await deleteObject(bkt, key);
 
     return Response.json({ ok: true, key });
   } catch (err) {

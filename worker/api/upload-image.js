@@ -1,5 +1,5 @@
 import { requireAdmin } from '../lib/auth.js';
-import { r2Client, putObject } from '../lib/r2.js';
+import { bucket, publicUrl, putObject } from '../lib/r2.js';
 import { validateImageUpload, buildR2Key, base64ToBytes } from '../lib/media.js';
 
 /**
@@ -8,7 +8,7 @@ import { validateImageUpload, buildR2Key, base64ToBytes } from '../lib/media.js'
  * Header: Authorization: Bearer <supabase-access-token>
  *
  * 1. Verifies the caller is a Supabase user with role = 'admin'
- * 2. Uploads the image to Cloudflare R2 (S3-compatible)
+ * 2. Uploads the image to Cloudflare R2 via the native bucket binding
  * 3. Returns the public URL for storage in the `books.cover_image` column
  */
 const MAX_BYTES = 6 * 1024 * 1024;
@@ -23,14 +23,12 @@ export async function handleUploadImage(request, env) {
     const auth = await requireAdmin(env, request);
     if (!auth.ok) return Response.json({ error: auth.error }, { status: auth.status });
 
-    // ---------- 2. R2 configuration (shared, server-only env) ----------
-    const r2 = r2Client(env);
-    if (!r2) {
+    // ---------- 2. R2 configuration (bucket binding + public base URL) ----------
+    const bkt = bucket(env);
+    const base = publicUrl(env);
+    if (!bkt || !base) {
       return Response.json(
-        {
-          error:
-            'متغيرات R2 غير مضبوطة — عيّن R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_URL',
-        },
+        { error: 'R2 غير مضبوط — تحقق من ربط الحاوية (r2_buckets) ومن R2_PUBLIC_URL' },
         { status: 500 }
       );
     }
@@ -67,13 +65,13 @@ export async function handleUploadImage(request, env) {
     // ---------- 4. Upload to R2 ----------
     const key = buildR2Key(cleanName, checked.ext);
 
-    await putObject(r2, key, imageBytes, {
+    await putObject(bkt, key, imageBytes, {
       contentType: checked.mime,
       contentDisposition: 'inline',
       cacheControl: 'public, max-age=31536000, immutable',
     });
 
-    const url = `${r2.publicUrl}/${key}`;
+    const url = `${base}/${key}`;
     return Response.json({ url, key });
   } catch (err) {
     console.error('upload-image error:', err);
