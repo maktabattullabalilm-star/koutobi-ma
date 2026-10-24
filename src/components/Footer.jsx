@@ -6,9 +6,10 @@ import { useSiteContact } from '../hooks/useSiteContact';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
 import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 import { generalInquiryLink } from '../lib/whatsapp';
+import { mailtoHref, verifyEmail } from '../lib/email';
 import { openCookiePreferences } from '../lib/cookies';
 import { APP_VERSION } from '../lib/version';
-import { IconWhatsApp, IconPhone, IconPaperPlane } from './icons';
+import { IconWhatsApp, IconPhone, IconMail, IconTelegram } from './icons';
 import StoreBrand from './StoreBrand';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +21,7 @@ function SocialIcon({ network }) {
   if (name === 'tiktok') return <svg {...common}><path d="M16.7 3c.3 2.2 1.6 3.5 3.8 3.7v3.1c-1.4 0-2.7-.4-3.8-1.1v6.8a5.8 5.8 0 1 1-5-5.8v3.1a2.7 2.7 0 1 0 1.9 2.6V3h3.1Z" /></svg>;
   if (name === 'x' || name === 'twitter') return <svg {...common}><path d="M18.9 2H22l-6.8 7.8L23 22h-6.1l-4.8-6.3L6.6 22H3.5l7.3-8.4L3.3 2h6.2l4.3 5.7L18.9 2Zm-1.1 18h1.7L8.6 3.9H6.8L17.8 20Z" /></svg>;
   if (name === 'youtube') return <svg {...common}><path d="M22.5 6.2a3 3 0 0 0-2.1-2.1C18.5 3.6 12 3.6 12 3.6s-6.5 0-8.4.5a3 3 0 0 0-2.1 2.1C1 8.1 1 12 1 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 8.4.5 8.4.5s6.5 0 8.4-.5a3 3 0 0 0 2.1-2.1C23 15.9 23 12 23 12s0-3.9-.5-5.8ZM9.9 15.6V8.4l6.3 3.6-6.3 3.6Z" /></svg>;
+  if (name === 'telegram') return <IconTelegram width={17} height={17} />;
   return <span className="text-[10px] font-bold uppercase">{network.slice(0, 2)}</span>;
 }
 
@@ -30,6 +32,7 @@ function socialHoverColor(network) {
   if (name === 'tiktok') return '#111111';
   if (name === 'x' || name === 'twitter') return '#000000';
   if (name === 'youtube') return '#FF0000';
+  if (name === 'telegram') return '#229ED9';
   return 'var(--color-brand)';
 }
 
@@ -40,6 +43,7 @@ export default function Footer() {
   const content = useStorefrontContent()?.footer || { content: CONTENT_DEFAULTS.footer, visible: true };
   const brand = useStorefrontContent()?.brand?.content || CONTENT_DEFAULTS.brand;
   const socials = (brand.socials || []).filter((social) => social.url);
+  const contactEmailHref = mailtoHref(brand.contact_email);
 
   useEffect(() => {
     getCategories()
@@ -85,7 +89,7 @@ export default function Footer() {
           <div className="mt-4 flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-xs text-soft">
             🚚 شحن متاح لجميع المدن المغربية — الدفع نقداً عند التسليم
           </div>
-          {socials.length > 0 && <div className="mt-5"><p className="mb-2 text-xs font-bold text-ink">تابعنا</p><div className="flex flex-wrap items-center gap-2">{socials.map((social) => <a key={`${social.network}-${social.url}`} href={social.url} target="_blank" rel="noreferrer noopener" style={{ '--social-hover': socialHoverColor(social.network) }} className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-white text-soft hover:border-[var(--social-hover)] hover:bg-[var(--social-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" aria-label={`تابعنا على ${social.network}`} title={social.network}><SocialIcon network={social.network} /></a>)}</div></div>}
+          {socials.length > 0 && <div className="mt-5"><p className="mb-2 text-xs font-bold text-ink">تابعنا</p><div className="flex items-center gap-1.5">{socials.map((social) => <a key={`${social.network}-${social.url}`} href={social.url} target="_blank" rel="noreferrer noopener" style={{ '--social-hover': socialHoverColor(social.network) }} className="flex h-9 min-w-0 flex-1 items-center justify-center rounded-md border border-line bg-white text-soft transition-colors hover:border-[var(--social-hover)] hover:bg-[var(--social-hover)] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand" aria-label={`تابعنا على ${social.network}`} title={social.network}><SocialIcon network={social.network} /></a>)}</div></div>}
         </div>
 
         <div>
@@ -119,11 +123,6 @@ export default function Footer() {
                 كيف أطلب؟
               </Link>
             </li>
-            <li>
-              <Link to="/admin" className="hover:text-brand">
-                لوحة التحكم
-              </Link>
-            </li>
           </ul>
         </div>
 
@@ -155,11 +154,11 @@ export default function Footer() {
                 </span>
               </a>
             </li>
-            <li>
-              <a href="mailto:salam@koutobi.ma" className="flex items-center gap-2 hover:text-brand">
-                <IconPaperPlane width={16} height={16} /> <bdi dir="ltr">salam@koutobi.ma</bdi>
+            {contactEmailHref && <li>
+              <a href={contactEmailHref} className="flex items-center gap-2 hover:text-brand">
+                <IconMail width={16} height={16} /> <bdi dir="ltr">{verifyEmail(brand.contact_email).email}</bdi>
               </a>
-            </li>
+            </li>}
           </ul>
         </div>
       </div>

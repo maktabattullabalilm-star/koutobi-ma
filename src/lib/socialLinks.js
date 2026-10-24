@@ -5,6 +5,7 @@ const SOCIAL_DOMAINS = {
   x: ['x.com', 'twitter.com'],
   twitter: ['x.com', 'twitter.com'],
   youtube: ['youtube.com', 'youtu.be'],
+  telegram: ['t.me', 'telegram.me', 'telegram.org'],
 };
 
 export function verifySocialUrl(network, value) {

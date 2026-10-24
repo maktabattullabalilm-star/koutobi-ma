@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   Layers,
   LogOut,
+  Mail,
   Menu,
   Minus,
   Pencil,
@@ -55,7 +56,9 @@ export const IconClose = adapt(X, 22);
 export const IconEye = adapt(Eye, 18);
 export const IconHeart = adapt(Heart, 18);
 export const IconPhone = adapt(Phone, 20);
-export const IconPaperPlane = adapt(Send, 18);
+export const IconMail = adapt(Mail, 18);
+/** Telegram's logo is a paper plane — reuse the send glyph for it. */
+export const IconTelegram = adapt(Send, 17);
 export const IconChevronDown = adapt(ChevronDown, 16);
 export const IconChevronLeft = adapt(ChevronLeft, 16);
 export const IconChevronRight = adapt(ChevronRight, 16);

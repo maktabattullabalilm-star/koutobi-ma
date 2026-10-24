@@ -1,13 +1,13 @@
 {
   "name": "koutobi-ma",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.1.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:api": "netlify dev",
     "build": "vite build",
-    "cf:deploy": "npm run build && wrangler deploy",
+    "cf:deploy": "npm run check:version && npm run build && wrangler deploy",
     "preview": "vite preview",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -17,8 +17,9 @@
     "format": "prettier --write src netlify/functions/_lib worker index.html",
     "format:check": "prettier --check src netlify/functions/_lib worker index.html",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run check:no-secrets && npm run lint && npm run typecheck && npm test",
+    "verify": "npm run check:no-secrets && npm run check:version && npm run lint && npm run typecheck && npm test",
     "check:no-secrets": "bash scripts/check-no-secrets.sh",
+    "check:version": "node scripts/check-version.mjs",
     "functions:dev": "netlify functions:invoke --name upload-image"
   },
   "dependencies": {

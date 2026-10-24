@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getCategories } from '../lib/api';
-import { IconCart, IconClose, IconMenu, IconSearch, IconWrench } from './icons';
+import { IconCart, IconClose, IconMenu, IconSearch } from './icons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -62,14 +62,6 @@ export default function Header() {
           </form>
 
           <div className="ms-auto flex items-center gap-1.5 lg:ms-0">
-            <Link
-              to="/admin"
-              className="rounded-md p-2 text-soft hover:text-brand"
-              title="لوحة التحكم"
-              aria-label="لوحة التحكم"
-            >
-              <IconWrench width={19} height={19} />
-            </Link>
             <Link to="/cart" className="relative rounded-md p-2 text-ink hover:text-brand" aria-label="السلة">
               <IconCart />
               {count > 0 && (
@@ -157,16 +149,6 @@ export default function Header() {
               كيف أطلب؟
             </Link>
           </nav>
-
-          <div className="border-t border-line p-4">
-            <Link
-              to="/admin"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 text-sm text-soft hover:text-brand"
-            >
-              <IconWrench width={16} height={16} /> لوحة التحكم
-            </Link>
-          </div>
         </SheetContent>
       </Sheet>
     </header>

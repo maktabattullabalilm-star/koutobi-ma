@@ -12,7 +12,7 @@ export const CONTENT_DEFAULTS = {
   product_page: { price_badge: 'الدفع عند الاستلام', tax_note: 'الضريبة مضمنة في السعر · التوصيل يُحسب عند تأكيد الطلب هاتفياً.', add_label: 'أضف للسلة', buy_label: 'اطلب الآن', support: 'عند إتمام طلبك، سيتواصل معك فريقنا هاتفياً لتأكيد العنوان والدفع عند الاستلام.', details_title: 'التفاصيل', specs_title: 'بيانات الطبعة', related_title: 'كتب قد تعجبك أيضاً' },
   footer: { contact_title: 'خدمة العملاء متواجدة لمساعدتكم', contact_description: 'اطلب عبر الموقع وسنتصل بك لتأكيد الطلب والتوصيل.', about: 'مكتبة إسلامية متخصصة في الكتب العربية الأصيلة. نوصل الكتب إلى باب منزلك والدفع عند الاستلام.' },
   announcement: { messages: ['📦 توصيل سريع لجميع المدن المغربية', '💳 الدفع عند الاستلام — بلا مخاطرة', '💬 اطلب عبر واتساب بسهولة'] },
-  brand: { logo_url: '', logo_mark: 'ك', logo_name: 'كُتُبِي', logo_suffix: '.ما', primary_color: '#35724e', primary_dark: '#2b5c40', primary_darker: '#234b35', primary_light: '#e8f2ec', primary_pale: '#f4f9f5', socials: [{ network: 'Facebook', url: '' }, { network: 'Instagram', url: '' }, { network: 'TikTok', url: '' }, { network: 'X', url: '' }, { network: 'YouTube', url: '' }] },
+  brand: { logo_url: '', logo_mark: 'ك', logo_name: 'كُتُبِي', logo_suffix: '.ما', contact_email: 'salam@koutobi.ma', primary_color: '#35724e', primary_dark: '#2b5c40', primary_darker: '#234b35', primary_light: '#e8f2ec', primary_pale: '#f4f9f5', socials: [{ network: 'Facebook', url: '' }, { network: 'Instagram', url: '' }, { network: 'TikTok', url: '' }, { network: 'X', url: '' }, { network: 'YouTube', url: '' }] },
 };
 
 export async function getStorefrontContent() {

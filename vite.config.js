@@ -4,10 +4,35 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { localFunctions } from './vite.local-functions.mjs';
 
+/**
+ * Workbox precaches `/index.html` *together with its response headers*. If the
+ * shell is byte-identical between deploys its precache revision never changes,
+ * so the SW never refetches it and clients keep serving the OLD document — and
+ * therefore the OLD CSP — indefinitely. That is how `img-src blob:` shipped
+ * but never reached browsers, breaking every admin image upload.
+ *
+ * Stamping a unique id into the shell on each build guarantees the precache
+ * entry is refetched, so header changes (CSP especially) actually land.
+ */
+const buildStamp = {
+  name: 'build-stamp',
+  apply: 'build',
+  transformIndexHtml() {
+    return [
+      {
+        tag: 'meta',
+        attrs: { name: 'build-id', content: Date.now().toString(36) },
+        injectTo: 'head-prepend',
+      },
+    ];
+  },
+};
+
 export default defineConfig({
   plugins: [
     react(),
     localFunctions(), // dev-only: serve Netlify functions under /api/*
+    buildStamp,
     VitePWA({
       registerType: 'autoUpdate',
       manifest: false, // we ship our own public/manifest.webmanifest

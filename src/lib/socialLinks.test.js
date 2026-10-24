@@ -9,6 +9,8 @@ describe('social URL verification', () => {
     expect(verifySocialUrl('X', 'https://x.com/koutobi').valid).toBe(true);
     expect(verifySocialUrl('Twitter', 'https://twitter.com/koutobi').valid).toBe(true);
     expect(verifySocialUrl('YouTube', 'https://youtu.be/abc').valid).toBe(true);
+    expect(verifySocialUrl('Telegram', 'https://t.me/koutobi').valid).toBe(true);
+    expect(verifySocialUrl('telegram', 'https://telegram.me/koutobi').valid).toBe(true);
   });
 
   it('rejects wrong domains, insecure URLs and malformed URLs', () => {
@@ -16,6 +18,7 @@ describe('social URL verification', () => {
     expect(verifySocialUrl('Facebook', 'http://facebook.com/koutobi').valid).toBe(false);
     expect(verifySocialUrl('TikTok', 'not a url').valid).toBe(false);
     expect(verifySocialUrl('YouTube', 'https://user:pass@youtube.com/channel').valid).toBe(false);
+    expect(verifySocialUrl('Telegram', 'https://telegram.com.evil.example/koutobi').valid).toBe(false);
   });
 
   it('allows blank values and secure custom-network URLs', () => {

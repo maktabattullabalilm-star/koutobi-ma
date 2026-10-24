@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   coverSrcSet,
   extractImageFiles,
   fitDimensions,
   isDeletableR2Key,
+  resizeImageToLimit,
   IMAGE_MAX_COUNT,
   IMAGE_MAX_KB,
 } from './images';
@@ -72,6 +73,86 @@ describe('extractImageFiles', () => {
     expect(extractImageFiles([])).toEqual([]);
     expect(extractImageFiles(null)).toEqual([]);
     expect(extractImageFiles(undefined)).toEqual([]);
+  });
+});
+
+describe('resizeImageToLimit', () => {
+  const jpegBlob = () => new Blob([new Uint8Array(2 * 1024)], { type: 'image/jpeg' });
+  const file = (type = 'image/jpeg') => new File([new Uint8Array(16)], `x.${type.split('/')[1]}`, { type });
+
+  beforeEach(() => {
+    URL.createObjectURL = vi.fn(() => 'blob:mock');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      fillStyle: '',
+      fillRect: vi.fn(),
+      drawImage: vi.fn(),
+    });
+    HTMLCanvasElement.prototype.toBlob = function (cb) {
+      cb(jpegBlob());
+    };
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('decodes via createImageBitmap, so no object URL / CSP img-src is involved', async () => {
+    const drawImage = vi.fn();
+    HTMLCanvasElement.prototype.getContext = vi.fn(() => ({ fillStyle: '', fillRect: vi.fn(), drawImage }));
+    const bitmap = { width: 800, height: 600, close: vi.fn() };
+    const decode = vi.fn().mockResolvedValue(bitmap);
+    vi.stubGlobal('createImageBitmap', decode);
+
+    const out = await resizeImageToLimit(file());
+
+    expect(decode).toHaveBeenCalledOnce();
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    expect(drawImage).toHaveBeenCalledWith(bitmap, 0, 0, 800, 600);
+    expect(bitmap.close).toHaveBeenCalledOnce();
+    expect(out).toMatchObject({ contentType: 'image/jpeg', ext: 'jpg' });
+    expect(out.blob.size).toBeLessThanOrEqual(IMAGE_MAX_KB * 1024);
+  });
+
+  it('falls back to <img> when createImageBitmap is unavailable', async () => {
+    vi.stubGlobal('createImageBitmap', undefined);
+    class FakeImage {
+      naturalWidth = 1000;
+      naturalHeight = 500;
+      set src(value) {
+        this._src = value;
+        queueMicrotask(() => this.onload?.());
+      }
+    }
+    vi.stubGlobal('Image', FakeImage);
+
+    const out = await resizeImageToLimit(file());
+
+    expect(URL.createObjectURL).toHaveBeenCalledOnce();
+    expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
+    expect(out.ext).toBe('jpg');
+  });
+
+  it('still reports a genuinely undecodable file', async () => {
+    vi.stubGlobal('createImageBitmap', vi.fn().mockRejectedValue(new Error('bad')));
+    class BrokenImage {
+      set src(value) {
+        this._src = value;
+        queueMicrotask(() => this.onerror?.());
+      }
+    }
+    vi.stubGlobal('Image', BrokenImage);
+
+    await expect(resizeImageToLimit(file())).rejects.toThrow('ملف الصورة غير صالح');
+  });
+
+  it('rejects non-image files before touching the decoder', async () => {
+    const decode = vi.fn();
+    vi.stubGlobal('createImageBitmap', decode);
+
+    await expect(resizeImageToLimit(file('application/pdf'))).rejects.toThrow('اختر ملف صورة صالحاً');
+    expect(decode).not.toHaveBeenCalled();
   });
 });
 

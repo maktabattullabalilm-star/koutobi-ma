@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
+import { APP_VERSION } from '../../lib/version';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -81,6 +82,9 @@ export default function AdminLayout() {
         <bdi dir="ltr" className="block text-start">{profile?.email}</bdi>
         <span className="mt-0.5 block rounded-sm bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">
           مدير المتجر
+        </span>
+        <span dir="ltr" className="mt-1 block text-start text-[10px] tabular-nums text-soft">
+          v{APP_VERSION}
         </span>
       </div>
       <button

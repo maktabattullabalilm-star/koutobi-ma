@@ -84,6 +84,25 @@ function loadImage(file) {
   });
 }
 
+/**
+ * Decode a File/Blob for canvas drawing.
+ * - Preferred path: `createImageBitmap(blob)` decodes straight from memory —
+ *   no object URL, so no CSP `img-src` decision. A stale/over-strict CSP must
+ *   never be reported to the admin as "ملف الصورة غير صالح".
+ * - Fallback: `<img>` + blob URL for browsers that lack or reject it.
+ * Both expose width/height, and both are accepted by `ctx.drawImage`.
+ */
+async function decodeImage(file) {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      return await createImageBitmap(file, { imageOrientation: 'from-image' });
+    } catch {
+      /* unsupported format or browser — try the <img> path below */
+    }
+  }
+  return loadImage(file);
+}
+
 function canvasToBlob(canvas, type, quality) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('تعذّر معالجة الصورة'))), type, quality);
@@ -107,7 +126,7 @@ export async function resizeImageToLimit(file, { maxDim = IMAGE_MAX_DIM, maxKB =
   const outType = srcType === 'image/webp' ? 'image/webp' : 'image/jpeg';
   const ext = outType === 'image/webp' ? 'webp' : 'jpg';
 
-  const img = await loadImage(file);
+  const img = await decodeImage(file);
   const naturalW = img.naturalWidth || img.width;
   const naturalH = img.naturalHeight || img.height;
   if (!naturalW || !naturalH) throw new Error('تعذّر قراءة أبعاد الصورة');
@@ -135,12 +154,17 @@ export async function resizeImageToLimit(file, { maxDim = IMAGE_MAX_DIM, maxKB =
     return blob;
   };
 
-  let blob = await render(naturalW, naturalH);
-  if (blob.size > limit) {
-    // Last resort: shrink dimensions to 70% and retry once.
-    blob = await render(Math.round(naturalW * 0.7), Math.round(naturalH * 0.7));
+  try {
+    let blob = await render(naturalW, naturalH);
+    if (blob.size > limit) {
+      // Last resort: shrink dimensions to 70% and retry once.
+      blob = await render(Math.round(naturalW * 0.7), Math.round(naturalH * 0.7));
+    }
+    return { blob, contentType: outType, ext };
+  } finally {
+    // ImageBitmap holds decoded pixels outside the GC-managed DOM; release it.
+    img.close?.();
   }
-  return { blob, contentType: outType, ext };
 }
 
 /** Blob/File → base64 payload (without the data: prefix). */

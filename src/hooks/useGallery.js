@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { IMAGE_MAX_COUNT, extractImageFiles, resizeImageToLimit } from '../lib/images';
+import { IMAGE_MAX_COUNT, extractImageFiles, resizeImageToLimit, blobToBase64 } from '../lib/images';
 import { swapAdjacent } from '../lib/catalog';
 import { useToast } from '../components/Toast';
 
@@ -92,7 +92,10 @@ export function useGallery() {
           ext,
           url: '',
           r2_key: null,
-          preview: URL.createObjectURL(blob),
+          // Data URL, not a blob URL: previews keep rendering even for a client
+          // still pinned to an older CSP that lacks `img-src blob:`. Both CSP
+          // revisions allow `data:`.
+          preview: `data:${blob.type || 'image/jpeg'};base64,${await blobToBase64(blob)}`,
           is_primary: false,
         });
       }
