@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getRelatedBooks, getShowQtyDefault } from '../lib/api';
+import { getHiddenEditionSpecs, getRelatedBooks, getShowQtyDefault } from '../lib/api';
 import { useBook } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
 import { formatPrice, isSoldOut } from '../lib/format';
@@ -20,7 +20,9 @@ function Spec({ label, value }) {
   return (
     <div className="flex justify-between border-b border-line/70 py-2.5 last:border-0">
       <dt className="text-sm text-soft">{label}</dt>
-      <dd className="text-sm font-semibold text-ink"><bdi dir="auto">{value}</bdi></dd>
+      <dd className="text-sm font-semibold text-ink">
+        <bdi dir="auto">{value}</bdi>
+      </dd>
     </div>
   );
 }
@@ -38,13 +40,20 @@ export default function BookDetail() {
   const [error, setError] = useState('');
   const [activeImg, setActiveImg] = useState(0);
   const [showQtyDefault, setShowQtyDefault] = useState('hide');
+  const [hiddenSpecs, setHiddenSpecs] = useState([]);
   const { add } = useCart();
   const { show } = useToast();
   const navigate = useNavigate();
-  const productCopy = useStorefrontContent()?.product_page || { content: CONTENT_DEFAULTS.product_page, visible: true };
+  const productCopy = useStorefrontContent()?.product_page || {
+    content: CONTENT_DEFAULTS.product_page,
+    visible: true,
+  };
 
   useEffect(() => {
     getShowQtyDefault().then(setShowQtyDefault);
+    getHiddenEditionSpecs()
+      .then(setHiddenSpecs)
+      .catch(() => setHiddenSpecs([]));
   }, []);
 
   useEffect(() => {
@@ -192,14 +201,27 @@ export default function BookDetail() {
           <span className="inline-block rounded-full bg-brand-pale px-3 py-1 text-xs font-bold text-brand">
             <bdi dir="auto">{book.category}</bdi>
           </span>
-          <h1 dir="auto" className="mt-3 text-2xl font-bold leading-tight text-ink sm:text-3xl">{book.title_ar}</h1>
-          {book.subtitle_ar && <p dir="auto" className="mt-1 text-base text-soft">{book.subtitle_ar}</p>}
-          {book.author_ar && (
-            <p className="mt-2 text-sm font-semibold text-ink">
-              تأليف: <bdi dir="auto" className="text-brand">{book.author_ar}</bdi>
+          <h1 dir="auto" className="mt-3 text-2xl font-bold leading-tight text-ink sm:text-3xl">
+            {book.title_ar}
+          </h1>
+          {book.subtitle_ar && (
+            <p dir="auto" className="mt-1 text-base text-soft">
+              {book.subtitle_ar}
             </p>
           )}
-          {book.publisher_ar && <p className="mt-1 text-sm text-soft">الناشر: <bdi dir="auto">{book.publisher_ar}</bdi></p>}
+          {book.author_ar && (
+            <p className="mt-2 text-sm font-semibold text-ink">
+              تأليف:{' '}
+              <bdi dir="auto" className="text-brand">
+                {book.author_ar}
+              </bdi>
+            </p>
+          )}
+          {book.publisher_ar && (
+            <p className="mt-1 text-sm text-soft">
+              الناشر: <bdi dir="auto">{book.publisher_ar}</bdi>
+            </p>
+          )}
 
           {/* price */}
           <Card className="mt-5 flex-row items-center gap-3 border-line/70 bg-gray-50 p-4">
@@ -223,8 +245,13 @@ export default function BookDetail() {
               }}
             >
               {inStock ? (
-                <>المتوفر: <bdi dir="ltr">{book.stock_qty}</bdi> {book.stock_qty <= LOW_STOCK_AT ? '⚠️ بقي قليل' : ''}</>
-              ) : 'غير متوفر حالياً'}
+                <>
+                  المتوفر: <bdi dir="ltr">{book.stock_qty}</bdi>{' '}
+                  {book.stock_qty <= LOW_STOCK_AT ? '⚠️ بقي قليل' : ''}
+                </>
+              ) : (
+                'غير متوفر حالياً'
+              )}
             </p>
           )}
 
@@ -265,7 +292,9 @@ export default function BookDetail() {
           {/* description */}
           {productCopy.visible && book.description_ar && (
             <section className="mt-7">
-              <h2 dir="auto" className="text-lg font-bold text-ink">{productCopy.content.details_title}</h2>
+              <h2 dir="auto" className="text-lg font-bold text-ink">
+                {productCopy.content.details_title}
+              </h2>
               <Card className="mt-2 border-line/70 bg-white p-4 text-sm leading-7 text-ink">
                 <bdi dir="auto">{book.description_ar}</bdi>
               </Card>
@@ -273,28 +302,52 @@ export default function BookDetail() {
           )}
 
           {/* specs */}
-          {productCopy.visible && <section className="mt-7">
-            <h2 dir="auto" className="text-lg font-bold text-ink">{productCopy.content.specs_title}</h2>
-            <Card className="mt-3 border-line/70 p-4">
-              <dl>
-                <Spec label="المؤلف" value={book.author_ar} />
-                <Spec label="الناشر" value={book.publisher_ar} />
-                <Spec label="الصفحات" value={book.pages ? <><bdi dir="ltr">{book.pages}</bdi> صفحة</> : null} />
-                <Spec label="المقاس" value={book.size_ar} />
-                <Spec label="التجليد" value={book.binding_ar} />
-                <Spec label="الورق" value={book.paper_ar} />
-                <Spec label="الطبعة" value={book.edition_ar} />
-                <Spec label="الرقم المعياري ISBN" value={book.isbn && <bdi dir="ltr" className="inline-block font-mono">{book.isbn}</bdi>} />
-              </dl>
-            </Card>
-          </section>}
+          {productCopy.visible && (
+            <section className="mt-7">
+              <h2 dir="auto" className="text-lg font-bold text-ink">
+                {productCopy.content.specs_title}
+              </h2>
+              <Card className="mt-3 border-line/70 p-4">
+                <dl>
+                  <Spec label="المؤلف" value={book.author_ar} />
+                  <Spec label="الناشر" value={book.publisher_ar} />
+                  <Spec
+                    label="الصفحات"
+                    value={
+                      book.pages ? (
+                        <>
+                          <bdi dir="ltr">{book.pages}</bdi> صفحة
+                        </>
+                      ) : null
+                    }
+                  />
+                  {!hiddenSpecs.includes('size') && <Spec label="المقاس" value={book.size_ar} />}
+                  {!hiddenSpecs.includes('binding') && <Spec label="التجليد" value={book.binding_ar} />}
+                  {!hiddenSpecs.includes('paper') && <Spec label="الورق" value={book.paper_ar} />}
+                  <Spec label="الطبعة" value={book.edition_ar} />
+                  <Spec
+                    label="الرقم المعياري ISBN"
+                    value={
+                      book.isbn && (
+                        <bdi dir="ltr" className="inline-block font-mono">
+                          {book.isbn}
+                        </bdi>
+                      )
+                    }
+                  />
+                </dl>
+              </Card>
+            </section>
+          )}
         </div>
       </div>
 
       {/* related */}
       {productCopy.visible && related.length > 0 && (
         <section className="mt-14">
-          <h2 dir="auto" className="section-title">{productCopy.content.related_title}</h2>
+          <h2 dir="auto" className="section-title">
+            {productCopy.content.related_title}
+          </h2>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {related.map((b) => (
               <ProductCard key={b.id} book={b} />

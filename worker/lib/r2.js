@@ -16,7 +16,12 @@ export function publicUrl(env) {
 }
 
 /** Store one object. `body` accepts ArrayBufferView (our Uint8Array). */
-export async function putObject(bkt, key, body, { contentType, contentDisposition = 'inline', cacheControl } = {}) {
+export async function putObject(
+  bkt,
+  key,
+  body,
+  { contentType, contentDisposition = 'inline', cacheControl } = {}
+) {
   await bkt.put(key, body, {
     httpMetadata: {
       contentType,

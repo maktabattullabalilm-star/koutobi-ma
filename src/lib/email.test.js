@@ -3,7 +3,11 @@ import { mailtoHref, verifyEmail } from './email';
 
 describe('contact e-mail', () => {
   it('accepts the store address and normal ones', () => {
-    expect(verifyEmail('salam@koutobi.ma')).toMatchObject({ valid: true, empty: false, email: 'salam@koutobi.ma' });
+    expect(verifyEmail('salam@koutobi.ma')).toMatchObject({
+      valid: true,
+      empty: false,
+      email: 'salam@koutobi.ma',
+    });
     expect(verifyEmail('  contact@example.co.uk  ').email).toBe('contact@example.co.uk');
   });
 

@@ -112,7 +112,11 @@ describe('admin/books', () => {
 describe('admin/orders', () => {
   it('changes order status through the atomic inventory-aware RPC', async () => {
     await orders.adminUpdateOrderStatus('order-1', 'contacted');
-    expect(state.calls).toContainEqual(['rpc', 'admin_set_order_status', { p_order_id: 'order-1', p_status: 'contacted' }]);
+    expect(state.calls).toContainEqual([
+      'rpc',
+      'admin_set_order_status',
+      { p_order_id: 'order-1', p_status: 'contacted' },
+    ]);
   });
 
   it('caps order lists and joins items', async () => {
@@ -141,6 +145,21 @@ describe('admin/catalog', () => {
     await expect(catalog.adminCreateCategory({ name_ar: 'x' })).rejects.toThrow('rls denied');
   });
 
+  it('creates a sub-category with an explicit parent', async () => {
+    await catalog.adminCreateCategory({ name_ar: 'علم القراءات', parent_id: 'parent-1', sort: 30 });
+    expect(callsFor('categories', 'insert')[0][0]).toMatchObject({
+      name_ar: 'علم القراءات',
+      parent_id: 'parent-1',
+      sort: 30,
+    });
+  });
+
+  it('deletes through the reparenting RPC so children are never orphaned', async () => {
+    await catalog.adminDeleteCategory('cat-1');
+    expect(state.calls).toContainEqual(['rpc', 'admin_delete_category', { p_id: 'cat-1' }]);
+    expect(callsFor('categories', 'delete')).toHaveLength(0);
+  });
+
   it('propagate-rename is a no-op for identical values', async () => {
     const n = await catalog.adminPropagateRename('category', 'x', 'x');
     expect(n).toBe(0);
@@ -151,17 +170,31 @@ describe('admin/catalog', () => {
 describe('admin/stock', () => {
   it('uses the audited adjustment RPC instead of directly changing book quantities', async () => {
     await stock.adminAdjustStock({ bookId: 'book-1', delta: 4, reason: 'restock', note: 'Invoice A-1' });
-    expect(state.calls).toContainEqual(['rpc', 'admin_adjust_stock', {
-      p_book_id: 'book-1', p_delta: 4, p_target_qty: null, p_reason: 'restock', p_note: 'Invoice A-1',
-    }]);
+    expect(state.calls).toContainEqual([
+      'rpc',
+      'admin_adjust_stock',
+      {
+        p_book_id: 'book-1',
+        p_delta: 4,
+        p_target_qty: null,
+        p_reason: 'restock',
+        p_note: 'Invoice A-1',
+      },
+    ]);
     expect(callsFor('books', 'update')).toHaveLength(0);
   });
 
   it('sends bulk restock entries to one atomic RPC', async () => {
     await stock.adminBulkStockIn({ items: [{ book_id: 'b1', qty: 3 }], reason: 'restock' });
-    expect(state.calls).toContainEqual(['rpc', 'admin_bulk_stock_in', {
-      p_items: [{ book_id: 'b1', qty: 3 }], p_reason: 'restock', p_note: null,
-    }]);
+    expect(state.calls).toContainEqual([
+      'rpc',
+      'admin_bulk_stock_in',
+      {
+        p_items: [{ book_id: 'b1', qty: 3 }],
+        p_reason: 'restock',
+        p_note: null,
+      },
+    ]);
   });
 
   it('returns null for missing settings (fail open)', async () => {

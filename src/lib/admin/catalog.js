@@ -5,14 +5,14 @@ function throwDb(error) {
   throw new Error(error?.message || 'تعذّر تحميل البيانات');
 }
 
-/** Public (anon) read — used by BookForm for dropdowns. Fails open. */
+/** Public (anon) read — used by admin forms for category dropdowns. Fails open. */
 export async function getCategoriesForForm() {
   const { data, error } = await supabase
     .from('categories')
-    .select('name_ar')
+    .select('id, name_ar, parent_id, sort')
     .order('sort', { ascending: true });
   if (error) return [];
-  return (data || []).map((c) => c.name_ar);
+  return data || [];
 }
 
 /** Public (anon) read — used by BookForm for dropdowns. Fails open. */
@@ -32,10 +32,10 @@ export async function adminGetCategories() {
   return data || [];
 }
 
-export async function adminCreateCategory({ name_ar, sort, slug }) {
+export async function adminCreateCategory({ name_ar, sort, slug, parent_id = null }) {
   const { data, error } = await supabase
     .from('categories')
-    .insert({ name_ar, sort: sort ?? 0, slug: slug || slugifyAr(name_ar) || null })
+    .insert({ name_ar, sort: sort ?? 0, slug: slug || slugifyAr(name_ar) || null, parent_id })
     .select()
     .single();
   if (error) throwDb(error);
@@ -48,8 +48,12 @@ export async function adminUpdateCategory(id, patch) {
   return data;
 }
 
+/**
+ * Delete a category. The RPC moves its direct children up to the deleted
+ * category's parent first, so a subtree is never orphaned or lost.
+ */
 export async function adminDeleteCategory(id) {
-  const { error } = await supabase.from('categories').delete().eq('id', id);
+  const { error } = await supabase.rpc('admin_delete_category', { p_id: id });
   if (error) throwDb(error);
 }
 

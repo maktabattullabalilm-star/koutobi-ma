@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card';
 export default function Cart() {
   const { items, remove, setQty, count, total } = useCart();
   const { whatsapp } = useSiteContact();
-  const productPath = (item) => item.product_type === 'bundle' ? `/pack/${item.id}` : `/book/${item.id}`;
+  const productPath = (item) => (item.product_type === 'bundle' ? `/pack/${item.id}` : `/book/${item.id}`);
 
   if (items.length === 0) {
     return (
@@ -43,7 +43,9 @@ export default function Cart() {
   return (
     <div className="container-x py-8">
       <h1 className="mb-1 text-2xl font-bold text-ink sm:text-3xl">سلة التسوق</h1>
-      <p className="mb-6 text-sm text-soft">لديك <bdi dir="ltr">{count}</bdi> منتج في السلة · الدفع عند الاستلام</p>
+      <p className="mb-6 text-sm text-soft">
+        لديك <bdi dir="ltr">{count}</bdi> منتج في السلة · الدفع عند الاستلام
+      </p>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* items */}
@@ -54,7 +56,16 @@ export default function Cart() {
                 to={productPath(it)}
                 className="shrink-0 overflow-hidden rounded-md border border-line/50 bg-gray-100"
               >
-                {it.product_type === 'bundle' ? <PackCover pack={it} alt={it.title} className="h-28 w-20 sm:h-32 sm:w-24" /> : <BookCover src={it.cover} alt={it.title} className="h-28 w-20 sm:h-32 sm:w-24" imgClassName="h-full w-full object-cover" />}
+                {it.product_type === 'bundle' ? (
+                  <PackCover pack={it} alt={it.title} className="h-28 w-20 sm:h-32 sm:w-24" />
+                ) : (
+                  <BookCover
+                    src={it.cover}
+                    alt={it.title}
+                    className="h-28 w-20 sm:h-32 sm:w-24"
+                    imgClassName="h-full w-full object-cover"
+                  />
+                )}
               </Link>
               <div className="flex flex-1 flex-col">
                 <div className="flex items-start justify-between gap-2">
@@ -66,7 +77,15 @@ export default function Cart() {
                     >
                       {it.title}
                     </Link>
-                    {it.product_type === 'bundle' ? <div className="text-xs text-soft">باقة كتب</div> : it.author && <div dir="auto" className="text-xs text-soft">{it.author}</div>}
+                    {it.product_type === 'bundle' ? (
+                      <div className="text-xs text-soft">باقة كتب</div>
+                    ) : (
+                      it.author && (
+                        <div dir="auto" className="text-xs text-soft">
+                          {it.author}
+                        </div>
+                      )
+                    )}
                   </div>
                   <button
                     onClick={() => remove(it.id)}
@@ -113,7 +132,7 @@ export default function Cart() {
             <h2 className="text-lg font-bold text-ink">ملخص الطلب</h2>
             <dl className="mt-4 space-y-2 border-b border-line pb-4 text-sm">
               <div className="flex justify-between">
-                  <dt className="text-soft">عدد المنتجات</dt>
+                <dt className="text-soft">عدد المنتجات</dt>
                 <dd className="font-semibold text-ink">{count}</dd>
               </div>
               <div className="flex justify-between">

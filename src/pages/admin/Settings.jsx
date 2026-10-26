@@ -11,12 +11,7 @@ import {
 import { useToast } from '../../components/Toast';
 import { PASSWORD_MIN } from '../../lib/constants';
 import { isValidMaPhone, normalizePhoneDigits } from '../../lib/validators';
-import {
-  PHONE_SETTING_KEY,
-  WHATSAPP_SETTING_KEY,
-  formatPhoneDisplay,
-  telHref,
-} from '../../lib/siteSettings';
+import { PHONE_SETTING_KEY, WHATSAPP_SETTING_KEY, formatPhoneDisplay, telHref } from '../../lib/siteSettings';
 import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -331,8 +326,8 @@ export default function Settings() {
         <form onSubmit={saveContacts} className="mt-4 border-b border-line pb-5">
           <h3 className="text-sm font-bold text-ink">أرقام التواصل 📞</h3>
           <p className="mt-1 text-xs leading-5 text-soft">
-            رقم الهاتف يظهر في الموقع وزر الاتصال، ورقم واتساب يُستخدم لجميع أزرار واتساب. التغيير يظهر
-            مباشرة في الموقع.
+            رقم الهاتف يظهر في الموقع وزر الاتصال، ورقم واتساب يُستخدم لجميع أزرار واتساب. التغيير يظهر مباشرة
+            في الموقع.
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="block">
@@ -361,7 +356,11 @@ export default function Settings() {
           {(phone || whatsapp) && (
             <p className="mt-2 text-xs text-soft">
               المعاينة:{' '}
-              <span dir="ltr" className="inline-block font-mono tabular-nums" style={{ unicodeBidi: 'isolate' }}>
+              <span
+                dir="ltr"
+                className="inline-block font-mono tabular-nums"
+                style={{ unicodeBidi: 'isolate' }}
+              >
                 {formatPhoneDisplay(phone || whatsapp)}
               </span>{' '}
               ·{' '}

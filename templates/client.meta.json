@@ -1,0 +1,43 @@
+{
+  "slug": "__SLUG__",
+  "store_name": "__STORE_NAME__",
+  "status": "setup",
+  "domain": "__DOMAIN__",
+  "live_url": "",
+  "admin_emails": [],
+  "contact": {
+    "name": "",
+    "email": "",
+    "phone": ""
+  },
+  "github": {
+    "repo": "",
+    "remote": "__SLUG__"
+  },
+  "supabase": {
+    "project_ref": "",
+    "org": "",
+    "region": "",
+    "plan": "",
+    "dashboard": ""
+  },
+  "cloudflare": {
+    "account_id": "",
+    "zone_id": "",
+    "r2_bucket": "",
+    "worker": "koutobi-ma",
+    "public_url": ""
+  },
+  "deploy": {
+    "target": "cloudflare",
+    "command": "scripts/deploy.sh",
+    "last_version": "",
+    "last_commit": "",
+    "last_deployed_at": ""
+  },
+  "billing": {
+    "owner": "",
+    "renews_on": null
+  },
+  "notes": ""
+}

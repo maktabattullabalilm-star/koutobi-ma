@@ -209,9 +209,13 @@ create table if not exists public.categories (
   id uuid primary key default gen_random_uuid(),
   name_ar text not null unique,
   slug text unique, -- ASCII canonical slug (backlog 27); name_ar stays display truth
+  parent_id uuid references public.categories(id) on delete restrict,
   sort int not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  constraint categories_parent_not_self check (parent_id is null or parent_id <> id)
 );
+create index if not exists categories_parent_sort_idx
+  on public.categories (parent_id, sort);
 
 create table if not exists public.attribute_options (
   id uuid primary key default gen_random_uuid(),
@@ -254,6 +258,49 @@ create policy "app_settings_admin_write" on public.app_settings for all
 
 grant select on public.categories, public.attribute_options, public.app_settings
   to anon, authenticated;
+
+-- Deleting a category moves its direct children up to its parent first, so no
+-- subtree is orphaned. (Live migration: 20261025120000_category_hierarchy.)
+create or replace function public.admin_delete_category(p_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_parent uuid;
+  v_sort int;
+  v_child record;
+begin
+  if not public.is_admin() then
+    raise exception 'not admin';
+  end if;
+
+  select parent_id into v_parent from public.categories where id = p_id;
+  if not found then
+    return;
+  end if;
+
+  select coalesce(max(sort), 0) into v_sort
+    from public.categories
+   where parent_id is not distinct from v_parent;
+
+  for v_child in
+    select id from public.categories where parent_id = p_id order by sort
+  loop
+    v_sort := v_sort + 10;
+    update public.categories
+       set parent_id = v_parent,
+           sort = v_sort
+     where id = v_child.id;
+  end loop;
+
+  delete from public.categories where id = p_id;
+end;
+$$;
+
+revoke all on function public.admin_delete_category(uuid) from public, anon;
+grant execute on function public.admin_delete_category(uuid) to authenticated;
 
 -- Canonical names used by the book form suggestions. Books retain text values
 -- so existing catalogue records and storefront reads remain uncomplicated.

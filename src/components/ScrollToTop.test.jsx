@@ -24,7 +24,14 @@ describe('ScrollToTop', () => {
         <ScrollToTop />
         <Routes>
           <Route path="/catalog" element={<Link to="/#how">كيف أطلب؟</Link>} />
-          <Route path="/" element={<main id="main-content"><section id="how">طريقة الطلب</section></main>} />
+          <Route
+            path="/"
+            element={
+              <main id="main-content">
+                <section id="how">طريقة الطلب</section>
+              </main>
+            }
+          />
         </Routes>
       </MemoryRouter>
     );

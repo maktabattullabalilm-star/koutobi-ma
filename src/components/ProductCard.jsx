@@ -19,7 +19,17 @@ export default function ProductCard({ book }) {
     <div className="group card relative flex flex-col overflow-hidden border border-line/60 transition hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-lift">
       {/* cover */}
       <Link to={productPath} className="relative block aspect-680/960 overflow-hidden bg-gray-100">
-        {book.product_type === 'bundle' ? <PackCover pack={book} alt={book.title_ar} className="absolute inset-0" /> : <BookCover src={book.cover_image} alt={book.title_ar} className="absolute inset-0 h-full w-full" imgClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" soldOut={soldOut} />}
+        {book.product_type === 'bundle' ? (
+          <PackCover pack={book} alt={book.title_ar} className="absolute inset-0" />
+        ) : (
+          <BookCover
+            src={book.cover_image}
+            alt={book.title_ar}
+            className="absolute inset-0 h-full w-full"
+            imgClassName="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            soldOut={soldOut}
+          />
+        )}
         {discounted && (
           <span className="absolute start-2 top-2 rounded-md bg-danger px-2 py-0.5 text-xs font-bold text-white">
             خصم <bdi dir="ltr">{discountPct}٪</bdi>
@@ -39,7 +49,9 @@ export default function ProductCard({ book }) {
 
       {/* body */}
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        <span dir="auto" className="text-[11px] font-medium text-brand">{book.category}</span>
+        <span dir="auto" className="text-[11px] font-medium text-brand">
+          {book.category}
+        </span>
         <Link
           to={productPath}
           dir="auto"
@@ -47,7 +59,15 @@ export default function ProductCard({ book }) {
         >
           {book.title_ar}
         </Link>
-        {book.product_type === 'bundle' ? <span className="text-xs text-soft">تضم {book.books?.length || 0} كتب</span> : book.author_ar && <span dir="auto" className="text-xs text-soft">{book.author_ar}</span>}
+        {book.product_type === 'bundle' ? (
+          <span className="text-xs text-soft">تضم {book.books?.length || 0} كتب</span>
+        ) : (
+          book.author_ar && (
+            <span dir="auto" className="text-xs text-soft">
+              {book.author_ar}
+            </span>
+          )
+        )}
 
         <div className="mt-auto flex items-center gap-2 pt-2">
           <span className="text-base font-bold text-brand">{formatPrice(book.price)}</span>

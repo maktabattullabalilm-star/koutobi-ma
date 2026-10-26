@@ -46,6 +46,10 @@ ships as a named feature.
 Bump **once per batch of changes that is deployed**, not once per commit. Bump
 in the same commit that introduces the change, before `npm run cf:deploy`.
 
+`npm run cf:deploy` runs `npm run verify` before building, so a failing gate
+(secrets, version, format, lint, typecheck, tests/coverage) blocks the deploy.
+CI runs the same `verify` on every push and pull request.
+
 ## Checklist
 
 1. Pick the position: PATCH for a fix/small feature, MINOR for a big feature,
@@ -65,6 +69,9 @@ in the same commit that introduces the change, before `npm run cf:deploy`.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| `1.1.7` | 2026-10-26 | «كيف أطلب؟» scrolls to the how-it-works section on every click, not just the first one |
+| `1.1.6` | 2026-10-25 | CI on GitHub Actions (`verify` + `build` on push/PR); `verify` now enforces `format:check` and coverage and the test scripts pin `NODE_ENV=test`; Prettier pass over the admin/storefront components; `cf:deploy` runs `verify` first |
+| `1.1.5` | 2026-10-25 | Unlimited-depth sub-categories (with drag-and-drop reparenting + save confirmation) across admin, catalog, header hover menus and footer; home category grid capped at two rows; per-type hide switches for the edition specs shown on the public book page |
 | `1.1.4` | 2026-10-24 | Telegram uses the paper-plane glyph instead of the “TE” fallback; social icons are full-width pills that stay on one row |
 | `1.1.3` | 2026-10-24 | Footer contact e-mail uses a proper mail icon; remove the public `/admin` entry points (header button, mobile drawer, footer link) |
 | `1.1.2` | 2026-10-24 | Editable contact e-mail in Admin → محتوى المتجر → روابط مواقع التواصل; footer reads it from content |

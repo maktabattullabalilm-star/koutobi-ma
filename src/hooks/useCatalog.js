@@ -33,8 +33,8 @@ function useAsync(fetchFn, args) {
   return { data, error, loading, reload };
 }
 
-export function useBooks({ category, q } = {}) {
-  const { data, error, loading, reload } = useAsync(getBooks, [{ category, q }]);
+export function useBooks({ category, categories, q } = {}) {
+  const { data, error, loading, reload } = useAsync(getBooks, [{ category, categories, q }]);
   return { books: data || [], error, loading, reload };
 }
 

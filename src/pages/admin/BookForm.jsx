@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -19,12 +19,25 @@ import {
   uploadR2File,
 } from '../../lib/admin';
 import { FALLBACK_CATEGORIES, warnFallback } from '../../lib/site';
+import { buildCategoryTree, flattenCategoryTree, normalizeCategoryRows } from '../../lib/catalog';
 import { blobToBase64, IMAGE_MAX_COUNT } from '../../lib/images';
 import { validateBook } from '../../lib/validators';
 import { pluralImg, useGallery } from '../../hooks/useGallery';
 import { useToast } from '../../components/Toast';
 import { Spinner } from '@/components/ui/spinner';
-import { IconBook, IconCamera, IconCheck, IconChevronLeft, IconChevronRight, IconCopy, IconEye, IconImage, IconLayers, IconStar, IconTrash } from '../../components/icons';
+import {
+  IconBook,
+  IconCamera,
+  IconCheck,
+  IconChevronLeft,
+  IconChevronRight,
+  IconCopy,
+  IconEye,
+  IconImage,
+  IconLayers,
+  IconStar,
+  IconTrash,
+} from '../../components/icons';
 import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldLabel } from '@/components/ui/field';
@@ -55,7 +68,12 @@ const EMPTY = {
   is_active: true,
 };
 
-const FALLBACK_CATS = FALLBACK_CATEGORIES;
+const FALLBACK_CATS = FALLBACK_CATEGORIES.map((name, index) => ({
+  id: `fallback-${index}`,
+  name_ar: name,
+  parent_id: null,
+  sort: (index + 1) * 10,
+}));
 const FALLBACK_PAPER = ['ورق أصفر (شامواه)', 'ورق أبيض'];
 const FALLBACK_BINDING = ['تجليد فني', 'تجليد عادي'];
 const FALLBACK_SIZES = ['17×24 سم', '14×20 سم', '12×17 سم', '24×17 سم'];
@@ -106,6 +124,18 @@ export default function BookForm() {
   const [authors, setAuthors] = useState([]);
   const [publishers, setPublishers] = useState([]);
 
+  // Depth-first category list with indentation — works for any tree depth.
+  const catOptions = useMemo(() => {
+    const options = flattenCategoryTree(buildCategoryTree(cats)).map((c) => ({
+      value: c.name_ar,
+      label: `${'— '.repeat(c.depth || 0)}${c.name_ar}`,
+    }));
+    if (form.category && !options.some((o) => o.value === form.category)) {
+      options.push({ value: form.category, label: form.category });
+    }
+    return options;
+  }, [cats, form.category]);
+
   useEffect(() => {
     // Fetch dropdown options (public reads — no admin check needed)
     Promise.all([
@@ -117,8 +147,9 @@ export default function BookForm() {
       getPublishersForForm(),
     ])
       .then(([c, p, b, s, a, publishersList]) => {
-        if (!c.length) warnFallback('categories');
-        setCats(c.length ? c : FALLBACK_CATS);
+        const categoryRows = normalizeCategoryRows(c);
+        if (!categoryRows.length) warnFallback('categories');
+        setCats(categoryRows.length ? categoryRows : FALLBACK_CATS);
         setPaperOpts(p.length ? p : FALLBACK_PAPER);
         setBindingOpts(b.length ? b : FALLBACK_BINDING);
         setSizeOpts(s.length ? s : FALLBACK_SIZES);
@@ -167,10 +198,7 @@ export default function BookForm() {
   const save = async (e) => {
     e.preventDefault();
     // key → [message, section anchor] so the summary can jump to the field.
-    const catNames = (cats.length ? cats : FALLBACK_CATS).map((c) =>
-      typeof c === 'string' ? c : c.name_ar || c.name
-    );
-    const errs = validateBook(form, { categories: catNames });
+    const errs = validateBook(form, { categories: catOptions.map((c) => c.value) });
     setErrors(errs);
     if (Object.keys(errs).length) {
       show('تحقق من الحقول الناقصة', 'error');
@@ -339,9 +367,18 @@ export default function BookForm() {
   const directoryField = (label, name, options, listId, placeholder) => (
     <Field>
       <FieldLabel htmlFor={name}>{label}</FieldLabel>
-      <Input id={name} dir="auto" value={form[name]} onChange={set(name)} list={listId} placeholder={placeholder} />
+      <Input
+        id={name}
+        dir="auto"
+        value={form[name]}
+        onChange={set(name)}
+        list={listId}
+        placeholder={placeholder}
+      />
       <datalist id={listId}>
-        {options.map((option) => <option key={option} value={option} />)}
+        {options.map((option) => (
+          <option key={option} value={option} />
+        ))}
       </datalist>
     </Field>
   );
@@ -411,8 +448,14 @@ export default function BookForm() {
             {field('العنوان *', 'title_ar', { placeholder: 'مثال: الداء والدواء' })}
             {field('العنوان الفرعي', 'subtitle_ar', { placeholder: 'اختياري' })}
             {directoryField('المؤلف', 'author_ar', authors, 'author-suggestions', 'مثال: ابن القيم الجوزية')}
-            {directoryField('الناشر', 'publisher_ar', publishers, 'publisher-suggestions', 'مثال: دار ابن كثير')}
-            {selectField('التصنيف *', 'category', cats)}
+            {directoryField(
+              'الناشر',
+              'publisher_ar',
+              publishers,
+              'publisher-suggestions',
+              'مثال: دار ابن كثير'
+            )}
+            {selectField('التصنيف *', 'category', catOptions)}
             {field('السعر (درهم) *', 'price', {
               type: 'number',
               min: 0,
@@ -449,10 +492,16 @@ export default function BookForm() {
             </span>
             <h2 className="admin-section-title">بيانات الطبعة</h2>
           </div>
-          <p className="mb-4 text-xs text-soft">مواصفات النسخة المعروضة. إدارة الكميات وسجل الحركات من صفحة إدارة المخزون.</p>
+          <p className="mb-4 text-xs text-soft">
+            مواصفات النسخة المعروضة. إدارة الكميات وسجل الحركات من صفحة إدارة المخزون.
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             {field('عدد الصفحات', 'pages', { type: 'number', min: 0, placeholder: 'مثال: 480' })}
-            {field('رقم ISBN', 'isbn', { dir: 'ltr', className: 'text-left font-mono', placeholder: 'مثال: 978-2-7451-...' })}
+            {field('رقم ISBN', 'isbn', {
+              dir: 'ltr',
+              className: 'text-left font-mono',
+              placeholder: 'مثال: 978-2-7451-...',
+            })}
             {field('الطبعة', 'edition_ar', { placeholder: 'مثال: الطبعة الخامسة' })}
             {selectField('الورق', 'paper_ar', paperOpts)}
             {selectField('التجليد', 'binding_ar', bindingOpts)}
@@ -479,8 +528,8 @@ export default function BookForm() {
             )}
           </div>
           <p className="mb-4 mt-1 text-xs leading-5 text-soft">
-            الصور المختارة من جهازك تُصغَّر تلقائياً ثم تُحفظ في تخزين المتجر عند الحفظ. الصورة الرئيسية
-            تظهر في بطاقات المتجر.
+            الصور المختارة من جهازك تُصغَّر تلقائياً ثم تُحفظ في تخزين المتجر عند الحفظ. الصورة الرئيسية تظهر
+            في بطاقات المتجر.
           </p>
 
           {images.length > 0 && (
@@ -608,7 +657,10 @@ export default function BookForm() {
                   : 'border-line bg-gray-50 hover:border-brand/50 hover:bg-brand-pale/50'
               }`}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-light text-brand" aria-hidden>
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-light text-brand"
+                aria-hidden
+              >
                 <IconImage width={20} height={20} />
               </span>
               <span className="text-sm font-bold text-ink">
@@ -685,7 +737,12 @@ export default function BookForm() {
           <p className="mb-4 text-xs text-soft">التحكم في ظهور الكتاب وتمييزه في المتجر.</p>
           <div className="flex flex-wrap gap-3">
             {check('is_new', 'كتاب جديد')}
-            {check('is_featured', (<span className="flex items-center gap-1.5"><IconStar filled width={14} height={14} className="text-amber-500" /> كتاب مميز</span>))}
+            {check(
+              'is_featured',
+              <span className="flex items-center gap-1.5">
+                <IconStar filled width={14} height={14} className="text-amber-500" /> كتاب مميز
+              </span>
+            )}
             {check('is_active', 'منشور في المتجر')}
           </div>
         </section>

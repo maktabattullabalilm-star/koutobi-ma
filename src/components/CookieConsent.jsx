@@ -100,8 +100,8 @@ export default function CookieConsent() {
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-bold text-ink">نحترم خصوصيتك 🍪</h2>
               <p className="mt-1 text-xs leading-5 text-soft">
-                نستخدم ملفات ضرورية لعمل المتجر (السلة، تأكيد الطلب). الإحصائية والتسويقية اختيارية
-                ومعطّلة افتراضياً — التفاصيل في{' '}
+                نستخدم ملفات ضرورية لعمل المتجر (السلة، تأكيد الطلب). الإحصائية والتسويقية اختيارية ومعطّلة
+                افتراضياً — التفاصيل في{' '}
                 <a href="/privacy-policy" className="font-semibold text-brand hover:underline">
                   سياسة الخصوصية
                 </a>

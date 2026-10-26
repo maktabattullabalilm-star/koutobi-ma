@@ -9,7 +9,12 @@ export function verifyEmail(value) {
   const email = String(value || '').trim();
   if (!email) return { valid: true, empty: true, email: '' };
   if (email.length > 254 || !EMAIL_RE.test(email)) {
-    return { valid: false, empty: false, email, message: 'أدخل بريداً إلكترونياً صالحاً مثل name@example.com' };
+    return {
+      valid: false,
+      empty: false,
+      email,
+      message: 'أدخل بريداً إلكترونياً صالحاً مثل name@example.com',
+    };
   }
   return { valid: true, empty: false, email };
 }

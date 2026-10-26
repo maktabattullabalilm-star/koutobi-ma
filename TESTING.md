@@ -109,9 +109,16 @@ to Netlify on your explicit approval.
 
 ---
 *Note for developers: an automated vitest suite also exists
-(`npm test`, 149 tests across 18 files, mocked Supabase;
+(`npm test`, 205 tests across 33 files, mocked Supabase;
 `npm run test:coverage` enforces the ratchet floor in `vite.config.js`).
 It guards pure helpers, validators, admin domain modules, route guards,
 and the checkout validation flow — but never replaces the hand-testing above.
 Live RPC checks (`create_order` pricing/stock/phone/rate-limit, hardened
 `decrement_stock`) were verified directly against the project DB on 2026-09-22.*
+
+*CI: GitHub Actions (`.github/workflows/ci.yml`) runs `npm run verify`
+(no-secrets, version, `format:check`, lint, typecheck, tests + coverage) and
+`npm run build` on every push to `main` and every pull request — a red gate
+blocks the change. The test scripts pin `NODE_ENV=test`, so an ambient
+`NODE_ENV=production` in your shell can no longer force React's production
+build and break the suite.*

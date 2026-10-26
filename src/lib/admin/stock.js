@@ -20,7 +20,11 @@ export async function adminUpdateAppSetting(key, value) {
 
 /** Append-only inventory ledger, visible only to an admin. */
 export async function adminGetStockMovements({ bookId, from = 0, limit = ADMIN_PAGE_SIZE } = {}) {
-  let query = supabase.from('stock_movements').select('*, profiles(email)').order('created_at', { ascending: false }).range(from, from + limit - 1);
+  let query = supabase
+    .from('stock_movements')
+    .select('*, profiles(email)')
+    .order('created_at', { ascending: false })
+    .range(from, from + limit - 1);
   if (bookId) query = query.eq('book_id', bookId);
   const { data, error } = await query;
   if (error) throwDb(error);

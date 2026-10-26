@@ -170,7 +170,9 @@ export default function Checkout() {
         {/* summary */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Card className="border-line/60 bg-white p-5">
-            <h2 className="text-base font-bold text-ink">طلبك (<bdi dir="ltr">{count}</bdi>)</h2>
+            <h2 className="text-base font-bold text-ink">
+              طلبك (<bdi dir="ltr">{count}</bdi>)
+            </h2>
             <ul className="mt-3 space-y-2.5 border-b border-line pb-4">
               {items.map((it) => {
                 const stock = it.stock ?? CART_MAX_QTY;
@@ -183,8 +185,12 @@ export default function Checkout() {
                       className="h-12 w-9 rounded-sm border border-line"
                       imgClassName="h-full w-full rounded-sm object-cover"
                     />
-                    <span dir="auto" className="flex-1 line-clamp-1 font-medium text-ink">{it.title}</span>
-                    <span className="shrink-0 text-xs text-soft"><bdi dir="ltr">×{it.qty}</bdi></span>
+                    <span dir="auto" className="flex-1 line-clamp-1 font-medium text-ink">
+                      {it.title}
+                    </span>
+                    <span className="shrink-0 text-xs text-soft">
+                      <bdi dir="ltr">×{it.qty}</bdi>
+                    </span>
                     {clamped && (
                       <span className="shrink-0 text-xs text-danger bg-rose-50 px-2 py-0.5 rounded-sm">
                         تم تقليص الكمية إلى المخزون (<bdi dir="ltr">{stock}</bdi>)

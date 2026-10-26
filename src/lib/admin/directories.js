@@ -3,7 +3,10 @@ import { supabase } from '../supabase';
 const AUTHOR_TITLES = /^(?:(?:الشيخ|شيخ|الإمام|امام|العالم|العلامة|علامة|الدكتور|الأستاذ|استاذ)\s+)+/;
 
 function cleanName(value) {
-  return String(value || '').normalize('NFKC').replace(/\s+/g, ' ').trim();
+  return String(value || '')
+    .normalize('NFKC')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function canonicalAuthorName(value) {

@@ -8,7 +8,9 @@ export default function ScrollToTop() {
     if (hash) {
       const target = document.getElementById(decodeURIComponent(hash.slice(1)));
       if (target) {
-        frame = window.requestAnimationFrame(() => target.scrollIntoView({ block: 'start', behavior: 'instant' }));
+        frame = window.requestAnimationFrame(() =>
+          target.scrollIntoView({ block: 'start', behavior: 'instant' })
+        );
       } else {
         window.scrollTo({ top: 0, behavior: 'instant' });
       }

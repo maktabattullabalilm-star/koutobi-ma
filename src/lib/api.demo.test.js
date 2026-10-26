@@ -12,7 +12,8 @@ vi.mock('./sampleData', () => ({
   ],
 }));
 
-const { DEMO_MODE, createOrder, getBook, getBooks, getCategories, getRelatedBooks } = await import('./api');
+const { DEMO_MODE, createOrder, getBook, getBooks, getCategories, getHiddenEditionSpecs, getRelatedBooks } =
+  await import('./api');
 
 describe('demo mode (no Supabase configured)', () => {
   it('reports DEMO_MODE', () => {
@@ -31,7 +32,21 @@ describe('demo mode (no Supabase configured)', () => {
   });
 
   it('getCategories counts the sample catalog', async () => {
-    await expect(getCategories()).resolves.toEqual([{ name: 'الفقه وأصوله', count: 2 }]);
+    await expect(getCategories()).resolves.toEqual([
+      {
+        id: 'الفقه وأصوله',
+        name: 'الفقه وأصوله',
+        parentId: null,
+        depth: 0,
+        childCount: 0,
+        count: 2,
+        totalCount: 2,
+      },
+    ]);
+  });
+
+  it('getHiddenEditionSpecs returns [] without Supabase', async () => {
+    await expect(getHiddenEditionSpecs()).resolves.toEqual([]);
   });
 
   it('getRelatedBooks excludes the current book', async () => {

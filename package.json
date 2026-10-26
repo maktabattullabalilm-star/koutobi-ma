@@ -1,25 +1,32 @@
 {
   "name": "koutobi-ma",
   "private": true,
-  "version": "1.1.4",
+  "version": "1.1.7",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "vite",
     "dev:api": "netlify dev",
     "build": "vite build",
-    "cf:deploy": "npm run check:version && npm run build && wrangler deploy",
+    "cf:deploy": "npm run verify && npm run build && wrangler deploy",
     "preview": "vite preview",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest",
+    "test": "NODE_ENV=test vitest run",
+    "test:coverage": "NODE_ENV=test vitest run --coverage",
+    "test:watch": "NODE_ENV=test vitest",
     "test:local": "npm test && npm run build",
     "lint": "eslint src netlify/functions worker",
     "format": "prettier --write src netlify/functions/_lib worker index.html",
     "format:check": "prettier --check src netlify/functions/_lib worker index.html",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run check:no-secrets && npm run check:version && npm run lint && npm run typecheck && npm test",
+    "verify": "npm run check:no-secrets && npm run check:version && npm run format:check && npm run lint && npm run typecheck && npm run test:coverage",
     "check:no-secrets": "bash scripts/check-no-secrets.sh",
     "check:version": "node scripts/check-version.mjs",
+    "clients": "bash scripts/clients-list.sh",
+    "client:new": "bash scripts/new-client.sh",
+    "client:use": "bash scripts/use-client.sh",
+    "client:deploy": "bash scripts/deploy.sh",
     "functions:dev": "netlify functions:invoke --name upload-image"
   },
   "dependencies": {

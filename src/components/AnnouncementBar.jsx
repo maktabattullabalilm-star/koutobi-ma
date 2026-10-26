@@ -9,7 +9,10 @@ export default function AnnouncementBar() {
   const [idx, setIdx] = useState(0);
   const [active, setActive] = useState(true);
   const timer = useRef(null);
-  const saved = useStorefrontContent()?.announcement || { content: CONTENT_DEFAULTS.announcement, visible: true };
+  const saved = useStorefrontContent()?.announcement || {
+    content: CONTENT_DEFAULTS.announcement,
+    visible: true,
+  };
   const messages = saved.content.messages?.filter(Boolean) || MESSAGES;
 
   useEffect(() => {

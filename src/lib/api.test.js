@@ -33,7 +33,9 @@ function builder(table) {
       return b._push('insert', a);
     },
     maybeSingle() {
-      const rows = state.tables[table] || [];
+      const t = state.tables[table];
+      if (t instanceof Error) return Promise.resolve({ data: null, error: t });
+      const rows = t || [];
       return Promise.resolve({ data: rows[0] ?? null, error: null });
     },
     then(resolve, reject) {
@@ -58,7 +60,8 @@ vi.mock('./supabase', () => ({
   SUPABASE_ENABLED: true,
 }));
 
-const { createOrder, getBook, getBooks, getCategories, getRelatedBooks } = await import('./api');
+const { createOrder, getBook, getBooks, getCategories, getHiddenEditionSpecs, getRelatedBooks } =
+  await import('./api');
 
 const ROWS = [
   {
@@ -88,8 +91,13 @@ beforeEach(() => {
     books: [...ROWS],
     orders: [],
     order_items: [],
-    categories: [{ name_ar: 'الرقائق والأخلاق' }, { name_ar: 'الأذكار والأدعية' }],
+    categories: [
+      { id: 'c1', name_ar: 'الرقائق والأخلاق', parent_id: null, sort: 10 },
+      { id: 'c2', name_ar: 'الأذكار والأدعية', parent_id: null, sort: 20 },
+      { id: 'c3', name_ar: 'الأذكار اليومية', parent_id: 'c2', sort: 10 },
+    ],
     book_images: [],
+    app_settings: [],
   };
   state.calls = [];
 });
@@ -113,6 +121,12 @@ describe('getBooks (live)', () => {
     state.calls = [];
     await getBooks({ category: 'all' });
     expect(callsFor('books', 'eq')).not.toContainEqual(['category', 'all']);
+  });
+
+  it('scopes by a whole category subtree with .in', async () => {
+    await getBooks({ categories: ['الأذكار والأدعية', 'الأذكار اليومية'] });
+    expect(callsFor('books', 'in')).toContainEqual(['category', ['الأذكار والأدعية', 'الأذكار اليومية']]);
+    expect(callsFor('books', 'eq')).not.toContainEqual(['category', 'الأذكار والأدعية']);
   });
 
   it('searches title OR author with a trimmed needle', async () => {
@@ -142,15 +156,40 @@ describe('getBook (live)', () => {
 });
 
 describe('getCategories (live)', () => {
-  it('returns categories from the categories table with live book counts', async () => {
+  it('returns a depth-first list with direct and subtree counts', async () => {
     const cats = await getCategories();
-    expect(cats).toContainEqual({ name: 'الرقائق والأخلاق', count: 1 });
-    expect(cats).toContainEqual({ name: 'الأذكار والأدعية', count: 1 });
+    expect(cats.map((c) => [c.name, c.depth, c.count, c.totalCount])).toEqual([
+      ['الرقائق والأخلاق', 0, 1, 1],
+      ['الأذكار والأدعية', 0, 1, 1],
+      ['الأذكار اليومية', 1, 0, 0],
+    ]);
+    expect(cats[1]).toMatchObject({ id: 'c2', parentId: null, childCount: 1 });
+    expect(cats[2]).toMatchObject({ id: 'c3', parentId: 'c2', childCount: 0 });
+  });
+
+  it('rolls child counts into the parent total', async () => {
+    state.tables.books = [...ROWS, { ...ROWS[1], id: '3', category: 'الأذكار اليومية' }];
+    const cats = await getCategories();
+    const parent = cats.find((c) => c.name === 'الأذكار والأدعية');
+    expect(parent).toMatchObject({ count: 1, totalCount: 2, childCount: 1 });
   });
 
   it('returns [] on error instead of throwing', async () => {
     state.tables.categories = new Error('db down');
     await expect(getCategories()).resolves.toEqual([]);
+  });
+});
+
+describe('getHiddenEditionSpecs (live)', () => {
+  it('parses the stored array', async () => {
+    state.tables.app_settings = [{ key: 'hidden_edition_specs', value: '["paper"]' }];
+    await expect(getHiddenEditionSpecs()).resolves.toEqual(['paper']);
+  });
+
+  it('fails open to [] when unset or broken', async () => {
+    expect(await getHiddenEditionSpecs()).toEqual([]);
+    state.tables.app_settings = new Error('db down');
+    expect(await getHiddenEditionSpecs()).toEqual([]);
   });
 });
 
@@ -186,7 +225,13 @@ describe('createOrder (live, server-priced RPC)', () => {
   it('sends only id+qty and returns the server total (never trusts cart price)', async () => {
     mockRpc({ id: 'order-1', total: '140.00' });
     const res = await createOrder({ ...payload, items: [{ id: '1', title: 'X', price: 1, qty: 2 }] });
-    expect(res).toEqual({ id: 'order-1', total: 140, adjusted: [], discountTotal: 0, bundleDiscountTotal: 0 });
+    expect(res).toEqual({
+      id: 'order-1',
+      total: 140,
+      adjusted: [],
+      discountTotal: 0,
+      bundleDiscountTotal: 0,
+    });
 
     const rpcCalls = state.calls.filter(([t]) => t === 'rpc');
     expect(rpcCalls).toHaveLength(1);

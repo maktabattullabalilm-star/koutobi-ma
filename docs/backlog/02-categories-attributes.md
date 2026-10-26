@@ -37,13 +37,39 @@ arrays in code.
 - Rename propagates to `books` text columns with a count confirmation.
 - Page renamed to "التصنيفات والخيارات" (a librarian knows what that is).
 
+## Sub-categories & per-type visibility (2026-10-25)
+
+- [x] Categories support **unlimited depth** via `categories.parent_id`
+  (self-parent check + `(parent_id, sort)` index). The admin page adds
+  sub-categories, renames/moves them, and reorders each sibling group.
+- [x] **Drag and drop** on the admin page: drop a category on another to make
+  it a child, or on the root box to lift it back to the first level. Moves
+  stay local (with an amber „غير محفوظ” marker) until «حفظ التغييرات» is
+  pressed; «إلغاء» discards them. Cycle-creating drops are rejected.
+- [x] Deleting a category **moves its direct children up** to the deleted
+  category's parent before deleting, atomically through
+  `admin_delete_category(uuid)` (admin-only, `security definer`). No subtree
+  is orphaned or lost, and books are never touched.
+- [x] Storefront: Home shows root categories only and caps the grid at **two
+  rows**; Catalog adds a breadcrumb, direct-child chips, and filters by the
+  whole selected subtree; Header shows a **hover dropdown** per root category
+  (recursive sub-category list with counts); Footer renders the tree.
+- [x] Admin book/stock category filters show indented DFS labels and match
+  the selected subtree.
+- [x] Edition specs (التجليد / المقاس / الورق) each have a **show/hide switch**
+  stored per type in `app_settings.hidden_edition_specs` (JSON array). A
+  hidden spec disappears **only from the public book page**; the admin book
+  form still shows all three fields.
+
 ## Schema
 
 ```sql
 create table public.categories (
   id uuid primary key default gen_random_uuid(),
   name_ar text not null unique,
-  sort int not null default 0
+  parent_id uuid references public.categories(id) on delete restrict,
+  sort int not null default 0,
+  constraint categories_parent_not_self check (parent_id is null or parent_id <> id)
 );
 create table public.attribute_options (
   id uuid primary key default gen_random_uuid(),

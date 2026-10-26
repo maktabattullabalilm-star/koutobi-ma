@@ -66,7 +66,13 @@ export default function OrdersAdmin() {
   const setStatus = async (id, status) => {
     try {
       await adminUpdateOrderStatus(id, status);
-      show(status === 'contacted' ? 'تم تأكيد الطلب وخصم الكميات من المخزون ✓' : status === 'cancelled' ? 'تم إلغاء الطلب وتحديث المخزون تلقائياً ✓' : 'تم تحديث حالة الطلب ✓');
+      show(
+        status === 'contacted'
+          ? 'تم تأكيد الطلب وخصم الكميات من المخزون ✓'
+          : status === 'cancelled'
+            ? 'تم إلغاء الطلب وتحديث المخزون تلقائياً ✓'
+            : 'تم تحديث حالة الطلب ✓'
+      );
       load();
     } catch (e) {
       const message = /insufficient stock/i.test(e.message)
@@ -131,7 +137,9 @@ export default function OrdersAdmin() {
               <div className="flex flex-wrap items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <bdi dir="auto" className="font-bold text-ink">{o.customer_name}</bdi>
+                    <bdi dir="auto" className="font-bold text-ink">
+                      {o.customer_name}
+                    </bdi>
                     <PhoneReveal phone={o.phone} />
                   </div>
                   <div className="mt-0.5 text-xs text-soft">
@@ -151,8 +159,12 @@ export default function OrdersAdmin() {
                 {(o.order_items || []).map((it, i) => (
                   <li key={i} className="flex items-center justify-between gap-3">
                     <span className="min-w-0">
-                       <bdi dir="auto" className="font-medium text-ink">{it.title_ar || 'كتاب'}</bdi>
-                      <span className="ms-2 text-xs text-soft"><bdi dir="ltr">×{it.quantity}</bdi></span>
+                      <bdi dir="auto" className="font-medium text-ink">
+                        {it.title_ar || 'كتاب'}
+                      </bdi>
+                      <span className="ms-2 text-xs text-soft">
+                        <bdi dir="ltr">×{it.quantity}</bdi>
+                      </span>
                     </span>
                     <span className="shrink-0 font-semibold text-ink">
                       {formatPrice(Number(it.price) * it.quantity)}
@@ -165,15 +177,24 @@ export default function OrdersAdmin() {
               <div className="mt-3 grid gap-1.5 text-xs text-soft sm:grid-cols-2">
                 {o.city && (
                   <span>
-                    🏙️ المدينة: <bdi dir="auto" className="font-medium text-ink">{o.city}</bdi>
+                    🏙️ المدينة:{' '}
+                    <bdi dir="auto" className="font-medium text-ink">
+                      {o.city}
+                    </bdi>
                   </span>
                 )}
                 <span>
-                  📍 العنوان: <bdi dir="auto" className="font-medium text-ink">{o.address}</bdi>
+                  📍 العنوان:{' '}
+                  <bdi dir="auto" className="font-medium text-ink">
+                    {o.address}
+                  </bdi>
                 </span>
                 {o.notes && (
                   <span className="sm:col-span-2">
-                    📝 ملاحظات: <bdi dir="auto" className="font-medium text-ink">{o.notes}</bdi>
+                    📝 ملاحظات:{' '}
+                    <bdi dir="auto" className="font-medium text-ink">
+                      {o.notes}
+                    </bdi>
                   </span>
                 )}
               </div>
@@ -193,12 +214,25 @@ export default function OrdersAdmin() {
                       <IconWhatsApp width={16} height={16} /> اتصال واتساب
                     </a>
                   </Button>
-                  {['new', 'contacted'].includes(o.status) ? <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
-                    <SelectTrigger className="w-auto" aria-label="حالة الطلب"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(o.status === 'new' ? STATUS.filter((s) => ['new', 'contacted', 'cancelled'].includes(s.id)) : STATUS.filter((s) => ['contacted', 'delivered', 'cancelled'].includes(s.id))).map((s) => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
-                    </SelectContent>
-                  </Select> : <span className="text-xs text-soft">لا يمكن تغيير الحالة النهائية</span>}
+                  {['new', 'contacted'].includes(o.status) ? (
+                    <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
+                      <SelectTrigger className="w-auto" aria-label="حالة الطلب">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(o.status === 'new'
+                          ? STATUS.filter((s) => ['new', 'contacted', 'cancelled'].includes(s.id))
+                          : STATUS.filter((s) => ['contacted', 'delivered', 'cancelled'].includes(s.id))
+                        ).map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="text-xs text-soft">لا يمكن تغيير الحالة النهائية</span>
+                  )}
                 </div>
               </div>
             </Card>

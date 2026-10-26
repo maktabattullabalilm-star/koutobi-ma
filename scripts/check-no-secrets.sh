@@ -28,6 +28,24 @@ if [ -n "$tracked_env" ] && [ "$tracked_env" != ".env.example" ]; then
   exit 1
 fi
 
+# 2b. Per-client config/credentials must stay local (clients/ is gitignored).
+tracked_clients=$(git ls-files 'clients/*' || true)
+if [ -n "$tracked_clients" ]; then
+  echo "FAIL: tracked files under clients/ (must be local-only):"
+  echo "$tracked_clients"
+  exit 1
+fi
+
+# 2c. Real API tokens must never appear in tracked files.
+if git grep -n -E "sbp_[A-Za-z0-9]{20,}" -- . ':!package-lock.json' | grep -v -E "YOUR_|EXAMPLE|PLACEHOLDER"; then
+  echo "FAIL: Supabase access token found in tracked files."
+  exit 1
+fi
+if git grep -n -E "(SUPABASE_ACCESS_TOKEN|CLOUDFLARE_API_TOKEN)[[:space:]]*=[[:space:]]*[A-Za-z0-9_-]{30,}" -- . ':!package-lock.json' | grep -v -E "YOUR_|EXAMPLE|PLACEHOLDER"; then
+  echo "FAIL: API token value found in tracked files."
+  exit 1
+fi
+
 # 3. Netlify functions must not reference VITE_ vars (would leak to browser).
 if grep -rn "VITE_" netlify/functions --include='*.mjs' --include='*.js' ; then
   echo "FAIL: VITE_ reference inside netlify/functions."

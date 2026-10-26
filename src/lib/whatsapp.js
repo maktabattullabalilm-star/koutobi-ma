@@ -8,7 +8,11 @@ import { whatsappLink } from './config';
 
 export function generalInquiryLink(kind = 'question', numberOverride) {
   // Back-compat: generalInquiryLink(number) treats a digits-like first arg as the override.
-  if (typeof kind === 'string' && /[0-9+][0-9+\s-]{7,}/.test(kind) && !['question', 'book', 'search', 'order'].includes(kind)) {
+  if (
+    typeof kind === 'string' &&
+    /[0-9+][0-9+\s-]{7,}/.test(kind) &&
+    !['question', 'book', 'search', 'order'].includes(kind)
+  ) {
     numberOverride = kind;
     kind = 'question';
   }

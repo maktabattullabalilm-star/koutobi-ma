@@ -30,7 +30,12 @@ afterEach(cleanup);
 
 describe('Catalog pagination', () => {
   it('shows numbered pages, loads the selected page, and syncs it to the URL', async () => {
-    render(<MemoryRouter initialEntries={['/catalog']}><LocationText /><Catalog /></MemoryRouter>);
+    render(
+      <MemoryRouter initialEntries={['/catalog']}>
+        <LocationText />
+        <Catalog />
+      </MemoryRouter>
+    );
     expect(screen.getAllByTestId('book-card')).toHaveLength(12);
     expect(screen.getByText('كتاب 50')).toBeTruthy();
     expect(screen.getByText('كتاب 39')).toBeTruthy();
@@ -42,7 +47,11 @@ describe('Catalog pagination', () => {
   });
 
   it('can show all matching books and return to paged results', () => {
-    render(<MemoryRouter initialEntries={['/catalog']}><Catalog /></MemoryRouter>);
+    render(
+      <MemoryRouter initialEntries={['/catalog']}>
+        <Catalog />
+      </MemoryRouter>
+    );
     fireEvent.click(screen.getByRole('button', { name: 'عرض الكل' }));
     expect(screen.getAllByTestId('book-card')).toHaveLength(50);
     fireEvent.click(screen.getByRole('button', { name: 'عرض الصفحات' }));

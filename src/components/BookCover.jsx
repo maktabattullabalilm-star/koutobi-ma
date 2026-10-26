@@ -4,10 +4,23 @@ import { DEFAULT_COVER_SIZES, coverSrcSet } from '../lib/images';
 
 function SoldOutSeal() {
   return (
-    <span className="pointer-events-none absolute bottom-[7%] end-[6%] z-10 w-[62%] max-w-40 -rotate-6" aria-hidden="true">
+    <span
+      className="pointer-events-none absolute bottom-[7%] end-[6%] z-10 w-[62%] max-w-40 -rotate-6"
+      aria-hidden="true"
+    >
       <svg viewBox="0 0 240 78" className="h-auto w-full" focusable="false">
         <rect x="4" y="4" width="232" height="70" rx="3" fill="none" stroke="#c51d30" strokeWidth="8" />
-        <text x="120" y="52" fill="#c51d30" fontSize="33" fontWeight="800" textAnchor="middle" fontFamily="serif">نفدت الكمية</text>
+        <text
+          x="120"
+          y="52"
+          fill="#c51d30"
+          fontSize="33"
+          fontWeight="800"
+          textAnchor="middle"
+          fontFamily="serif"
+        >
+          نفدت الكمية
+        </text>
       </svg>
     </span>
   );

@@ -28,8 +28,7 @@ describe('cookie consent storage', () => {
     const stored = getConsent();
     expect(stored.statistics).toBe(true);
     expect(stored.marketing).toBe(true);
-    const monthsLeft =
-      (new Date(stored.expiresAt) - new Date()) / (30 * 24 * 3600 * 1000);
+    const monthsLeft = (new Date(stored.expiresAt) - new Date()) / (30 * 24 * 3600 * 1000);
     expect(monthsLeft).toBeGreaterThan(11);
     expect(isConsented('statistics')).toBe(true);
   });

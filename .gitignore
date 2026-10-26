@@ -1,15 +1,22 @@
 node_modules
 dist
+coverage
+*.tsbuildinfo
 .netlify
 .env
 .env.*
 !.env.example
 .env*.local
+# Per-client config + credentials live only on the operator's machine.
+# The repo is mirrored to client GitHub repos, so this must never be tracked.
+# Leading slash: only the repo-root folder, not docs/clients/.
+/clients/
 *.log
 .DS_Store
 supabase/.temp
 # throwaway frontend audit snapshots
 .audit/
 
-# Wrangler local state
+# Wrangler local state + generated per-client deploy config
 .wrangler/
+.wrangler.client.jsonc

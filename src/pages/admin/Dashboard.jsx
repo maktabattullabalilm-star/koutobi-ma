@@ -182,7 +182,9 @@ export default function AdminDashboard() {
                 <li key={o.id} className="flex flex-wrap items-center gap-3 py-3">
                   <span className="h-2.5 w-2.5 rounded-full bg-brand" />
                   <div className="min-w-0 flex-1">
-                    <div dir="auto" className="truncate text-sm font-semibold text-ink">{o.customer_name}</div>
+                    <div dir="auto" className="truncate text-sm font-semibold text-ink">
+                      {o.customer_name}
+                    </div>
                     <div className="text-xs tabular-nums text-soft" dir="ltr">
                       {o.phone}
                     </div>

@@ -9,7 +9,13 @@ import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 
 export default function StoreLayout() {
   const brand = useStorefrontContent()?.brand?.content || CONTENT_DEFAULTS.brand;
-  const theme = { '--color-brand': brand.primary_color, '--color-brand-dark': brand.primary_dark, '--color-brand-darker': brand.primary_darker, '--color-brand-light': brand.primary_light, '--color-brand-pale': brand.primary_pale };
+  const theme = {
+    '--color-brand': brand.primary_color,
+    '--color-brand-dark': brand.primary_dark,
+    '--color-brand-darker': brand.primary_darker,
+    '--color-brand-light': brand.primary_light,
+    '--color-brand-pale': brand.primary_pale,
+  };
   return (
     <div className="flex min-h-screen flex-col" style={theme}>
       <a

@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { ATTRIBUTE_COLUMNS, countByColumn, nextSort, reorderList, swapAdjacent } from './catalog';
+import {
+  ATTRIBUTE_COLUMNS,
+  buildCategoryTree,
+  categoryPath,
+  categoryScopeNames,
+  categorySiblings,
+  categorySubtreeIds,
+  countByColumn,
+  flattenCategoryTree,
+  nextSort,
+  normalizeCategoryRows,
+  parseHiddenEditionSpecs,
+  reorderList,
+  swapAdjacent,
+} from './catalog';
 
 const ROWS = [
   { id: 'a', value_ar: 'أ', sort: 10 },
@@ -65,5 +79,80 @@ describe('countByColumn', () => {
 
   it('maps attribute types to book columns', () => {
     expect(ATTRIBUTE_COLUMNS).toEqual({ binding: 'binding_ar', size: 'size_ar', paper: 'paper_ar' });
+  });
+});
+
+describe('hidden edition specs', () => {
+  it('parses JSON arrays and legacy comma lists in canonical order', () => {
+    expect(parseHiddenEditionSpecs('["paper","size","bogus"]')).toEqual(['size', 'paper']);
+    expect(parseHiddenEditionSpecs('binding,paper')).toEqual(['binding', 'paper']);
+    expect(parseHiddenEditionSpecs(null)).toEqual([]);
+    expect(parseHiddenEditionSpecs('')).toEqual([]);
+  });
+});
+
+describe('category tree', () => {
+  const CATS = [
+    { id: 'quran', name_ar: 'علوم القرآن', parent_id: null, sort: 10 },
+    { id: 'qiraat', name_ar: 'علم القراءات', parent_id: 'quran', sort: 10 },
+    { id: 'asbab', name_ar: 'علم أسباب النزول', parent_id: 'quran', sort: 20 },
+    { id: 'nahw', name_ar: 'علم النحو', parent_id: 'qiraat', sort: 10 },
+    { id: 'fiqh', name_ar: 'الفقه وأصوله', parent_id: null, sort: 20 },
+  ];
+
+  it('builds unlimited-depth trees and flattens them in display order', () => {
+    const tree = buildCategoryTree(CATS);
+    expect(tree.map((n) => n.name_ar)).toEqual(['علوم القرآن', 'الفقه وأصوله']);
+    expect(flattenCategoryTree(tree).map((n) => [n.name_ar, n.depth])).toEqual([
+      ['علوم القرآن', 0],
+      ['علم القراءات', 1],
+      ['علم النحو', 2],
+      ['علم أسباب النزول', 1],
+      ['الفقه وأصوله', 0],
+    ]);
+  });
+
+  it('collects a category subtree and its ancestor path', () => {
+    expect(categoryScopeNames(CATS, 'علوم القرآن')).toEqual([
+      'علوم القرآن',
+      'علم القراءات',
+      'علم النحو',
+      'علم أسباب النزول',
+    ]);
+    expect(categoryScopeNames(CATS, 'علم النحو')).toEqual(['علم النحو']);
+    expect(categoryPath(CATS, 'علم النحو').map((n) => n.name_ar)).toEqual([
+      'علوم القرآن',
+      'علم القراءات',
+      'علم النحو',
+    ]);
+    expect(categorySubtreeIds(CATS, 'quran')).toEqual(new Set(['quran', 'qiraat', 'asbab', 'nahw']));
+    expect(categorySiblings(CATS, 'quran').map((n) => n.name_ar)).toEqual([
+      'علم القراءات',
+      'علم أسباب النزول',
+    ]);
+  });
+
+  it('keeps cycles renderable instead of hiding rows', () => {
+    const tree = buildCategoryTree([
+      { id: 'a', name_ar: 'أ', parent_id: 'b', sort: 10 },
+      { id: 'b', name_ar: 'ب', parent_id: 'a', sort: 20 },
+    ]);
+    expect(tree.map((n) => n.name_ar)).toEqual(['أ', 'ب']);
+  });
+
+  it('normalizes legacy string lists', () => {
+    expect(normalizeCategoryRows(['فقه', 'توحيد'])).toEqual([
+      { id: 'fallback-0', name_ar: 'فقه', parent_id: null, sort: 10 },
+      { id: 'fallback-1', name_ar: 'توحيد', parent_id: null, sort: 20 },
+    ]);
+  });
+
+  it('accepts the public API shape (name/parentId)', () => {
+    const publicRows = [
+      { id: 'q', name: 'علوم القرآن', parentId: null, depth: 0 },
+      { id: 'r', name: 'القراءات', parentId: 'q', depth: 1 },
+    ];
+    expect(categoryScopeNames(publicRows, 'علوم القرآن')).toEqual(['علوم القرآن', 'القراءات']);
+    expect(categoryPath(publicRows, 'القراءات').map((n) => n.name)).toEqual(['علوم القرآن', 'القراءات']);
   });
 });

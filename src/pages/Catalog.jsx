@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useBooks, useBundles, useCategories } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
+import { categoryPath, categoryScopeNames } from '../lib/catalog';
 import { formatPrice } from '../lib/format';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { useSiteContact } from '../hooks/useSiteContact';
@@ -40,13 +41,25 @@ export default function Catalog() {
   const showAll = params.get('all') === '1';
 
   const { whatsapp } = useSiteContact();
-  const { books, error: booksError, loading: booksLoading } = useBooks({ category, q });
+  const { categories, error: catsError, loading: catsLoading } = useCategories();
+  const roots = useMemo(() => categories.filter((c) => (c.depth || 0) === 0), [categories]);
+  const selected = useMemo(() => categories.find((c) => c.name === category), [categories, category]);
+  const trail = useMemo(() => categoryPath(categories, category), [categories, category]);
+  const scope = useMemo(
+    () => (category === 'all' ? undefined : categoryScopeNames(categories, category)),
+    [categories, category]
+  );
+  const children = useMemo(
+    () => (selected ? categories.filter((c) => c.parentId === selected.id) : []),
+    [categories, selected]
+  );
+  const activeRoot = trail[0]?.name;
+  const { books, error: booksError, loading: booksLoading } = useBooks({ category, categories: scope, q });
   const { bundles, error: bundlesError, loading: bundlesLoading } = useBundles();
   useHead({
     title: q ? `نتائج البحث: ${q}` : category === 'all' ? 'جميع الكتب' : category,
     path: `/catalog${params.toString() ? `?${params.toString()}` : ''}`,
   });
-  const { categories, error: catsError, loading: catsLoading } = useCategories();
   const loading = booksLoading || bundlesLoading || catsLoading;
   const [sort, setSort] = useState('newest');
   const error = booksError || bundlesError || catsError;
@@ -63,7 +76,9 @@ export default function Catalog() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
   const currentPage = Math.min(requestedPage, totalPages);
-  const visibleBooks = showAll ? sorted : sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const visibleBooks = showAll
+    ? sorted
+    : sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const paginationItems = getPaginationItems(currentPage, totalPages);
 
   const updateParams = (patch = {}) => {
@@ -90,37 +105,97 @@ export default function Catalog() {
     <div className="container-x py-8">
       {/* header */}
       <div className="mb-6">
+        {trail.length > 1 && (
+          <nav aria-label="مسار التصنيف" className="mb-2 flex flex-wrap items-center gap-1 text-xs text-soft">
+            {trail.map((node, index) => (
+              <span key={node.id} className="flex items-center gap-1">
+                {index > 0 && <span aria-hidden="true">›</span>}
+                {index === trail.length - 1 ? (
+                  <span className="font-semibold text-ink">{node.name}</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => changeCategory(node.name)}
+                    className="hover:text-brand"
+                  >
+                    {node.name}
+                  </button>
+                )}
+              </span>
+            ))}
+          </nav>
+        )}
         <h1 className="text-2xl font-bold text-ink sm:text-3xl">
           {category === 'all' ? 'جميع الكتب' : q ? 'نتائج البحث' : category}
         </h1>
         <p className="mt-1.5 text-sm text-soft">
-          {q && <>نتائج البحث عن: «<bdi>{q}</bdi>» — </>}
+          {q && (
+            <>
+              نتائج البحث عن: «<bdi>{q}</bdi>» —{' '}
+            </>
+          )}
           <bdi dir="ltr">{sorted.length}</bdi> منتج متاح · الدفع عند الاستلام
         </p>
       </div>
 
       {/* category chips */}
-      <div className="mb-5 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2">
         <button
           onClick={() => changeCategory('all')}
           className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
             category === 'all' ? 'bg-brand text-white' : 'bg-gray-100 text-ink hover:bg-brand-pale'
           }`}
         >
-          الكل (<bdi dir="ltr">{categories.reduce((s, c) => s + c.count, 0) || books.length}</bdi>)
+          الكل (
+          <bdi dir="ltr">
+            {roots.reduce((sum, c) => sum + (c.totalCount ?? c.count ?? 0), 0) || books.length}
+          </bdi>
+          )
         </button>
-        {categories.map((c) => (
+        {roots.map((c) => (
           <button
-            key={c.name}
+            key={c.id || c.name}
             onClick={() => changeCategory(c.name)}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-              category === c.name ? 'bg-brand text-white' : 'bg-gray-100 text-ink hover:bg-brand-pale'
+              activeRoot === c.name ? 'bg-brand text-white' : 'bg-gray-100 text-ink hover:bg-brand-pale'
             }`}
           >
-            <bdi dir="auto">{c.name}</bdi> (<bdi dir="ltr">{c.count}</bdi>)
+            <bdi dir="auto">{c.name}</bdi> (<bdi dir="ltr">{c.totalCount ?? c.count}</bdi>)
           </button>
         ))}
       </div>
+
+      {/* direct sub-categories of the selected category */}
+      {children.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center gap-2 rounded-lg border border-line/60 bg-gray-50 px-3 py-2">
+          <span className="text-xs font-semibold text-soft">داخل «{selected.name}»:</span>
+          <button
+            type="button"
+            onClick={() => changeCategory(selected.name)}
+            className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+              category === selected.name
+                ? 'bg-brand text-white'
+                : 'bg-white text-ink ring-1 ring-inset ring-line hover:text-brand'
+            }`}
+          >
+            كل {selected.name} (<bdi dir="ltr">{selected.totalCount ?? selected.count}</bdi>)
+          </button>
+          {children.map((c) => (
+            <button
+              key={c.id || c.name}
+              type="button"
+              onClick={() => changeCategory(c.name)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                category === c.name
+                  ? 'bg-brand text-white'
+                  : 'bg-white text-ink ring-1 ring-inset ring-line hover:text-brand'
+              }`}
+            >
+              <bdi dir="auto">{c.name}</bdi> (<bdi dir="ltr">{c.totalCount ?? c.count}</bdi>)
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* toolbar */}
       <div className="mb-6 flex items-center justify-between gap-3">
@@ -136,8 +211,16 @@ export default function Catalog() {
           <span className="hidden sm:block" />
         )}
         <div className="relative flex items-center gap-2">
-          <span className="text-sm text-soft" id="sort-label">ترتيب حسب:</span>
-            <Select value={sort} onValueChange={(value) => { setSort(value); updateParams({ page: null }); }}>
+          <span className="text-sm text-soft" id="sort-label">
+            ترتيب حسب:
+          </span>
+          <Select
+            value={sort}
+            onValueChange={(value) => {
+              setSort(value);
+              updateParams({ page: null });
+            }}
+          >
             <SelectTrigger className="w-auto" aria-labelledby="sort-label">
               <SelectValue />
             </SelectTrigger>
@@ -189,19 +272,88 @@ export default function Catalog() {
       {!loading && !error && sorted.length > PAGE_SIZE && (
         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <p className="text-xs text-soft">
-            عرض <bdi dir="ltr">{showAll ? sorted.length : Math.min((currentPage - 1) * PAGE_SIZE + 1, sorted.length)}–{showAll ? sorted.length : Math.min(currentPage * PAGE_SIZE, sorted.length)}</bdi> من <bdi dir="ltr">{sorted.length}</bdi> كتاباً
+            عرض{' '}
+            <bdi dir="ltr">
+              {showAll ? sorted.length : Math.min((currentPage - 1) * PAGE_SIZE + 1, sorted.length)}–
+              {showAll ? sorted.length : Math.min(currentPage * PAGE_SIZE, sorted.length)}
+            </bdi>{' '}
+            من <bdi dir="ltr">{sorted.length}</bdi> كتاباً
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-1.5" dir="ltr" aria-label="التنقل بين صفحات الكتب">
-            {!showAll && <>
-              <Button type="button" variant="outline" size="sm" aria-label="الصفحة الأولى" onClick={() => setPage(1)} disabled={currentPage === 1}>|‹</Button>
-              <Button type="button" variant="outline" size="sm" aria-label="الصفحة السابقة" onClick={() => setPage(currentPage - 1)} disabled={currentPage === 1}>‹</Button>
-              {paginationItems.map((item, index) => typeof item === 'number' ? (
-                <Button key={item} type="button" variant={currentPage === item ? 'default' : 'outline'} size="sm" aria-current={currentPage === item ? 'page' : undefined} aria-label={`الصفحة ${item}`} onClick={() => setPage(item)}>{item}</Button>
-              ) : <span key={`${item}-${index}`} className="px-1 text-sm text-soft" aria-hidden="true">…</span>)}
-              <Button type="button" variant="outline" size="sm" aria-label="الصفحة التالية" onClick={() => setPage(currentPage + 1)} disabled={currentPage === totalPages}>›</Button>
-              <Button type="button" variant="outline" size="sm" aria-label="الصفحة الأخيرة" onClick={() => setPage(totalPages)} disabled={currentPage === totalPages}>›|</Button>
-            </>}
-            <Button type="button" variant={showAll ? 'default' : 'outline'} size="sm" aria-pressed={showAll} onClick={() => updateParams({ all: showAll ? null : '1', page: null })}>
+          <div
+            className="flex flex-wrap items-center justify-center gap-1.5"
+            dir="ltr"
+            aria-label="التنقل بين صفحات الكتب"
+          >
+            {!showAll && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="الصفحة الأولى"
+                  onClick={() => setPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  |‹
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="الصفحة السابقة"
+                  onClick={() => setPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </Button>
+                {paginationItems.map((item, index) =>
+                  typeof item === 'number' ? (
+                    <Button
+                      key={item}
+                      type="button"
+                      variant={currentPage === item ? 'default' : 'outline'}
+                      size="sm"
+                      aria-current={currentPage === item ? 'page' : undefined}
+                      aria-label={`الصفحة ${item}`}
+                      onClick={() => setPage(item)}
+                    >
+                      {item}
+                    </Button>
+                  ) : (
+                    <span key={`${item}-${index}`} className="px-1 text-sm text-soft" aria-hidden="true">
+                      …
+                    </span>
+                  )
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="الصفحة التالية"
+                  onClick={() => setPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  aria-label="الصفحة الأخيرة"
+                  onClick={() => setPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›|
+                </Button>
+              </>
+            )}
+            <Button
+              type="button"
+              variant={showAll ? 'default' : 'outline'}
+              size="sm"
+              aria-pressed={showAll}
+              onClick={() => updateParams({ all: showAll ? null : '1', page: null })}
+            >
               {showAll ? 'عرض الصفحات' : 'عرض الكل'}
             </Button>
           </div>

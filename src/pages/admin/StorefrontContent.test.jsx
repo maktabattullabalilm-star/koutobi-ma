@@ -14,7 +14,9 @@ vi.mock('../../lib/storefrontContent', async (importOriginal) => {
   return {
     ...actual,
     getStorefrontContent: vi.fn(async () =>
-      Object.fromEntries(Object.entries(actual.CONTENT_DEFAULTS).map(([key, content]) => [key, { content, visible: true }]))
+      Object.fromEntries(
+        Object.entries(actual.CONTENT_DEFAULTS).map(([key, content]) => [key, { content, visible: true }])
+      )
     ),
     adminSaveStorefrontContent: mockSave,
   };

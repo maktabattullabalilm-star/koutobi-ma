@@ -1,6 +1,7 @@
 import { supabase, SUPABASE_ENABLED } from './supabase';
 import { SAMPLE_BOOKS } from './sampleData';
 import { normalizeBook } from './format';
+import { HIDDEN_EDITION_SPECS_KEY, buildCategoryTree, parseHiddenEditionSpecs } from './catalog';
 
 export const DEMO_MODE = !SUPABASE_ENABLED;
 
@@ -30,13 +31,15 @@ async function attachImages(books) {
   }
 }
 
-export async function getBooks({ category, q } = {}) {
+export async function getBooks({ category, categories, q } = {}) {
   const sb = supabase;
   if (!sb) return [...SAMPLE_BOOKS].map(normalizeBook);
 
   let query = sb.from('books').select('*').eq('is_active', true).order('created_at', { ascending: false });
 
-  if (category && category !== 'all') query = query.eq('category', category);
+  const scope = Array.isArray(categories) ? categories.filter(Boolean) : [];
+  if (scope.length) query = query.in('category', scope);
+  else if (category && category !== 'all') query = query.eq('category', category);
   if (q && q.trim()) {
     const needle = q.trim().replace(/[%_,]/g, '');
     query = query.or(`title_ar.ilike.%${needle}%,author_ar.ilike.%${needle}%`);
@@ -50,16 +53,38 @@ export async function getBooks({ category, q } = {}) {
 function normalizeBundle(row) {
   const books = row.bundle_offer_books || [];
   const stockQty = books.length ? Math.min(...books.map((item) => Number(item.books?.stock_qty || 0))) : 0;
-  return { ...row, product_type: 'bundle', title_ar: row.name_ar, price: Number(row.bundle_price), old_price: Number(row.component_total || 0) || null, stock_qty: stockQty, is_out_of_stock: stockQty < 1, cover_image: row.cover_image || books[0]?.books?.cover_image || null, books };
+  return {
+    ...row,
+    product_type: 'bundle',
+    title_ar: row.name_ar,
+    price: Number(row.bundle_price),
+    old_price: Number(row.component_total || 0) || null,
+    stock_qty: stockQty,
+    is_out_of_stock: stockQty < 1,
+    cover_image: row.cover_image || books[0]?.books?.cover_image || null,
+    books,
+  };
 }
 
 export async function getBundles() {
   const sb = supabase;
   if (!sb) return [];
   const now = new Date().toISOString();
-  const { data, error } = await sb.from('bundle_offers').select('*, bundle_offer_books(book_id, books(title_ar, author_ar, cover_image, stock_qty, price))').eq('is_active', true).or(`starts_at.is.null,starts_at.lte.${now}`).or(`ends_at.is.null,ends_at.gt.${now}`).order('is_featured', { ascending: false }).order('created_at', { ascending: false });
+  const { data, error } = await sb
+    .from('bundle_offers')
+    .select('*, bundle_offer_books(book_id, books(title_ar, author_ar, cover_image, stock_qty, price))')
+    .eq('is_active', true)
+    .or(`starts_at.is.null,starts_at.lte.${now}`)
+    .or(`ends_at.is.null,ends_at.gt.${now}`)
+    .order('is_featured', { ascending: false })
+    .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
-  return (data || []).map((row) => normalizeBundle({ ...row, component_total: row.bundle_offer_books?.reduce((sum, item) => sum + Number(item.books?.price || 0), 0) }));
+  return (data || []).map((row) =>
+    normalizeBundle({
+      ...row,
+      component_total: row.bundle_offer_books?.reduce((sum, item) => sum + Number(item.books?.price || 0), 0),
+    })
+  );
 }
 
 export async function getBundle(id) {
@@ -86,11 +111,19 @@ export async function getCategories() {
   if (!sb) {
     const counts = {};
     SAMPLE_BOOKS.forEach((b) => (counts[b.category] = (counts[b.category] || 0) + 1));
-    return Object.entries(counts).map(([name, count]) => ({ name, count }));
+    return Object.entries(counts).map(([name, count]) => ({
+      id: name,
+      name,
+      parentId: null,
+      depth: 0,
+      childCount: 0,
+      count,
+      totalCount: count,
+    }));
   }
   try {
     const [{ data: cats, error: catsErr }, { data: books, error: booksErr }] = await Promise.all([
-      sb.from('categories').select('name_ar').order('sort', { ascending: true }),
+      sb.from('categories').select('id, name_ar, slug, parent_id, sort').order('sort', { ascending: true }),
       sb.from('books').select('category').eq('is_active', true),
     ]);
     if (catsErr || !cats) return [];
@@ -100,7 +133,43 @@ export async function getCategories() {
         if (b.category) counts[b.category] = (counts[b.category] || 0) + 1;
       });
     }
-    return cats.map((c) => ({ name: c.name_ar, count: counts[c.name_ar] || 0 }));
+    // Flat display order (depth-first) with direct and subtree counts.
+    const decorate = (nodes, depth) =>
+      nodes.flatMap((node) => {
+        const children = decorate(node.children || [], depth + 1);
+        const count = counts[node.name_ar] || 0;
+        const totalCount = count + children.reduce((sum, child) => sum + child.totalCount, 0);
+        return [
+          {
+            id: node.id,
+            name: node.name_ar,
+            parentId: node.parent_id ?? null,
+            depth,
+            childCount: (node.children || []).length,
+            count,
+            totalCount,
+          },
+          ...children,
+        ];
+      });
+    return decorate(buildCategoryTree(cats), 0);
+  } catch {
+    return [];
+  }
+}
+
+/** Public read of the edition specs hidden from the book page. Fails open. */
+export async function getHiddenEditionSpecs() {
+  const sb = supabase;
+  if (!sb) return [];
+  try {
+    const { data, error } = await sb
+      .from('app_settings')
+      .select('value')
+      .eq('key', HIDDEN_EDITION_SPECS_KEY)
+      .maybeSingle();
+    if (error) return [];
+    return parseHiddenEditionSpecs(data?.value);
   } catch {
     return [];
   }
@@ -172,7 +241,9 @@ export async function createOrder({ name, phone, address, city, notes, items, co
     return { id: `local-${Date.now()}`, total, demo: true };
   }
 
-  const p_items = items.map((it) => (it.product_type === 'bundle' ? { bundle_id: it.id, qty: it.qty } : { book_id: it.id, qty: it.qty }));
+  const p_items = items.map((it) =>
+    it.product_type === 'bundle' ? { bundle_id: it.id, qty: it.qty } : { book_id: it.id, qty: it.qty }
+  );
   const { data, error } = await supabase.rpc('create_order_with_offers', {
     p_name: name,
     p_phone: phone,
@@ -183,5 +254,11 @@ export async function createOrder({ name, phone, address, city, notes, items, co
     p_coupon_code: couponCode.trim().toUpperCase() || null,
   });
   if (error) throw new Error(mapOrderError(error.message));
-  return { id: data.id, total: Number(data.total), adjusted: [], discountTotal: Number(data.discount_total || 0), bundleDiscountTotal: Number(data.bundle_discount_total || 0) };
+  return {
+    id: data.id,
+    total: Number(data.total),
+    adjusted: [],
+    discountTotal: Number(data.discount_total || 0),
+    bundleDiscountTotal: Number(data.bundle_discount_total || 0),
+  };
 }

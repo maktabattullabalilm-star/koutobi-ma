@@ -59,7 +59,10 @@ vi.mock('../../lib/admin', () => ({
   adminCreateAttributeOption: vi.fn(),
   adminUpdateAttributeOption: vi.fn(),
   adminDeleteAttributeOption: vi.fn(),
-  getCategoriesForForm: vi.fn(async () => ['العقيدة والتوحيد', 'الفقه وأصوله']),
+  getCategoriesForForm: vi.fn(async () => [
+    { id: 'c1', name_ar: 'العقيدة والتوحيد', parent_id: null, sort: 10 },
+    { id: 'c2', name_ar: 'الفقه وأصوله', parent_id: null, sort: 20 },
+  ]),
   getAuthorsForForm: vi.fn(async () => ['عبد الرحمن بن ناصر السعدي']),
   getPublishersForForm: vi.fn(async () => ['دار ابن حزم']),
   ensureAuthor: vi.fn(async (name) => name),

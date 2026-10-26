@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { adminDeleteBookWithImages, adminGetBooks, adminUpdateBook, getCategoriesForForm } from '../../lib/admin';
+import {
+  adminDeleteBookWithImages,
+  adminGetBooks,
+  adminUpdateBook,
+  getCategoriesForForm,
+} from '../../lib/admin';
+import {
+  buildCategoryTree,
+  categoryScopeNames,
+  flattenCategoryTree,
+  normalizeCategoryRows,
+} from '../../lib/catalog';
 import { formatPrice, isSoldOut } from '../../lib/format';
 import { LOW_STOCK_AT } from '../../lib/constants';
 import { useToast } from '../../components/Toast';
@@ -91,6 +102,15 @@ export default function BooksAdmin() {
   };
   useEffect(load, []);
 
+  const catOptions = useMemo(
+    () => flattenCategoryTree(buildCategoryTree(normalizeCategoryRows(categories))),
+    [categories]
+  );
+  const catScope = useMemo(() => {
+    const rows = normalizeCategoryRows(categories);
+    return new Map(rows.map((row) => [row.name_ar, categoryScopeNames(rows, row.name_ar)]));
+  }, [categories]);
+
   const filtered = useMemo(() => {
     if (!books) return [];
     const q = query.trim().toLowerCase();
@@ -108,10 +128,10 @@ export default function BooksAdmin() {
       if (stockFilter === 'in' && (stock <= 0 || b.is_out_of_stock)) return false;
       if (stockFilter === 'low' && (stock === 0 || stock > LOW_STOCK_AT)) return false;
       if (stockFilter === 'out' && stock > 0 && !b.is_out_of_stock) return false;
-      if (catFilter !== 'all' && b.category !== catFilter) return false;
+      if (catFilter !== 'all' && !(catScope.get(catFilter) || [catFilter]).includes(b.category)) return false;
       return true;
     });
-  }, [books, query, statusFilter, stockFilter, catFilter]);
+  }, [books, query, statusFilter, stockFilter, catFilter, catScope]);
 
   const isFiltered = query.trim() || statusFilter !== 'all' || stockFilter !== 'all' || catFilter !== 'all';
   const clearFilters = () => {
@@ -170,11 +190,19 @@ export default function BooksAdmin() {
 
   const stockCell = (b) => (
     <div className="flex items-center justify-center gap-2">
-      <span className={`min-w-8 text-center text-sm font-bold tabular-nums ${(b.stock_qty ?? 0) <= 0 ? 'text-danger' : lowStock(b) ? 'text-amber-600' : 'text-brand'}`}>
+      <span
+        className={`min-w-8 text-center text-sm font-bold tabular-nums ${(b.stock_qty ?? 0) <= 0 ? 'text-danger' : lowStock(b) ? 'text-amber-600' : 'text-brand'}`}
+      >
         {b.stock_qty ?? 0}
       </span>
-      {soldOut(b) ? <StatusPill tone="red">نفد</StatusPill> : lowStock(b) ? <StatusPill tone="amber">قارب</StatusPill> : null}
-      <Link to={`/admin/stock?book=${b.id}`} className="text-[11px] font-semibold text-brand hover:underline">إدارة</Link>
+      {soldOut(b) ? (
+        <StatusPill tone="red">نفد</StatusPill>
+      ) : lowStock(b) ? (
+        <StatusPill tone="amber">قارب</StatusPill>
+      ) : null}
+      <Link to={`/admin/stock?book=${b.id}`} className="text-[11px] font-semibold text-brand hover:underline">
+        إدارة
+      </Link>
     </div>
   );
 
@@ -259,9 +287,10 @@ export default function BooksAdmin() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل التصنيفات</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
+              {catOptions.map((c) => (
+                <SelectItem key={c.id} value={c.name_ar}>
+                  {'— '.repeat(c.depth || 0)}
+                  {c.name_ar}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -338,7 +367,9 @@ export default function BooksAdmin() {
                           {b.is_featured && <span className="me-1 text-amber-500">★</span>}
                           <bdi dir="auto">{b.title_ar}</bdi>
                         </div>
-                        <div dir="auto" className="text-xs text-soft">{b.author_ar || '—'}</div>
+                        <div dir="auto" className="text-xs text-soft">
+                          {b.author_ar || '—'}
+                        </div>
                       </div>
                     </div>
                   </TableCell>
@@ -353,9 +384,7 @@ export default function BooksAdmin() {
                       </span>
                     )}
                   </TableCell>
-                  <TableCell className="px-4 py-2.5">
-                    {stockCell(b)}
-                  </TableCell>
+                  <TableCell className="px-4 py-2.5">{stockCell(b)}</TableCell>
                   <TableCell className="px-4 py-2.5 text-center">{publishToggle(b)}</TableCell>
                   <TableCell className="px-4 py-2.5">
                     <div className="flex items-center justify-center">{rowActions(b)}</div>
@@ -418,7 +447,9 @@ export default function BooksAdmin() {
                     {soldOut(b) ? (
                       <StatusPill tone="red">نافد</StatusPill>
                     ) : lowStock(b) ? (
-                      <StatusPill tone="amber">بقي <bdi dir="ltr">{b.stock_qty}</bdi></StatusPill>
+                      <StatusPill tone="amber">
+                        بقي <bdi dir="ltr">{b.stock_qty}</bdi>
+                      </StatusPill>
                     ) : (
                       <StatusPill tone="green">متوفر</StatusPill>
                     )}
@@ -426,7 +457,14 @@ export default function BooksAdmin() {
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-line/60 pt-3">
-                <div className="flex items-center gap-2"><span className="text-xs text-soft">المخزون: <b className="tabular-nums text-ink">{b.stock_qty ?? 0}</b></span><Link to={`/admin/stock?book=${b.id}`} className="text-xs font-semibold text-brand">إدارة المخزون</Link></div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-soft">
+                    المخزون: <b className="tabular-nums text-ink">{b.stock_qty ?? 0}</b>
+                  </span>
+                  <Link to={`/admin/stock?book=${b.id}`} className="text-xs font-semibold text-brand">
+                    إدارة المخزون
+                  </Link>
+                </div>
                 {rowActions(b)}
               </div>
             </article>

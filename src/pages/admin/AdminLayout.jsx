@@ -79,7 +79,9 @@ export default function AdminLayout() {
   const profileBox = (
     <div className="border-t border-line p-3">
       <div className="mb-2 truncate px-3 text-xs text-soft">
-        <bdi dir="ltr" className="block text-start">{profile?.email}</bdi>
+        <bdi dir="ltr" className="block text-start">
+          {profile?.email}
+        </bdi>
         <span className="mt-0.5 block rounded-sm bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">
           مدير المتجر
         </span>
