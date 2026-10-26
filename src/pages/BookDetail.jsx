@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconBook, IconCart, IconHeadset } from '../components/icons';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
+import { useBooksPerRow } from '../hooks/useBooksPerRow';
+import { booksGridClass } from '../lib/booksGrid';
 import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 
 function Spec({ label, value }) {
@@ -44,6 +46,7 @@ export default function BookDetail() {
   const { add } = useCart();
   const { show } = useToast();
   const navigate = useNavigate();
+  const booksPerRow = useBooksPerRow();
   const productCopy = useStorefrontContent()?.product_page || {
     content: CONTENT_DEFAULTS.product_page,
     visible: true,
@@ -60,13 +63,13 @@ export default function BookDetail() {
     setActiveImg(0);
     setError(bookError || (!loading && !book ? 'الكتاب غير موجود.' : ''));
     if (book) {
-      getRelatedBooks(book)
+      getRelatedBooks(book, booksPerRow)
         .then(setRelated)
         .catch(() => {});
     } else {
       setRelated([]);
     }
-  }, [book, bookError, loading]);
+  }, [book, bookError, loading, booksPerRow]);
 
   if (loading) {
     return (
@@ -348,7 +351,7 @@ export default function BookDetail() {
           <h2 dir="auto" className="section-title">
             {productCopy.content.related_title}
           </h2>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className={booksGridClass(booksPerRow)}>
             {related.map((b) => (
               <ProductCard key={b.id} book={b} />
             ))}

@@ -335,7 +335,8 @@ grant insert, update, delete on public.authors, public.publishers to authenticat
 -- `phone_number` drives tel: links + display; `whatsapp_number` drives wa.me links.
 insert into public.app_settings (key, value) values
   ('phone_number', '212624182004'),
-  ('whatsapp_number', '212624182004')
+  ('whatsapp_number', '212624182004'),
+  ('books_per_row', '4')
 on conflict (key) do nothing;
 
 -- Owner-editable visible storefront sections. Each row is a stable UI section

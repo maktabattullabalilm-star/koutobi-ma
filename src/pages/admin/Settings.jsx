@@ -11,7 +11,15 @@ import {
 import { useToast } from '../../components/Toast';
 import { PASSWORD_MIN } from '../../lib/constants';
 import { isValidMaPhone, normalizePhoneDigits } from '../../lib/validators';
-import { PHONE_SETTING_KEY, WHATSAPP_SETTING_KEY, formatPhoneDisplay, telHref } from '../../lib/siteSettings';
+import {
+  BOOKS_PER_ROW_KEY,
+  DEFAULT_BOOKS_PER_ROW,
+  PHONE_SETTING_KEY,
+  WHATSAPP_SETTING_KEY,
+  formatPhoneDisplay,
+  parseBooksPerRow,
+  telHref,
+} from '../../lib/siteSettings';
 import PageHeader from '../../components/admin/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,6 +40,9 @@ export default function Settings() {
 
   const [qtyDefault, setQtyDefault] = useState('hide');
   const [qtyBusy, setQtyBusy] = useState(false);
+
+  const [booksPerRow, setBooksPerRow] = useState(DEFAULT_BOOKS_PER_ROW);
+  const [booksBusy, setBooksBusy] = useState(false);
 
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -61,6 +72,9 @@ export default function Settings() {
       .then((v) => {
         if (v && /[0-9]/.test(String(v))) setWhatsapp(String(v));
       })
+      .catch(() => {});
+    getAppSetting(BOOKS_PER_ROW_KEY)
+      .then((v) => setBooksPerRow(parseBooksPerRow(v)))
       .catch(() => {});
     refreshMfa();
   }, []);
@@ -190,6 +204,20 @@ export default function Settings() {
       show(err.message, 'error');
     } finally {
       setQtyBusy(false);
+    }
+  };
+
+  const saveBooksPerRow = async (value) => {
+    const next = parseBooksPerRow(value);
+    setBooksPerRow(next);
+    setBooksBusy(true);
+    try {
+      await adminUpdateAppSetting(BOOKS_PER_ROW_KEY, String(next));
+      show('تم حفظ عدد الكتب في الصف ✓');
+    } catch (err) {
+      show(err.message, 'error');
+    } finally {
+      setBooksBusy(false);
     }
   };
 
@@ -386,6 +414,22 @@ export default function Settings() {
             <SelectContent>
               <SelectItem value="hide">إخفاء الكمية</SelectItem>
               <SelectItem value="show">إظهار الكمية الدقيقة</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="mt-4 border-t border-line pt-4">
+          <h3 className="text-sm font-bold text-ink">عدد الكتب في الصف 🧱</h3>
+          <p className="mt-1 text-xs leading-5 text-soft">
+            على الشاشات الكبيرة: 4 أو 6 أو 8 كتب في الصف. الهاتف يبقى عمودين.
+          </p>
+          <Select value={String(booksPerRow)} onValueChange={saveBooksPerRow} disabled={booksBusy}>
+            <SelectTrigger className="mt-2 max-w-xs" aria-label="عدد الكتب في الصف">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="4">4 كتب</SelectItem>
+              <SelectItem value="6">6 كتب</SelectItem>
+              <SelectItem value="8">8 كتب</SelectItem>
             </SelectContent>
           </Select>
         </div>

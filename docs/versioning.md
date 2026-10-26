@@ -69,6 +69,7 @@ CI runs the same `verify` on every push and pull request.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| `1.1.8` | 2026-10-26 | Admin setting for books per row (4/6/8) on desktop grids; phones/tablets scale proportionally (2/3–4 columns); most-recent row follows the setting |
 | `1.1.7` | 2026-10-26 | «كيف أطلب؟» scrolls to the how-it-works section on every click, not just the first one |
 | `1.1.6` | 2026-10-25 | CI on GitHub Actions (`verify` + `build` on push/PR); `verify` now enforces `format:check` and coverage and the test scripts pin `NODE_ENV=test`; Prettier pass over the admin/storefront components; `cf:deploy` runs `verify` first |
 | `1.1.5` | 2026-10-25 | Unlimited-depth sub-categories (with drag-and-drop reparenting + save confirmation) across admin, catalog, header hover menus and footer; home category grid capped at two rows; per-type hide switches for the edition specs shown on the public book page |

@@ -3,10 +3,19 @@ import { PHONE_DISPLAY, WHATSAPP_NUMBER } from './site';
 
 export const PHONE_SETTING_KEY = 'phone_number';
 export const WHATSAPP_SETTING_KEY = 'whatsapp_number';
+export const BOOKS_PER_ROW_KEY = 'books_per_row';
 
 export const DEFAULT_PHONE_NUMBER = WHATSAPP_NUMBER;
 export const DEFAULT_WHATSAPP_NUMBER = WHATSAPP_NUMBER;
 export const DEFAULT_PHONE_DISPLAY = PHONE_DISPLAY;
+export const DEFAULT_BOOKS_PER_ROW = 4;
+export const BOOKS_PER_ROW_OPTIONS = [4, 6, 8];
+
+/** Accepts only the supported grid widths (4/6/8); anything else falls back to 4. */
+export function parseBooksPerRow(value) {
+  const n = Number(value);
+  return BOOKS_PER_ROW_OPTIONS.includes(n) ? n : DEFAULT_BOOKS_PER_ROW;
+}
 
 /** Digits only, e.g. "+212 624-182004" → "212624182004". */
 export function normalizeContactDigits(value) {
@@ -77,5 +86,24 @@ export async function getSiteContacts() {
     };
   } catch {
     return fallback;
+  }
+}
+
+/**
+ * Public storefront read of the books-per-row setting. Fails open to 4 so a
+ * missing row or a DB hiccup never changes the layout unexpectedly.
+ */
+export async function getBooksPerRow() {
+  if (!supabase) return DEFAULT_BOOKS_PER_ROW;
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', BOOKS_PER_ROW_KEY)
+      .maybeSingle();
+    if (error) return DEFAULT_BOOKS_PER_ROW;
+    return parseBooksPerRow(data?.value);
+  } catch {
+    return DEFAULT_BOOKS_PER_ROW;
   }
 }

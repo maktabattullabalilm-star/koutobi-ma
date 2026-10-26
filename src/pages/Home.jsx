@@ -7,6 +7,8 @@ import HashLink from '../components/HashLink';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { useSiteContact } from '../hooks/useSiteContact';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
+import { useBooksPerRow } from '../hooks/useBooksPerRow';
+import { booksGridClass } from '../lib/booksGrid';
 import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 import { isSoldOut } from '../lib/format';
 import ProductCard from '../components/ProductCard';
@@ -71,8 +73,12 @@ export default function Home() {
   const categories = useMemo(() => rawCategories.filter((c) => (c.depth || 0) === 0), [rawCategories]);
   const error = booksError || catsError;
 
+  const booksPerRow = useBooksPerRow();
+  const gridClass = booksGridClass(booksPerRow);
   const featured = books.filter((b) => b.is_featured).slice(0, 8);
-  const newest = [...books].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 4);
+  const newest = [...books]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, booksPerRow);
 
   return (
     <div>
@@ -239,7 +245,7 @@ export default function Home() {
                 {newestCopy.content.link_label}
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className={gridClass}>
               {newest.map((b) => (
                 <ProductCard key={b.id} book={b} />
               ))}
@@ -264,7 +270,7 @@ export default function Home() {
               {featuredCopy.content.link_label}
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className={gridClass}>
             {featured.map((b) => (
               <ProductCard key={b.id} book={b} />
             ))}

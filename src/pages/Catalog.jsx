@@ -6,6 +6,8 @@ import { categoryPath, categoryScopeNames } from '../lib/catalog';
 import { formatPrice } from '../lib/format';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { useSiteContact } from '../hooks/useSiteContact';
+import { useBooksPerRow } from '../hooks/useBooksPerRow';
+import { booksGridClass } from '../lib/booksGrid';
 import ProductCard from '../components/ProductCard';
 import { IconSearch } from '../components/icons';
 import { Button } from '@/components/ui/button';
@@ -41,6 +43,7 @@ export default function Catalog() {
   const showAll = params.get('all') === '1';
 
   const { whatsapp } = useSiteContact();
+  const booksPerRow = useBooksPerRow();
   const { categories, error: catsError, loading: catsLoading } = useCategories();
   const roots = useMemo(() => categories.filter((c) => (c.depth || 0) === 0), [categories]);
   const selected = useMemo(() => categories.find((c) => c.name === category), [categories, category]);
@@ -237,8 +240,8 @@ export default function Catalog() {
 
       {/* grid */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className={booksGridClass(booksPerRow)}>
+          {Array.from({ length: booksPerRow }).map((_, i) => (
             <div key={i} className="card aspect-4/5 animate-pulse bg-gray-100" />
           ))}
         </div>
@@ -262,7 +265,7 @@ export default function Catalog() {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className={booksGridClass(booksPerRow)}>
           {visibleBooks.map((b) => (
             <ProductCard key={b.id} book={b} />
           ))}

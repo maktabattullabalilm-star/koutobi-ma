@@ -172,6 +172,7 @@ describe('Settings (sensitive area, separate page)', () => {
     expect(await screen.findByText('أمان الحساب')).toBeTruthy();
     expect(await screen.findByText(/تغيير كلمة المرور/)).toBeTruthy();
     expect(await screen.findByText(/إظهار الكمية \(افتراضي\)/)).toBeTruthy();
+    expect(await screen.findByText(/عدد الكتب في الصف/)).toBeTruthy();
     expect(await screen.findByText('إعدادات المتجر')).toBeTruthy();
     // 2FA enroll CTA (no factor enrolled in mock)
     expect(await screen.findByText(/تفعيل بخطوتين/)).toBeTruthy();
