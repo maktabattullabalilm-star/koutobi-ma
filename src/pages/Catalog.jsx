@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useBooks, useBundles, useCategories } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
 import { categoryPath, categoryScopeNames } from '../lib/catalog';
+import { filterBundles } from '../lib/bundles';
 import { formatPrice } from '../lib/format';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { useSiteContact } from '../hooks/useSiteContact';
@@ -28,6 +29,11 @@ const SORTS = [
   { id: 'title', label: 'الاسم أبجدياً' },
 ];
 const PAGE_SIZE = 12;
+const TYPE_TABS = [
+  { id: 'all', label: 'الكل' },
+  { id: 'books', label: 'الكتب' },
+  { id: 'packs', label: 'الباقات' },
+];
 
 export function getPaginationItems(currentPage, totalPages) {
   if (totalPages <= 5) return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -41,6 +47,8 @@ export default function Catalog() {
   const category = params.get('category') || 'all';
   const q = params.get('q') || '';
   const showAll = params.get('all') === '1';
+  const typeParam = params.get('type');
+  const type = typeParam === 'books' || typeParam === 'packs' ? typeParam : 'all';
 
   const { whatsapp } = useSiteContact();
   const booksPerRow = useBooksPerRow();
@@ -59,8 +67,26 @@ export default function Catalog() {
   const activeRoot = trail[0]?.name;
   const { books, error: booksError, loading: booksLoading } = useBooks({ category, categories: scope, q });
   const { bundles, error: bundlesError, loading: bundlesLoading } = useBundles();
+  const heading = q
+    ? 'نتائج البحث'
+    : type === 'packs'
+      ? category === 'all'
+        ? 'الباقات'
+        : `الباقات في «${category}»`
+      : type === 'books'
+        ? category === 'all'
+          ? 'جميع الكتب'
+          : category
+        : category === 'all'
+          ? 'جميع الكتب والباقات'
+          : category;
+  const packCount = (name) =>
+    filterBundles(bundles, {
+      type: 'packs',
+      scope: name === 'all' ? undefined : categoryScopeNames(categories, name),
+    }).length;
   useHead({
-    title: q ? `نتائج البحث: ${q}` : category === 'all' ? 'جميع الكتب' : category,
+    title: q ? `نتائج البحث: ${q}` : heading,
     path: `/catalog${params.toString() ? `?${params.toString()}` : ''}`,
   });
   const loading = booksLoading || bundlesLoading || catsLoading;
@@ -68,13 +94,14 @@ export default function Catalog() {
   const error = booksError || bundlesError || catsError;
 
   const sorted = useMemo(() => {
-    const list = [...books, ...(category === 'all' && !q ? bundles : [])];
+    const scopedBundles = filterBundles(bundles, { type, scope, q });
+    const list = [...(type === 'packs' ? [] : books), ...scopedBundles];
     if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
     else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
     else if (sort === 'title') list.sort((a, b) => (a.title_ar || '').localeCompare(b.title_ar || '', 'ar'));
     else list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return list;
-  }, [books, bundles, category, q, sort]);
+  }, [books, bundles, type, scope, q, sort]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
@@ -104,6 +131,15 @@ export default function Catalog() {
     setParams(next, { replace: true });
   };
 
+  const changeType = (nextType) => {
+    const next = new URLSearchParams(params);
+    next.delete('page');
+    next.delete('all');
+    if (nextType === 'all') next.delete('type');
+    else next.set('type', nextType);
+    setParams(next, { replace: true });
+  };
+
   return (
     <div className="container-x py-8">
       {/* header */}
@@ -128,9 +164,7 @@ export default function Catalog() {
             ))}
           </nav>
         )}
-        <h1 className="text-2xl font-bold text-ink sm:text-3xl">
-          {category === 'all' ? 'جميع الكتب' : q ? 'نتائج البحث' : category}
-        </h1>
+        <h1 className="text-2xl font-bold text-ink sm:text-3xl">{heading}</h1>
         <p className="mt-1.5 text-sm text-soft">
           {q && (
             <>
@@ -139,6 +173,25 @@ export default function Catalog() {
           )}
           <bdi dir="ltr">{sorted.length}</bdi> منتج متاح · الدفع عند الاستلام
         </p>
+      </div>
+
+      {/* product type tabs */}
+      <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="نوع المنتج">
+        {TYPE_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            aria-pressed={type === tab.id}
+            onClick={() => changeType(tab.id)}
+            className={`rounded-md px-4 py-2 text-sm font-bold transition ${
+              type === tab.id
+                ? 'bg-brand text-white'
+                : 'bg-white text-ink ring-1 ring-inset ring-line hover:text-brand'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* category chips */}
@@ -151,7 +204,9 @@ export default function Catalog() {
         >
           الكل (
           <bdi dir="ltr">
-            {roots.reduce((sum, c) => sum + (c.totalCount ?? c.count ?? 0), 0) || books.length}
+            {type === 'packs'
+              ? bundles.length
+              : roots.reduce((sum, c) => sum + (c.totalCount ?? c.count ?? 0), 0) || books.length}
           </bdi>
           )
         </button>
@@ -163,7 +218,8 @@ export default function Catalog() {
               activeRoot === c.name ? 'bg-brand text-white' : 'bg-gray-100 text-ink hover:bg-brand-pale'
             }`}
           >
-            <bdi dir="auto">{c.name}</bdi> (<bdi dir="ltr">{c.totalCount ?? c.count}</bdi>)
+            <bdi dir="auto">{c.name}</bdi> (
+            <bdi dir="ltr">{type === 'packs' ? packCount(c.name) : (c.totalCount ?? c.count)}</bdi>)
           </button>
         ))}
       </div>
@@ -181,7 +237,11 @@ export default function Catalog() {
                 : 'bg-white text-ink ring-1 ring-inset ring-line hover:text-brand'
             }`}
           >
-            كل {selected.name} (<bdi dir="ltr">{selected.totalCount ?? selected.count}</bdi>)
+            كل {selected.name} (
+            <bdi dir="ltr">
+              {type === 'packs' ? packCount(selected.name) : (selected.totalCount ?? selected.count)}
+            </bdi>
+            )
           </button>
           {children.map((c) => (
             <button
@@ -194,7 +254,8 @@ export default function Catalog() {
                   : 'bg-white text-ink ring-1 ring-inset ring-line hover:text-brand'
               }`}
             >
-              <bdi dir="auto">{c.name}</bdi> (<bdi dir="ltr">{c.totalCount ?? c.count}</bdi>)
+              <bdi dir="auto">{c.name}</bdi> (
+              <bdi dir="ltr">{type === 'packs' ? packCount(c.name) : (c.totalCount ?? c.count)}</bdi>)
             </button>
           ))}
         </div>
@@ -253,7 +314,7 @@ export default function Catalog() {
             <EmptyMedia variant="icon">
               <IconSearch width={20} height={20} />
             </EmptyMedia>
-            <EmptyTitle>لا توجد كتب مطابقة</EmptyTitle>
+            <EmptyTitle>{type === 'packs' ? 'لا توجد باقات مطابقة' : 'لا توجد كتب مطابقة'}</EmptyTitle>
             <EmptyDescription>
               {whatsapp ? 'جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.' : 'جرّب تصنيفاً آخر.'}
             </EmptyDescription>
@@ -284,12 +345,12 @@ export default function Catalog() {
               {showAll ? sorted.length : Math.min((currentPage - 1) * PAGE_SIZE + 1, sorted.length)}–
               {showAll ? sorted.length : Math.min(currentPage * PAGE_SIZE, sorted.length)}
             </bdi>{' '}
-            من <bdi dir="ltr">{sorted.length}</bdi> كتاباً
+            من <bdi dir="ltr">{sorted.length}</bdi> منتجاً
           </p>
           <div
             className="flex flex-wrap items-center justify-center gap-1.5"
             dir="ltr"
-            aria-label="التنقل بين صفحات الكتب"
+            aria-label="التنقل بين صفحات المنتجات"
           >
             {!showAll && (
               <>
@@ -370,7 +431,7 @@ export default function Catalog() {
       {/* sample prices strip */}
       {sorted.length > 0 && (
         <div className="mt-10 flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
-          <span>الكتب تبدأ من</span>
+          <span>{type === 'packs' ? 'الباقات تبدأ من' : 'الكتب تبدأ من'}</span>
           <span className="font-bold text-brand">{formatPrice(Math.min(...sorted.map((b) => b.price)))}</span>
         </div>
       )}

@@ -202,6 +202,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link to="/packs" className="hover:text-brand">
+                الباقات
+              </Link>
+            </li>
+            <li>
               <Link to="/cart" className="hover:text-brand">
                 سلة التسوق
               </Link>

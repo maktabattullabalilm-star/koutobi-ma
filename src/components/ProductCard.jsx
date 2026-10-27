@@ -50,7 +50,7 @@ export default function ProductCard({ book }) {
       {/* body */}
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
         <span dir="auto" className="text-[11px] font-medium text-brand">
-          {book.category}
+          {book.product_type === 'bundle' ? 'باقة' : book.category}
         </span>
         <Link
           to={productPath}

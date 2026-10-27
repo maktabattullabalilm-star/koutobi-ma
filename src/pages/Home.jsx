@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useBooks, useCategories } from '../hooks/useCatalog';
+import { useBooks, useBundles, useCategories } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
 import BookCover from '../components/BookCover';
 import HashLink from '../components/HashLink';
@@ -70,6 +70,7 @@ export default function Home() {
   const reviews = (testimonials?.content.items || []).filter((t) => String(t.text || '').trim());
   const cta = section('home_cta');
   const { books, error: booksError } = useBooks();
+  const { bundles } = useBundles();
   const { categories: rawCategories, error: catsError } = useCategories();
   const categories = useMemo(() => rawCategories.filter((c) => (c.depth || 0) === 0), [rawCategories]);
   const error = booksError || catsError;
@@ -290,6 +291,23 @@ export default function Home() {
           <div className={gridClass}>
             {featured.map((b) => (
               <ProductCard key={b.id} book={b} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ================= BUNDLES ================= */}
+      {bundles.length > 0 && (
+        <section className="container-x py-12">
+          <div className="mb-6 flex items-end justify-between">
+            <h2 className="section-title mb-1!">الباقات</h2>
+            <Link to="/packs" className="text-sm font-semibold text-brand hover:text-brand-dark">
+              عرض كل الباقات ←
+            </Link>
+          </div>
+          <div className={gridClass}>
+            {bundles.slice(0, booksPerRow).map((bundle) => (
+              <ProductCard key={bundle.id} book={bundle} />
             ))}
           </div>
         </section>

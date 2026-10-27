@@ -71,7 +71,9 @@ export async function getBundles() {
   const now = new Date().toISOString();
   const { data, error } = await sb
     .from('bundle_offers')
-    .select('*, bundle_offer_books(book_id, books(title_ar, author_ar, cover_image, stock_qty, price))')
+    .select(
+      '*, bundle_offer_books(book_id, books(title_ar, author_ar, cover_image, stock_qty, price, category))'
+    )
     .eq('is_active', true)
     .or(`starts_at.is.null,starts_at.lte.${now}`)
     .or(`ends_at.is.null,ends_at.gt.${now}`)

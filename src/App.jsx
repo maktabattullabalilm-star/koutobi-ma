@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 // downloads admin code (BookForm alone was ~1/3 of the old bundle).
 const Home = lazy(() => import('./pages/Home'));
 const Catalog = lazy(() => import('./pages/Catalog'));
+const Packs = lazy(() => import('./pages/Packs'));
 const BookDetail = lazy(() => import('./pages/BookDetail'));
 const PackDetail = lazy(() => import('./pages/PackDetail'));
 const Cart = lazy(() => import('./pages/Cart'));
@@ -56,6 +57,7 @@ export default function App() {
           >
             <Route path="/" element={<Home />} />
             <Route path="/catalog" element={<Catalog />} />
+            <Route path="/packs" element={<Packs />} />
             <Route path="/book/:id" element={<BookDetail />} />
             <Route path="/pack/:id" element={<PackDetail />} />
             <Route path="/cart" element={<Cart />} />

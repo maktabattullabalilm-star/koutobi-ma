@@ -142,6 +142,9 @@ export default function Header() {
           <Link to="/catalog" className={navLink}>
             كل الكتب
           </Link>
+          <Link to="/packs" className={navLink}>
+            الباقات
+          </Link>
           {tree.map((c) =>
             c.children?.length > 0 ? (
               <div key={c.id || c.name} className="group relative">
@@ -230,6 +233,13 @@ export default function Header() {
               className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-brand-pale hover:text-brand"
             >
               كل الكتب
+            </Link>
+            <Link
+              to="/packs"
+              onClick={() => setOpen(false)}
+              className="block rounded-md px-3 py-3 text-sm font-medium text-ink hover:bg-brand-pale hover:text-brand"
+            >
+              الباقات
             </Link>
             <MobileCategoryLinks nodes={tree} onNavigate={() => setOpen(false)} />
             <HashLink
