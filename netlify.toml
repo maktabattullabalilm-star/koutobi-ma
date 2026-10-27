@@ -33,6 +33,12 @@
   [headers.values]
     Cache-Control = "no-cache"
 
+# Always revalidate the self-destructing service worker
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
 # API responses are never cached
 [[headers]]
   for = "/api/*"

@@ -10,6 +10,11 @@
 /index.html
   Cache-Control: no-cache
 
+# Always revalidate the self-destructing service worker so old PWA clients
+# pick it up and clear their precached build.
+/sw.js
+  Cache-Control: no-cache
+
 # API responses are never cached
 /api/*
   Cache-Control: no-store
