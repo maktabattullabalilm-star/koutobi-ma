@@ -67,6 +67,7 @@ export default function Home() {
   const how = section('home_how');
   const features = section('home_features');
   const testimonials = section('home_testimonials');
+  const reviews = (testimonials?.content.items || []).filter((t) => String(t.text || '').trim());
   const cta = section('home_cta');
   const { books, error: booksError } = useBooks();
   const { categories: rawCategories, error: catsError } = useCategories();
@@ -361,43 +362,43 @@ export default function Home() {
       )}
 
       {/* ================= TESTIMONIALS ================= */}
-      {testimonials?.visible && (
+      {testimonials?.visible && reviews.length > 0 && (
         <section className="bg-brand-pale py-12">
           <div className="container-x">
-            <h2 className="section-title text-center">{testimonials.content.title}</h2>
+            {testimonials.content.title && (
+              <h2 className="section-title text-center">{testimonials.content.title}</h2>
+            )}
             <div className="grid gap-4 sm:grid-cols-3">
-              {(testimonials.content.items || [])
-                .filter((t) => String(t.text || '').trim())
-                .map((t, index) => {
-                  const rating = Math.min(5, Math.max(0, Number(t.rating) || 0));
-                  const verified = t.verified === true || t.verified === 'true';
-                  return (
-                    <Card key={`${t.name || 'review'}-${index}`} className="border-line/60 p-5">
-                      {rating > 0 && (
-                        <div className="flex gap-0.5 text-amber-400" aria-label={`${rating} من 5`}>
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <IconStar key={i} filled={i < rating} width={15} height={15} />
-                          ))}
-                        </div>
+              {reviews.map((t, index) => {
+                const rating = Math.min(5, Math.max(0, Number(t.rating) || 0));
+                const verified = t.verified === true || t.verified === 'true';
+                return (
+                  <Card key={`${t.name || 'review'}-${index}`} className="border-line/60 p-5">
+                    {rating > 0 && (
+                      <div className="flex gap-0.5 text-amber-400" aria-label={`${rating} من 5`}>
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <IconStar key={i} filled={i < rating} width={15} height={15} />
+                        ))}
+                      </div>
+                    )}
+                    <blockquote dir="auto" className="mt-3 flex-1 text-sm leading-7 text-ink">
+                      «{t.text}»
+                    </blockquote>
+                    <figcaption className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-sm">
+                      {t.name && (
+                        <span dir="auto" className="font-bold text-brand">
+                          {t.name}
+                        </span>
                       )}
-                      <blockquote dir="auto" className="mt-3 flex-1 text-sm leading-7 text-ink">
-                        «{t.text}»
-                      </blockquote>
-                      <figcaption className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-sm">
-                        {t.name && (
-                          <span dir="auto" className="font-bold text-brand">
-                            {t.name}
-                          </span>
-                        )}
-                        {verified && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                            <IconCheck width={13} height={13} /> شراء موثّق
-                          </span>
-                        )}
-                      </figcaption>
-                    </Card>
-                  );
-                })}
+                      {verified && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                          <IconCheck width={13} height={13} /> شراء موثّق
+                        </span>
+                      )}
+                    </figcaption>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
