@@ -3,6 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/Toast';
 import { APP_VERSION } from '../../lib/version';
+import { useStorefrontContent } from '../../hooks/useStorefrontContent';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -16,6 +17,7 @@ import {
   IconWrench,
   IconShield,
   IconEdit,
+  IconStar,
 } from '../../components/icons';
 import { Boxes, FileText, Tags } from 'lucide-react';
 
@@ -26,6 +28,7 @@ const LINKS = [
   { to: '/admin/orders', label: 'الطلبات', Icon: IconWrench },
   { to: '/admin/settings', label: 'الإعدادات', Icon: IconShield },
   { to: '/admin/content', label: 'محتوى المتجر', Icon: IconEdit },
+  { to: '/admin/reviews', label: 'آراء العملاء', Icon: IconStar },
   { to: '/admin/pages', label: 'صفحات المتجر', Icon: FileText },
   { to: '/admin/stock', label: 'إدارة المخزون', Icon: Boxes },
   { to: '/admin/offers', label: 'العروض والخصومات', Icon: Tags },
@@ -36,6 +39,12 @@ export default function AdminLayout() {
   const { show } = useToast();
   const navigate = useNavigate();
   const [drawer, setDrawer] = useState(false);
+  const storeBrand = useStorefrontContent()?.brand?.content;
+  const storeName = [storeBrand?.logo_name, storeBrand?.logo_suffix]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ');
+  const storeMark = String(storeBrand?.logo_mark || '').trim() || storeName.charAt(0) || 'ل';
 
   const active = ({ isActive }) =>
     `flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium transition ${
@@ -66,12 +75,16 @@ export default function AdminLayout() {
 
   const brand = (
     <NavLink to="/" className="flex items-center gap-2 border-b border-line px-5 py-4">
-      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand font-display text-lg font-bold text-white">
-        ك
-      </span>
+      {storeBrand?.logo_url ? (
+        <img src={storeBrand.logo_url} alt={storeName} className="h-9 w-9 rounded-lg object-contain" />
+      ) : (
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand font-display text-lg font-bold text-white">
+          {storeMark}
+        </span>
+      )}
       <div>
         <div className="font-display text-base font-bold leading-tight text-ink">لوحة التحكم</div>
-        <div className="text-[11px] text-soft">مكتبة كُتُبِي.ما</div>
+        <div className="text-[11px] text-soft">{storeName || 'إدارة المتجر'}</div>
       </div>
     </NavLink>
   );

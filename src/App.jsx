@@ -6,7 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Spinner } from '@/components/ui/spinner';
 
-// Code-split by route (docs/backlog/17): the storefront first paint never
+// Code-split by route (backlog 17): the storefront first paint never
 // downloads admin code (BookForm alone was ~1/3 of the old bundle).
 const Home = lazy(() => import('./pages/Home'));
 const Catalog = lazy(() => import('./pages/Catalog'));
@@ -84,6 +84,7 @@ export default function App() {
               <Route path="catalog" element={<CatalogData />} />
               <Route path="settings" element={<Settings />} />
               <Route path="content" element={<StorefrontContent />} />
+              <Route path="reviews" element={<StorefrontContent initialSection="home_testimonials" />} />
               <Route path="pages" element={<PagesAdmin />} />
               <Route path="stock" element={<StockAdmin />} />
               <Route path="offers" element={<OffersAdmin />} />

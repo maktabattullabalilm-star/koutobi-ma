@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase, supabaseErrorHint } from '../../lib/supabase';
 import { challengeFactor, getVerifiedTotpFactor, verifyFactorCode } from '../../lib/mfa';
-import { STORE_NAME } from '../../lib/site';
+import { useStorefrontContent } from '../../hooks/useStorefrontContent';
 import { useToast } from '../../components/Toast';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -16,9 +16,15 @@ export default function AdminLogin() {
   const { supabaseEnabled, session, isAdmin, loading, signIn, signOut } = useAuth();
   const { show } = useToast();
   const navigate = useNavigate();
+  const brand = useStorefrontContent()?.brand?.content;
+  const storeName = [brand?.logo_name, brand?.logo_suffix]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ');
+  const brandMark = String(brand?.logo_mark || '').trim() || storeName.charAt(0);
 
   // Invite-only: no public signup on /admin. New admins are created
-  // exclusively via the one-time /admin/setup invite link (docs/backlog/14).
+  // exclusively via the one-time /admin/setup invite link (backlog 14).
   const [mode, setMode] = useState('login'); // login | forgot
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -209,15 +215,27 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <Link to="/" className="inline-flex items-center gap-2">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-white">
-              ك
-            </span>
-            <span className="text-2xl font-bold">
-              <span className="text-brand">كُتُبِي</span>
-              <span className="text-ink">.ما</span>
-            </span>
+            {brand?.logo_url || storeName ? (
+              <>
+                {brand?.logo_url ? (
+                  <img src={brand.logo_url} alt={storeName} className="h-12 w-12 rounded-xl object-contain" />
+                ) : (
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-white">
+                    {brandMark}
+                  </span>
+                )}
+                <span className="text-2xl font-bold">
+                  <span className="text-brand">{String(brand?.logo_name || '').trim()}</span>{' '}
+                  <span className="text-ink">{String(brand?.logo_suffix || '').trim()}</span>
+                </span>
+              </>
+            ) : (
+              <span className="text-2xl font-bold text-brand">لوحة التحكم</span>
+            )}
           </Link>
-          <p className="mt-2 text-sm text-soft">لوحة تحكم {STORE_NAME}</p>
+          <p className="mt-2 text-sm text-soft">
+            {storeName ? `لوحة تحكم ${storeName}` : 'تسجيل الدخول إلى لوحة التحكم'}
+          </p>
         </div>
 
         <Card className="border-line shadow-card">

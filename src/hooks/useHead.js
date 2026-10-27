@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 
 /**
- * Minimal per-route head manager (docs/backlog/19). No dependency —
+ * Minimal per-route head manager (backlog 19). No dependency —
  * sets title + meta + canonical, restores defaults on unmount.
  */
-const DEFAULT_TITLE = 'كُتُبِي.ما — مكتبة الكتب الإسلامية';
-const DEFAULT_DESC = 'كُتُبِي.ما — مكتبة إسلامية متخصصة. كتب عربية | الدفع عند الاستلام والتوصيل لجميع المدن';
+const SITE_NAME = 'مكتبة الكتب الإسلامية';
+const DEFAULT_TITLE = SITE_NAME;
+const DEFAULT_DESC = 'مكتبة إلكترونية للكتب العربية والإسلامية';
 
 function upsertMeta(attr, key, content) {
   if (content == null) return null;
@@ -22,7 +23,7 @@ function upsertMeta(attr, key, content) {
 export function useHead({ title, description, image, path } = {}) {
   useEffect(() => {
     const prevTitle = document.title;
-    const fullTitle = title ? `${title} | كُتُبِي.ما` : DEFAULT_TITLE;
+    const fullTitle = title ? `${title} | ${SITE_NAME}` : DEFAULT_TITLE;
     document.title = fullTitle;
 
     const created = [];

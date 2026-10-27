@@ -57,7 +57,6 @@ export default function Checkout() {
           total: res.total,
           name: form.name.trim(),
           phone: form.phone.trim(),
-          demo: !!res.demo,
         })
       );
       clear();
@@ -212,26 +211,28 @@ export default function Checkout() {
             </p>
           </Card>
 
-          <Card className="mt-4 border-line/60 bg-gray-50 p-4 text-center text-sm text-soft">
-            تفضّل الطلب مباشرة؟{' '}
-            <a
-              href={checkoutOrderLink(
-                {
-                  items,
-                  total,
-                  name: form.name,
-                  phone: form.phone,
-                  address: form.address,
-                },
-                whatsapp
-              )}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="font-semibold text-brand hover:text-brand-dark"
-            >
-              تواصل عبر واتساب
-            </a>
-          </Card>
+          {whatsapp && (
+            <Card className="mt-4 border-line/60 bg-gray-50 p-4 text-center text-sm text-soft">
+              تفضّل الطلب مباشرة؟{' '}
+              <a
+                href={checkoutOrderLink(
+                  {
+                    items,
+                    total,
+                    name: form.name,
+                    phone: form.phone,
+                    address: form.address,
+                  },
+                  whatsapp
+                )}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="font-semibold text-brand hover:text-brand-dark"
+              >
+                تواصل عبر واتساب
+              </a>
+            </Card>
+          )}
         </aside>
       </div>
     </div>

@@ -46,7 +46,7 @@ describe('isImagePath', () => {
   it('accepts http(s) and root-relative paths', () => {
     expect(isImagePath('https://pub-xxx.r2.dev/covers/a.jpg')).toBe(true);
     expect(isImagePath('http://localhost:5173/covers/a.svg')).toBe(true);
-    expect(isImagePath('/covers/daa-wa-dawaa.svg')).toBe(true);
+    expect(isImagePath('/covers/example.svg')).toBe(true);
   });
 
   it('rejects empty, null and bare filenames', () => {

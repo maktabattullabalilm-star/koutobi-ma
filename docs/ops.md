@@ -1,4 +1,4 @@
-# Ops runbook — koutobi-ma (docs/backlog/30)
+# Ops runbook — koutobi-ma (backlog 30)
 
 ## Weekly (5 min, Supabase Dashboard)
 

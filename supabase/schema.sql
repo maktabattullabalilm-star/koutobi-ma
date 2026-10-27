@@ -400,5 +400,5 @@ on conflict (slug) do nothing;
 -- One-time admin claim (hashed token, single-use, admin-count guard).
 -- See live migration history for the canonical body; revoked from anon
 -- direct misuse via auth.uid() check inside the function.
--- decrement_stock() canonical hardened body lives in docs/backlog/09;
+-- decrement_stock() canonical hardened body lives in backlog 09;
 -- applied live via migration (qty-validated, SECURITY DEFINER, anon+authenticated EXECUTE).

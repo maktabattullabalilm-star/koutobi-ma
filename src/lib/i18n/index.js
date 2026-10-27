@@ -1,5 +1,5 @@
 /**
- * Arabic dictionary — the single home for user-facing strings (docs/backlog/27).
+ * Arabic dictionary — the single home for user-facing strings (backlog 27).
  * Only `ar` ships today (COD Morocco). New user-facing copy goes HERE first
  * (boy-scout rule: migrate the file you touch) so a second locale is a
  * data change, not a refactor. Validators and components import from here —

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 
 /**
- * Route guard for /admin/* (docs/backlog/21). Replaces the scattered
+ * Route guard for /admin/* (backlog 21). Replaces the scattered
  * useEffect-navigate guards with one declarative wrapper.
  */
 export default function ProtectedRoute({ children }) {

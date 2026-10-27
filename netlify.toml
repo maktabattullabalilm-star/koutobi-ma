@@ -8,7 +8,7 @@
   # Allowed to be invoked from anywhere (frontend + admin dashboard).
   directory = "netlify/functions"
 
-# API is same-origin only (no CORS headers by design — see docs/backlog/13).
+# API is same-origin only (no CORS headers by design — see backlog 13).
 # Must come BEFORE the SPA fallback so /api/* never serves index.html.
 [[redirects]]
   from = "/api/*"

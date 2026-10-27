@@ -31,7 +31,7 @@ function page() {
   );
 }
 
-describe('Checkout (docs/backlog/26)', () => {
+describe('Checkout (backlog 26)', () => {
   it('blocks empty submit with Arabic field errors (no order call)', async () => {
     const { createOrder } = await import('../lib/api');
     page();

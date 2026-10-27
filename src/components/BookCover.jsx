@@ -31,7 +31,7 @@ function SoldOutSeal() {
  * `className` sizes/positions the box; `imgClassName` styles the img itself.
  * The box is ALWAYS a wrapper div so sizing classes never leak onto the img.
  *
- * Perf (docs/backlog/18): lazy by default, `decoding="async"`, intrinsic
+ * Perf (backlog 18): lazy by default, `decoding="async"`, intrinsic
  * `aspect-[680/960]` fallback to prevent CLS, responsive `srcSet` when
  * VITE_IMAGE_CDN is configured (single-file origin otherwise).
  */

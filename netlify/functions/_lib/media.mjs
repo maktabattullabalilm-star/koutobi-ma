@@ -14,7 +14,7 @@ const ALLOWED = new Map([
 
 export const ALLOWED_EXTS = [...ALLOWED.keys()].filter((e) => e !== 'jpg');
 
-/** R2 keys we create: exactly `covers/<filename>` — single source (docs/backlog/22). */
+/** R2 keys we create: exactly `covers/<filename>` — single source (backlog 22). */
 export const R2_KEY_RE = /^covers\/[A-Za-z0-9._-]+$/;
 
 export function isR2Key(s) {

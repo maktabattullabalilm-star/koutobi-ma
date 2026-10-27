@@ -10,6 +10,7 @@ import {
   Palette,
   Plus,
   Save,
+  Star,
   Trash2,
 } from 'lucide-react';
 import { adminSaveStorefrontContent, getStorefrontContent } from '../../lib/storefrontContent';
@@ -49,7 +50,10 @@ const META = {
   home_featured: { title: 'الأكثر مبيعاً', hint: 'عنوان ووصف قسم الكتب المميزة.' },
   home_how: { title: 'كيف أطلب؟', hint: 'عنوان القسم والخطوات الثلاث التي تشرح الشراء.' },
   home_features: { title: 'مزايا المتجر', hint: 'البطاقات الأربع: الدفع، التوصيل، الكتب، والدعم.' },
-  home_testimonials: { title: 'آراء العملاء', hint: 'اقتباسات العملاء الظاهرة في الصفحة الرئيسية.' },
+  home_testimonials: {
+    title: 'آراء العملاء',
+    hint: 'أضف آراء العملاء مع التقييم وشارة الشراء الموثّق. فعّل «القسم ظاهر للزوار» ليظهر في الصفحة الرئيسية.',
+  },
   home_cta: { title: 'الدعوة الأخيرة', hint: 'الكتلة الخضراء في أسفل الصفحة الرئيسية.' },
   product_page: { title: 'صفحة المنتج', hint: 'الأزرار والعناوين والرسائل الثابتة بجانب كل كتاب.' },
   announcement: { title: 'الشريط العلوي', hint: 'الرسائل المتحركة أعلى جميع صفحات المتجر.' },
@@ -115,14 +119,45 @@ function itemSchema(sectionKey, listKey) {
   if (listKey === 'messages') return [['message', 'الرسالة']];
   if (sectionKey === 'home_testimonials')
     return [
-      ['name', 'اسم العميل والمدينة'],
-      ['text', 'رأيه'],
-      ['book', 'الكتاب المطلوب'],
+      ['name', 'اسم العميل'],
+      ['rating', 'التقييم'],
+      ['text', 'نص الرأي'],
+      ['verified', 'شراء موثّق'],
     ];
   return [
     ['title', 'العنوان'],
     ['description', 'الوصف'],
   ];
+}
+
+function emptyItem(sectionKey, schema) {
+  if (sectionKey === 'home_testimonials') return { name: '', rating: 5, text: '', verified: false };
+  return Object.fromEntries(schema.map(([key]) => [key, '']));
+}
+
+function RatingPicker({ value, onChange }) {
+  const rating = Math.min(5, Math.max(1, Number(value) || 5));
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1" role="group" aria-label="التقييم">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          aria-label={`${star} من 5`}
+          aria-pressed={rating === star}
+          onClick={() => onChange(star)}
+          className="rounded p-0.5 transition hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          <Star
+            size={22}
+            aria-hidden="true"
+            className={star <= rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}
+          />
+        </button>
+      ))}
+      <span className="ms-1 text-xs font-bold text-soft">{rating} من 5</span>
+    </div>
+  );
 }
 
 function ListEditor({ sectionKey, listKey, value, onChange }) {
@@ -150,35 +185,74 @@ function ListEditor({ sectionKey, listKey, value, onChange }) {
               <GripVertical size={16} /> عنصر {index + 1}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              {schema.map(([key, label]) => (
-                <label key={key} className={key === 'text' || key === 'description' ? 'sm:col-span-2' : ''}>
-                  <span className="text-xs font-semibold text-soft">{label}</span>
-                  {isLong(key, item[key]) ? (
-                    <Textarea
-                      dir="auto"
-                      value={item[key] || ''}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[index] = { ...item, [key]: e.target.value };
-                        update(next);
-                      }}
-                      rows={3}
-                      className="mt-1 bg-gray-50"
-                    />
-                  ) : (
-                    <Input
-                      dir="auto"
-                      value={item[key] || ''}
-                      onChange={(e) => {
-                        const next = [...items];
-                        next[index] = { ...item, [key]: e.target.value };
-                        update(next);
-                      }}
-                      className="mt-1 bg-gray-50"
-                    />
-                  )}
-                </label>
-              ))}
+              {schema.map(([key, label]) => {
+                if (key === 'rating') {
+                  return (
+                    <div key={key}>
+                      <span className="text-xs font-semibold text-soft">{label}</span>
+                      <RatingPicker
+                        value={item.rating}
+                        onChange={(rating) => {
+                          const next = [...items];
+                          next[index] = { ...item, rating };
+                          update(next);
+                        }}
+                      />
+                    </div>
+                  );
+                }
+                if (key === 'verified') {
+                  return (
+                    <div key={key} className="flex items-center gap-2 pt-5">
+                      <Switch
+                        id={`testimonial-verified-${index}`}
+                        aria-label={label}
+                        checked={Boolean(item.verified)}
+                        onCheckedChange={(verified) => {
+                          const next = [...items];
+                          next[index] = { ...item, verified };
+                          update(next);
+                        }}
+                      />
+                      <label
+                        htmlFor={`testimonial-verified-${index}`}
+                        className="cursor-pointer text-sm font-semibold text-ink"
+                      >
+                        {label}
+                      </label>
+                    </div>
+                  );
+                }
+                return (
+                  <label key={key} className={key === 'text' || key === 'description' ? 'sm:col-span-2' : ''}>
+                    <span className="text-xs font-semibold text-soft">{label}</span>
+                    {isLong(key, item[key]) ? (
+                      <Textarea
+                        dir="auto"
+                        value={item[key] || ''}
+                        onChange={(e) => {
+                          const next = [...items];
+                          next[index] = { ...item, [key]: e.target.value };
+                          update(next);
+                        }}
+                        rows={3}
+                        className="mt-1 bg-gray-50"
+                      />
+                    ) : (
+                      <Input
+                        dir="auto"
+                        value={item[key] || ''}
+                        onChange={(e) => {
+                          const next = [...items];
+                          next[index] = { ...item, [key]: e.target.value };
+                          update(next);
+                        }}
+                        className="mt-1 bg-gray-50"
+                      />
+                    )}
+                  </label>
+                );
+              })}
             </div>
             <div className="mt-3 flex items-center gap-1 border-t border-line pt-2">
               <Button
@@ -225,7 +299,7 @@ function ListEditor({ sectionKey, listKey, value, onChange }) {
         variant="outline"
         size="sm"
         className="mt-3"
-        onClick={() => update([...items, Object.fromEntries(schema.map(([key]) => [key, '']))])}
+        onClick={() => update([...items, emptyItem(sectionKey, schema)])}
       >
         <Plus size={15} /> إضافة عنصر
       </Button>
@@ -394,17 +468,22 @@ function BrandEditor({ brand, onChange }) {
   );
 }
 
-export default function StorefrontContent() {
+export default function StorefrontContent({ initialSection = '' }) {
   const { show } = useToast();
   const [sections, setSections] = useState(null);
-  const [pageIndex, setPageIndex] = useState(0);
-  const [activeKey, setActiveKey] = useState('home_hero');
+  const initialPageIndex = Math.max(
+    0,
+    PAGES.findIndex((item) => item.keys.includes(initialSection))
+  );
+  const [pageIndex, setPageIndex] = useState(initialPageIndex);
+  const [activeKey, setActiveKey] = useState(initialSection || PAGES[initialPageIndex].keys[0]);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     getStorefrontContent().then(setSections);
   }, []);
   if (!sections) return <div className="py-16 text-center text-sm text-soft">جارٍ تحميل محتوى المتجر…</div>;
 
+  const isReviewsPage = initialSection === 'home_testimonials' && activeKey === 'home_testimonials';
   const page = PAGES[pageIndex];
   const section = sections[activeKey];
   const meta = META[activeKey];
@@ -443,9 +522,16 @@ export default function StorefrontContent() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="محتوى المتجر"
-        description="اختر مكاناً في المتجر، عدّل النصوص الظاهرة فيه، ثم احفظ."
-        crumbs={[{ label: 'لوحة التحكم', to: '/admin/dashboard' }, { label: 'محتوى المتجر' }]}
+        title={isReviewsPage ? 'آراء العملاء' : 'محتوى المتجر'}
+        description={
+          isReviewsPage
+            ? 'أضف آراء العملاء وعدّلها، ثم فعّل ظهور القسم في الصفحة الرئيسية.'
+            : 'اختر مكاناً في المتجر، عدّل النصوص الظاهرة فيه، ثم احفظ.'
+        }
+        crumbs={[
+          { label: 'لوحة التحكم', to: '/admin/dashboard' },
+          ...(isReviewsPage ? [{ label: 'آراء العملاء' }] : [{ label: 'محتوى المتجر' }]),
+        ]}
         actions={
           <Button asChild variant="outline">
             <a href="/" target="_blank" rel="noreferrer noopener">

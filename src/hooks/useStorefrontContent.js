@@ -5,9 +5,13 @@ export function useStorefrontContent() {
   const [sections, setSections] = useState(null);
   useEffect(() => {
     let alive = true;
-    getStorefrontContent().then((data) => {
-      if (alive) setSections(data);
-    });
+    getStorefrontContent()
+      .then((data) => {
+        if (alive) setSections(data);
+      })
+      .catch(() => {
+        if (alive) setSections({});
+      });
     return () => {
       alive = false;
     };

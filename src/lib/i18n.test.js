@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LOCALE, t } from './i18n';
 import { slugifyAr } from './slug';
 
-describe('i18n infra (docs/backlog/27)', () => {
+describe('i18n infra (backlog 27)', () => {
   it('resolves dictionary paths with key fallback', () => {
     expect(t('order.errors.phone')).toContain('0612345678');
     expect(t('announcement.close')).toBe('إغلاق الإعلان');

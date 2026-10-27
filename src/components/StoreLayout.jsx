@@ -5,17 +5,16 @@ import Footer from './Footer';
 import WhatsAppFloat from './WhatsAppFloat';
 import CookieConsent from './CookieConsent';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
-import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 
 export default function StoreLayout() {
-  const brand = useStorefrontContent()?.brand?.content || CONTENT_DEFAULTS.brand;
-  const theme = {
-    '--color-brand': brand.primary_color,
-    '--color-brand-dark': brand.primary_dark,
-    '--color-brand-darker': brand.primary_darker,
-    '--color-brand-light': brand.primary_light,
-    '--color-brand-pale': brand.primary_pale,
-  };
+  const brand = useStorefrontContent()?.brand?.content;
+  // CSS declares the neutral palette; only DB-provided colours override it.
+  const theme = {};
+  if (brand?.primary_color) theme['--color-brand'] = brand.primary_color;
+  if (brand?.primary_dark) theme['--color-brand-dark'] = brand.primary_dark;
+  if (brand?.primary_darker) theme['--color-brand-darker'] = brand.primary_darker;
+  if (brand?.primary_light) theme['--color-brand-light'] = brand.primary_light;
+  if (brand?.primary_pale) theme['--color-brand-pale'] = brand.primary_pale;
   return (
     <div className="flex min-h-screen flex-col" style={theme}>
       <a

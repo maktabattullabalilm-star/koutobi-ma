@@ -16,30 +16,31 @@ describe('site contact numbers', () => {
     expect(toWhatsAppDigits('212624182004')).toBe('212624182004');
   });
 
-  it('falls back to the bundled default on garbage', () => {
-    expect(toWhatsAppDigits('abc')).toBe('212624182004');
-    expect(toPhoneDigits('')).toBe('212624182004');
+  it('returns empty values on garbage instead of a bundled number', () => {
+    expect(toWhatsAppDigits('abc')).toBe('');
+    expect(toPhoneDigits('')).toBe('');
     expect(normalizeContactDigits('+212 624-182004')).toBe('212624182004');
   });
 
-  it('builds a correct tel: href (single +, full digits)', () => {
+  it('builds a correct tel: href, or null without a number', () => {
     expect(telHref('0624182004')).toBe('tel:+212624182004');
     expect(telHref('212624182004')).toBe('tel:+212624182004');
-    expect(telHref('abc')).toBe('tel:+212624182004');
+    expect(telHref('abc')).toBeNull();
+    expect(telHref('')).toBeNull();
   });
 
-  it('formats LTR-safe display strings', () => {
+  it('formats LTR-safe display strings and hides empty values', () => {
     expect(formatPhoneDisplay('212624182004')).toBe('+212 624-182004');
     expect(formatPhoneDisplay('0624182004')).toBe('0624-182004');
+    expect(formatPhoneDisplay('')).toBe('');
   });
 
-  it('routes wa.me links through the override number', () => {
+  it('routes wa.me links through an explicit DB number', () => {
     expect(whatsappLink('سلام', '212600000000')).toBe(
       `https://wa.me/212600000000?text=${encodeURIComponent('سلام')}`
     );
     expect(generalInquiryLink('book', '212600000000').startsWith('https://wa.me/212600000000')).toBe(true);
-    // default unchanged when no override
-    expect(whatsappLink()).toBe('https://wa.me/212624182004');
+    expect(whatsappLink()).toBeNull();
   });
 });
 

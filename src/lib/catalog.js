@@ -24,7 +24,7 @@ export const HIDDEN_EDITION_SPECS_KEY = 'hidden_edition_specs';
 /**
  * Swap the item with `id` one step in `dir` (+1 down, -1 up).
  * Returns the swapped list, or null when the move is impossible.
- * Pure — the single home for reorder math (docs/backlog/22).
+ * Pure — the single home for reorder math (backlog 22).
  */
 export function swapAdjacent(list, id, dir, key = 'id') {
   const ix = list.findIndex((r) => r[key] === id);

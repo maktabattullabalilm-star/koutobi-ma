@@ -15,7 +15,6 @@ import { IconBook, IconCart, IconHeadset } from '../components/icons';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
 import { useBooksPerRow } from '../hooks/useBooksPerRow';
 import { booksGridClass } from '../lib/booksGrid';
-import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 
 function Spec({ label, value }) {
   if (!value) return null;
@@ -47,10 +46,9 @@ export default function BookDetail() {
   const { show } = useToast();
   const navigate = useNavigate();
   const booksPerRow = useBooksPerRow();
-  const productCopy = useStorefrontContent()?.product_page || {
-    content: CONTENT_DEFAULTS.product_page,
-    visible: true,
-  };
+  const productSection = useStorefrontContent()?.product_page;
+  const productCopy = productSection?.content;
+  const productVisible = productSection?.visible ?? false;
 
   useEffect(() => {
     getShowQtyDefault().then(setShowQtyDefault);
@@ -234,9 +232,11 @@ export default function BookDetail() {
                 {formatPrice(book.old_price)}
               </span>
             )}
-            <span className="ms-auto rounded-full bg-brand-light px-3 py-1 text-xs font-bold text-brand">
-              <span dir="auto">{productCopy.content.price_badge}</span>
-            </span>
+            {productCopy?.price_badge && (
+              <span className="ms-auto rounded-full bg-brand-light px-3 py-1 text-xs font-bold text-brand">
+                <span dir="auto">{productCopy.price_badge}</span>
+              </span>
+            )}
           </Card>
 
           {/* stock visibility */}
@@ -258,9 +258,11 @@ export default function BookDetail() {
             </p>
           )}
 
-          <p className="mt-3 text-xs text-soft">
-            <span dir="auto">{productCopy.content.tax_note}</span>
-          </p>
+          {productCopy?.tax_note && (
+            <p className="mt-3 text-xs text-soft">
+              <span dir="auto">{productCopy.tax_note}</span>
+            </p>
+          )}
 
           {/* actions */}
           <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -273,7 +275,7 @@ export default function BookDetail() {
               className="flex-1 px-6 py-3"
             >
               <IconCart width={18} height={18} />
-              {soldOut ? 'غير متوفر' : <bdi dir="auto">{productCopy.content.add_label}</bdi>}
+              {soldOut ? 'غير متوفر' : <bdi dir="auto">{productCopy?.add_label || 'أضف للسلة'}</bdi>}
             </Button>
             <Button
               onClick={() => {
@@ -283,20 +285,22 @@ export default function BookDetail() {
               disabled={soldOut}
               className="flex-1 bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark hover:bg-amber-300"
             >
-              <bdi dir="auto">{productCopy.content.buy_label}</bdi>
+              <bdi dir="auto">{productCopy?.buy_label || 'اطلب الآن'}</bdi>
             </Button>
           </div>
 
-          <div className="mt-4 flex items-center gap-2 rounded-md bg-brand-pale px-4 py-3 text-sm text-brand-dark">
-            <IconHeadset width={18} height={18} />
-            <span dir="auto">{productCopy.content.support}</span>
-          </div>
+          {productCopy?.support && (
+            <div className="mt-4 flex items-center gap-2 rounded-md bg-brand-pale px-4 py-3 text-sm text-brand-dark">
+              <IconHeadset width={18} height={18} />
+              <span dir="auto">{productCopy.support}</span>
+            </div>
+          )}
 
           {/* description */}
-          {productCopy.visible && book.description_ar && (
+          {productVisible && book.description_ar && (
             <section className="mt-7">
               <h2 dir="auto" className="text-lg font-bold text-ink">
-                {productCopy.content.details_title}
+                {productCopy?.details_title || 'التفاصيل'}
               </h2>
               <Card className="mt-2 border-line/70 bg-white p-4 text-sm leading-7 text-ink">
                 <bdi dir="auto">{book.description_ar}</bdi>
@@ -305,10 +309,10 @@ export default function BookDetail() {
           )}
 
           {/* specs */}
-          {productCopy.visible && (
+          {productVisible && (
             <section className="mt-7">
               <h2 dir="auto" className="text-lg font-bold text-ink">
-                {productCopy.content.specs_title}
+                {productCopy?.specs_title || 'بيانات الطبعة'}
               </h2>
               <Card className="mt-3 border-line/70 p-4">
                 <dl>
@@ -346,10 +350,10 @@ export default function BookDetail() {
       </div>
 
       {/* related */}
-      {productCopy.visible && related.length > 0 && (
+      {productVisible && related.length > 0 && (
         <section className="mt-14">
           <h2 dir="auto" className="section-title">
-            {productCopy.content.related_title}
+            {productCopy?.related_title || 'كتب قد تعجبك أيضاً'}
           </h2>
           <div className={booksGridClass(booksPerRow)}>
             {related.map((b) => (

@@ -48,11 +48,6 @@ export default function ThankYou() {
       <h1 className="mt-5 text-2xl font-bold text-ink sm:text-3xl">شكراً لك! تم استلام طلبك</h1>
       <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-soft">
         سيصلك اتصال من فريقنا لتأكيد الطلب وتحديد التفاصيل.
-        {order?.demo && (
-          <span className="mt-1 block rounded-md bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-            ⚠️ أنت الآن في الوضع التجريبي — لم يتم حفظ الطلب في قاعدة البيانات.
-          </span>
-        )}
       </p>
 
       {orderId && (
@@ -72,15 +67,17 @@ export default function ThankYou() {
       )}
 
       <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row sm:justify-center">
-        <Button asChild className="bg-[#25D366] hover:bg-[#1eb856] sm:flex-1">
-          <a
-            href={thankYouConfirmLink({ orderId, name: order?.name, phone: order?.phone }, whatsapp)}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            <IconWhatsApp /> تأكيد أسرع عبر واتساب
-          </a>
-        </Button>
+        {whatsapp && (
+          <Button asChild className="bg-[#25D366] hover:bg-[#1eb856] sm:flex-1">
+            <a
+              href={thankYouConfirmLink({ orderId, name: order?.name, phone: order?.phone }, whatsapp)}
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              <IconWhatsApp /> تأكيد أسرع عبر واتساب
+            </a>
+          </Button>
+        )}
         <Button asChild variant="outline" className="sm:flex-1">
           <Link to="/catalog">متابعة التسوق</Link>
         </Button>

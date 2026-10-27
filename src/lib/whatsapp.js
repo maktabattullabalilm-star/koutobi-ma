@@ -2,8 +2,9 @@ import { formatPrice } from './format';
 import { whatsappLink } from './config';
 
 /**
- * Single home for every WhatsApp message template (docs/backlog/22).
- * All links go through `whatsappLink` (encoding-safe).
+ * Single home for every WhatsApp message template (backlog 22).
+ * All links go through `whatsappLink` (encoding-safe) and return null when the
+ * store has no configured number.
  */
 
 export function generalInquiryLink(kind = 'question', numberOverride) {
@@ -18,12 +19,12 @@ export function generalInquiryLink(kind = 'question', numberOverride) {
   }
   const msg =
     kind === 'book'
-      ? 'السلام عليكم، أريد طلب كتاب من مكتبة كُتُبِي 📚'
+      ? 'السلام عليكم، أريد طلب كتاب من متجركم 📚'
       : kind === 'search'
         ? 'السلام عليكم، أبحث عن كتاب معيّن 📚'
         : kind === 'order'
           ? 'السلام عليكم، أريد الاستفسار عن الطلب 🛒'
-          : 'السلام عليكم، لديّ سؤال حول متجر كُتُبِي 🌱';
+          : 'السلام عليكم، لديّ سؤال حول المتجر 🌱';
   return whatsappLink(msg, numberOverride);
 }
 
@@ -47,11 +48,11 @@ export function thankYouConfirmLink({ orderId = '', name = '', phone = '' }, num
 export function adminOrderFollowupLink(order, numberOverride) {
   const items = (order.order_items || []).map((it) => `• ${it.title_ar} (×${it.quantity})`).join('\n');
   return whatsappLink(
-    `السلام عليكم ${order.customer_name} 🌱، بخصوص طلبكم من مكتبة كُتُبِي.ما:\n${items}\nالإجمالي: ${formatPrice(order.total)}`,
+    `السلام عليكم ${order.customer_name} 🌱، بخصوص طلبكم من متجرنا:\n${items}\nالإجمالي: ${formatPrice(order.total)}`,
     numberOverride
   );
 }
 
-export function orderWhatsApp(order) {
-  return adminOrderFollowupLink(order);
+export function orderWhatsApp(order, numberOverride) {
+  return adminOrderFollowupLink(order, numberOverride);
 }

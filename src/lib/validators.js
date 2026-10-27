@@ -57,7 +57,7 @@ const ORDER_LIMITS = {
   notes: [0, 1000],
 };
 
-/** Returns {field: message} (empty = valid). Mirrors server CHECKs (docs/backlog/08). */
+/** Returns {field: message} (empty = valid). Mirrors server CHECKs (backlog 08). */
 export function validateOrder({ name = '', phone = '', city = '', address = '', notes = '' } = {}) {
   const e = {};
   const n = name.trim();

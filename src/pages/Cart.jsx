@@ -25,17 +25,19 @@ export default function Cart() {
         <Button asChild className="mt-6">
           <Link to="/catalog">تصفّح الكتب</Link>
         </Button>
-        <div className="mt-6 text-sm text-soft">
-          أو اطلب مباشرة عبر{' '}
-          <a
-            href={generalInquiryLink('book', whatsapp)}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="font-semibold text-brand hover:text-brand-dark"
-          >
-            واتساب
-          </a>
-        </div>
+        {whatsapp && (
+          <div className="mt-6 text-sm text-soft">
+            أو اطلب مباشرة عبر{' '}
+            <a
+              href={generalInquiryLink('book', whatsapp)}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="font-semibold text-brand hover:text-brand-dark"
+            >
+              واتساب
+            </a>
+          </div>
+        )}
       </div>
     );
   }

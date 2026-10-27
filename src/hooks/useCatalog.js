@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { getBook, getBooks, getBundles, getCategories } from '../lib/api';
 
 /**
- * Shared storefront data hooks (docs/backlog/21). One loading/error shape
+ * Shared storefront data hooks (backlog 21). One loading/error shape
  * everywhere — replaces the per-page useEffect+useState+Promise.all copies.
  */
 

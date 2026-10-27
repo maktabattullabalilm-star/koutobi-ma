@@ -1,5 +1,5 @@
 /**
- * Central API client for browser → backend calls (docs/backlog/21).
+ * Central API client for browser → backend calls (backlog 21).
  * - injects the admin JWT (no per-call `Bearer ${...}` drift)
  * - aborts after 25s (no hanging fetches)
  * - maps failures to short Arabic messages (never leaks internals)

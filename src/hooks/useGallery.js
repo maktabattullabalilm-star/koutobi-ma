@@ -7,7 +7,7 @@ let uidCounter = 0;
 const nextUid = () => `img-${Date.now()}-${uidCounter++}`;
 
 /**
- * Gallery working set extracted from BookForm (docs/backlog/21).
+ * Gallery working set extracted from BookForm (backlog 21).
  * Item shape: { uid, id?, url, r2_key?, blob?, ext?, preview?, is_primary }
  * - `blob` set → staged locally, uploaded to R2 on save (never orphaned).
  * - `id` set → already persisted in book_images.

@@ -1,5 +1,5 @@
 /**
- * Shared admin gate for Netlify functions (docs/backlog/24).
+ * Shared admin gate for Netlify functions (backlog 24).
  * Verifies the caller via the anon key + their own JWT + RLS
  * (`profiles` row with role='admin'). No service-role key anywhere.
  */

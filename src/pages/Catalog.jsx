@@ -254,15 +254,19 @@ export default function Catalog() {
               <IconSearch width={20} height={20} />
             </EmptyMedia>
             <EmptyTitle>لا توجد كتب مطابقة</EmptyTitle>
-            <EmptyDescription>جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.</EmptyDescription>
+            <EmptyDescription>
+              {whatsapp ? 'جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.' : 'جرّب تصنيفاً آخر.'}
+            </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
-            <Button asChild>
-              <a href={generalInquiryLink('search', whatsapp)} target="_blank" rel="noreferrer noopener">
-                اطلب الكتاب عبر واتساب
-              </a>
-            </Button>
-          </EmptyContent>
+          {whatsapp && (
+            <EmptyContent>
+              <Button asChild>
+                <a href={generalInquiryLink('search', whatsapp)} target="_blank" rel="noreferrer noopener">
+                  اطلب الكتاب عبر واتساب
+                </a>
+              </Button>
+            </EmptyContent>
+          )}
         </Empty>
       ) : (
         <div className={booksGridClass(booksPerRow)}>

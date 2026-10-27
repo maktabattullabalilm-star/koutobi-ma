@@ -18,7 +18,6 @@ import {
   getPublishersForForm,
   uploadR2File,
 } from '../../lib/admin';
-import { FALLBACK_CATEGORIES, warnFallback } from '../../lib/site';
 import { buildCategoryTree, flattenCategoryTree, normalizeCategoryRows } from '../../lib/catalog';
 import { blobToBase64, IMAGE_MAX_COUNT } from '../../lib/images';
 import { validateBook } from '../../lib/validators';
@@ -68,12 +67,6 @@ const EMPTY = {
   is_active: true,
 };
 
-const FALLBACK_CATS = FALLBACK_CATEGORIES.map((name, index) => ({
-  id: `fallback-${index}`,
-  name_ar: name,
-  parent_id: null,
-  sort: (index + 1) * 10,
-}));
 const FALLBACK_PAPER = ['ورق أصفر (شامواه)', 'ورق أبيض'];
 const FALLBACK_BINDING = ['تجليد فني', 'تجليد عادي'];
 const FALLBACK_SIZES = ['17×24 سم', '14×20 سم', '12×17 سم', '24×17 سم'];
@@ -148,8 +141,7 @@ export default function BookForm() {
     ])
       .then(([c, p, b, s, a, publishersList]) => {
         const categoryRows = normalizeCategoryRows(c);
-        if (!categoryRows.length) warnFallback('categories');
-        setCats(categoryRows.length ? categoryRows : FALLBACK_CATS);
+        setCats(categoryRows);
         setPaperOpts(p.length ? p : FALLBACK_PAPER);
         setBindingOpts(b.length ? b : FALLBACK_BINDING);
         setSizeOpts(s.length ? s : FALLBACK_SIZES);
@@ -157,8 +149,7 @@ export default function BookForm() {
         setPublishers(publishersList);
       })
       .catch(() => {
-        warnFallback('catalog options');
-        setCats(FALLBACK_CATS);
+        setCats([]);
         setPaperOpts(FALLBACK_PAPER);
         setBindingOpts(FALLBACK_BINDING);
         setSizeOpts(FALLBACK_SIZES);

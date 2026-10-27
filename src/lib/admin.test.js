@@ -44,7 +44,7 @@ const EXPECTED = [
   'adminUpdateOrderStatus',
 ];
 
-describe('admin barrel (docs/backlog/21)', () => {
+describe('admin barrel (backlog 21)', () => {
   it('re-exports the full domain surface (no missing barrel entries)', () => {
     for (const name of EXPECTED) {
       expect(typeof admin[name] !== 'undefined', name).toBe(true);

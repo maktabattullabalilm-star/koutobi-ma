@@ -2,7 +2,7 @@
 
 - **Status:** planned
 - **Size:** M
-- **Depends on:** image system v2 + stock badges (new UI must be responsive too)
+- **Depends on:** — (historical image/stock work is done)
 
 ## Goal
 
@@ -34,5 +34,5 @@ admin: no horizontal scroll, tappable controls, readable tables.
 
 - Owner hand-tests on a real phone per `TESTING.md`; screenshots attached
   to the completion report.
-- New UI from items 1–3 is built responsive-first so this pass is
-  verification + fixes, not a rewrite.
+- New UI shipped since this task was written is built responsive-first, so this
+  pass is verification + fixes, not a rewrite.

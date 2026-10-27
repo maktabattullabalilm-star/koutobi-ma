@@ -1,9 +1,8 @@
-import { supabase, SUPABASE_ENABLED } from './supabase';
-import { SAMPLE_BOOKS } from './sampleData';
+import { supabase } from './supabase';
 import { normalizeBook } from './format';
 import { HIDDEN_EDITION_SPECS_KEY, buildCategoryTree, parseHiddenEditionSpecs } from './catalog';
 
-export const DEMO_MODE = !SUPABASE_ENABLED;
+const NOT_CONFIGURED = 'تعذّر الاتصال بقاعدة البيانات — تحقّق من الإنترنت ثم أعد تحميل الصفحة';
 
 // ---------- Catalog (customer side) ----------
 
@@ -33,7 +32,7 @@ async function attachImages(books) {
 
 export async function getBooks({ category, categories, q } = {}) {
   const sb = supabase;
-  if (!sb) return [...SAMPLE_BOOKS].map(normalizeBook);
+  if (!sb) throw new Error(NOT_CONFIGURED);
 
   let query = sb.from('books').select('*').eq('is_active', true).order('created_at', { ascending: false });
 
@@ -94,10 +93,7 @@ export async function getBundle(id) {
 
 export async function getBook(id) {
   const sb = supabase;
-  if (!sb)
-    return SAMPLE_BOOKS.find((b) => b.id === id)
-      ? normalizeBook(SAMPLE_BOOKS.find((b) => b.id === id))
-      : null;
+  if (!sb) throw new Error(NOT_CONFIGURED);
 
   const { data, error } = await sb.from('books').select('*').eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
@@ -108,19 +104,7 @@ export async function getBook(id) {
 
 export async function getCategories() {
   const sb = supabase;
-  if (!sb) {
-    const counts = {};
-    SAMPLE_BOOKS.forEach((b) => (counts[b.category] = (counts[b.category] || 0) + 1));
-    return Object.entries(counts).map(([name, count]) => ({
-      id: name,
-      name,
-      parentId: null,
-      depth: 0,
-      childCount: 0,
-      count,
-      totalCount: count,
-    }));
-  }
+  if (!sb) return [];
   try {
     const [{ data: cats, error: catsErr }, { data: books, error: booksErr }] = await Promise.all([
       sb.from('categories').select('id, name_ar, slug, parent_id, sort').order('sort', { ascending: true }),
@@ -200,7 +184,7 @@ export async function getShowQtyDefault() {
 // ---------- Orders (cash on delivery) ----------
 // Prices are NEVER trusted from the browser: only id+qty are sent,
 // the server re-reads books.price, validates stock, computes total,
-// and inserts order + items + stock decrement atomically (docs/backlog/08).
+// and inserts order + items + stock decrement atomically (backlog 08).
 const ORDER_RPC_ERRORS = [
   [/rate limited/i, 'لقد تجاوزت عدد المحاولات — حاول مجددًا بعد ساعة'],
   [/bad phone/i, 'أدخل رقم هاتف مغربي صحيح (مثال: 0612345678)'],
@@ -235,11 +219,7 @@ function mapOrderError(message) {
 }
 
 export async function createOrder({ name, phone, address, city, notes, items, couponCode = '' }) {
-  if (!supabase) {
-    // Demo mode — simulate success so the flow can be tested locally.
-    const total = items.reduce((s, it) => s + Number(it.price) * it.qty, 0);
-    return { id: `local-${Date.now()}`, total, demo: true };
-  }
+  if (!supabase) throw new Error(NOT_CONFIGURED);
 
   const p_items = items.map((it) =>
     it.product_type === 'bundle' ? { bundle_id: it.id, qty: it.qty } : { book_id: it.id, qty: it.qty }

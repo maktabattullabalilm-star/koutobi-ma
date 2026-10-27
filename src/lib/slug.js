@@ -1,5 +1,5 @@
 /**
- * Arabic → Latin slug helper (docs/backlog/27). Used for future ASCII
+ * Arabic → Latin slug helper (backlog 27). Used for future ASCII
  * category/book slugs (canonical URLs); Arabic names stay the display truth.
  */
 const AR_MAP = {

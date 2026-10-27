@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { reportError } from '../lib/report';
 
 /**
- * Last-resort crash boundary around route outlets (docs/backlog/21).
+ * Last-resort crash boundary around route outlets (backlog 21).
  * Data errors are handled per-page; this catches render crashes only.
  */
 export default class ErrorBoundary extends Component {

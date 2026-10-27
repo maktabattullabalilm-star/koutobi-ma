@@ -1,5 +1,5 @@
 /**
- * Minimal error reporting (docs/backlog/30). Zero vendor, zero PII leaks.
+ * Minimal error reporting (backlog 30). Zero vendor, zero PII leaks.
  * - Without VITE_ERROR_ENDPOINT: console-only (dev + default prod).
  * - With it: POSTs {message, stack, url, at} scrubbed of PII.
  * Upgrade path: point the endpoint at Sentry/GlitchTip envelope API.

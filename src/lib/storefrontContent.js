@@ -1,143 +1,123 @@
 import { supabase } from './supabase';
 
-export const CONTENT_DEFAULTS = {
+/**
+ * Empty shapes for every editable storefront section.
+ *
+ * The database is the ONLY source of storefront copy. These shapes exist so the
+ * admin editor always has a complete object to edit; they deliberately contain
+ * no store name, contact details, testimonials or marketing copy. A section
+ * with no DB row is returned as `visible: false` and therefore renders nothing.
+ *
+ * Brand colours are a neutral palette (design tokens, not store identity) so
+ * the UI stays styled before/without a brand row.
+ */
+export const CONTENT_SHAPES = {
   home_hero: {
-    badge: '📚 كتب عربية أصيلة — بأسعار مناسبة',
-    title: 'مكتبة الكتب الإسلامية\nفي خدمتكم من قلب المغرب',
-    description:
-      'اختر كتابك المفضّل، أرسل اسمك وهاتفك وعنوانك، وسنتصل بك لتأكيد الطلب وتوصيله إلى باب منزلك. الدفع عند الاستلام — بدون بطاقة بنكية.',
-    shop_label: 'تسوّق الكتب',
-    how_label: 'كيف أطلب؟',
-    stats: [
-      { value: '100%', label: 'دفع عند الاستلام' },
-      { value: '+500', label: 'عنوان رقمي مختار' },
-      { value: '24/7', label: 'دعم عبر واتساب' },
-    ],
+    badge: '',
+    title: '',
+    description: '',
+    shop_label: '',
+    how_label: '',
+    stats: [],
   },
   home_categories: {
-    title: 'تصنيفات شائعة',
-    description: 'اختر تصنيفك المفضّل لاستكشاف الكتب',
-    link_label: 'عرض الكل ←',
+    title: '',
+    description: '',
+    link_label: '',
   },
   home_newest: {
-    title: 'أحدث الإصدارات',
-    description: 'جديدنا الذي وصل حديثاً إلى المكتبة',
-    link_label: 'عرض الكل ←',
+    title: '',
+    description: '',
+    link_label: '',
   },
   home_featured: {
-    title: 'الكتب الأكثر مبيعاً',
-    description: 'تشكيلة مميّزة يفضّلها طلاب العلم',
-    link_label: 'عرض الكل ←',
+    title: '',
+    description: '',
+    link_label: '',
   },
   home_how: {
-    title: 'كيف أطلب من كُتُبِي؟',
-    description: 'طريقة الطلب بسيطة جداً ولا تتطلب حساباً أو بطاقة بنكية — الدفع عند الاستلام.',
-    items: [
-      { title: 'اختر كتبك', description: 'أضف الكتب إلى السلة من صفحات المتجر، ثم انتقل إلى إتمام الطلب.' },
-      { title: 'أدخل بياناتك', description: 'أرسل اسمك، رقم هاتفك، وعنوان التوصيل في صفحة الطلب.' },
-      {
-        title: 'نقوم بالباقي',
-        description: 'سنتصل بك لتأكيد الطلب، وتوصيله إلى باب منزلك — تدفع عند الاستلام.',
-      },
-    ],
+    title: '',
+    description: '',
+    items: [],
   },
   home_features: {
-    items: [
-      { title: 'الدفع عند الاستلام', description: 'ادفع عند استلام كتابك' },
-      { title: 'توصيل سريع', description: 'لجميع المدن المغربية' },
-      { title: 'كتب مختارة', description: 'جودة وأصالة المتحقق' },
-      { title: 'دعم واتساب', description: 'نجيب على استفساراتك' },
-    ],
+    items: [],
   },
   home_testimonials: {
-    title: 'آراء عملائنا',
-    items: [
-      {
-        name: 'أم يوسف — الدار البيضاء',
-        text: 'طلبت كتابين، وكّلتهم بجودة التغليف والتوصيل. وصلنا في يومين والدفع عند الاستلام ريّحني كثيراً.',
-        book: 'حصن المسلم',
-      },
-      {
-        name: 'محمد — مراكش',
-        text: 'تجربة ممتازة، تواصلوا معي هاتفياً لتأكيد الطلب كما وعدوا. الكتب أصلية والمصاريف واضحة.',
-        book: 'تيسير الكريم الرحمن',
-      },
-      {
-        name: 'أبوعبدالله — فاس',
-        text: 'أفضل ما يميزهم الردّ السريع على واتساب والأسعار المعقولة. نصحني الأخ أن أخد «الداء والدواء» ولم أندم.',
-        book: 'الداء والدواء',
-      },
-    ],
+    title: '',
+    items: [],
   },
   home_cta: {
-    title: 'جاهز لاقتناء كتابك المفضّل؟',
-    description: 'تصفّح المكتبة، اختر كتبك، وأرسل بياناتك — وسنتواصل معك لتأكيد الطلب.',
-    shop_label: 'تصفّح المكتبة',
-    whatsapp_label: 'اطلب عبر واتساب',
-    note: 'أو تواصل معنا مباشرة للاستفسار عن الكتب وتوفرها',
+    title: '',
+    description: '',
+    shop_label: '',
+    whatsapp_label: '',
+    note: '',
   },
   product_page: {
-    price_badge: 'الدفع عند الاستلام',
-    tax_note: 'الضريبة مضمنة في السعر · التوصيل يُحسب عند تأكيد الطلب هاتفياً.',
-    add_label: 'أضف للسلة',
-    buy_label: 'اطلب الآن',
-    support: 'عند إتمام طلبك، سيتواصل معك فريقنا هاتفياً لتأكيد العنوان والدفع عند الاستلام.',
-    details_title: 'التفاصيل',
-    specs_title: 'بيانات الطبعة',
-    related_title: 'كتب قد تعجبك أيضاً',
+    price_badge: '',
+    tax_note: '',
+    add_label: '',
+    buy_label: '',
+    support: '',
+    details_title: '',
+    specs_title: '',
+    related_title: '',
   },
   footer: {
-    contact_title: 'خدمة العملاء متواجدة لمساعدتكم',
-    contact_description: 'اطلب عبر الموقع وسنتصل بك لتأكيد الطلب والتوصيل.',
-    about: 'مكتبة إسلامية متخصصة في الكتب العربية الأصيلة. نوصل الكتب إلى باب منزلك والدفع عند الاستلام.',
+    contact_title: '',
+    contact_description: '',
+    about: '',
   },
   announcement: {
-    messages: [
-      '📦 توصيل سريع لجميع المدن المغربية',
-      '💳 الدفع عند الاستلام — بلا مخاطرة',
-      '💬 اطلب عبر واتساب بسهولة',
-    ],
+    messages: [],
   },
   brand: {
     logo_url: '',
-    logo_mark: 'ك',
-    logo_name: 'كُتُبِي',
-    logo_suffix: '.ما',
-    contact_email: 'salam@koutobi.ma',
+    logo_mark: '',
+    logo_name: '',
+    logo_suffix: '',
+    contact_email: '',
     primary_color: '#35724e',
     primary_dark: '#2b5c40',
     primary_darker: '#234b35',
     primary_light: '#e8f2ec',
     primary_pale: '#f4f9f5',
-    socials: [
-      { network: 'Facebook', url: '' },
-      { network: 'Instagram', url: '' },
-      { network: 'TikTok', url: '' },
-      { network: 'X', url: '' },
-      { network: 'YouTube', url: '' },
-    ],
+    socials: [],
   },
 };
 
+function hiddenSections() {
+  return Object.fromEntries(
+    Object.entries(CONTENT_SHAPES).map(([key, content]) => [key, { content: { ...content }, visible: false }])
+  );
+}
+
+/**
+ * Live storefront content. Missing rows are hidden — never replaced with
+ * bundled copy. A failed read hides everything instead of showing stale demo
+ * content; the network guard and page-level errors explain what happened.
+ */
 export async function getStorefrontContent() {
-  if (!supabase)
-    return Object.fromEntries(
-      Object.entries(CONTENT_DEFAULTS).map(([key, content]) => [key, { content, visible: true }])
-    );
+  if (!supabase) return hiddenSections();
   try {
     const { data, error } = await supabase.from('storefront_content').select('key,content,visible');
     if (error) throw error;
     const rows = Object.fromEntries((data || []).map((row) => [row.key, row]));
     return Object.fromEntries(
-      Object.entries(CONTENT_DEFAULTS).map(([key, fallback]) => [
-        key,
-        { content: { ...fallback, ...(rows[key]?.content || {}) }, visible: rows[key]?.visible ?? true },
-      ])
+      Object.entries(CONTENT_SHAPES).map(([key, shape]) => {
+        const row = rows[key];
+        return [
+          key,
+          {
+            content: { ...shape, ...(row?.content || {}) },
+            visible: row ? row.visible !== false : false,
+          },
+        ];
+      })
     );
   } catch {
-    return Object.fromEntries(
-      Object.entries(CONTENT_DEFAULTS).map(([key, content]) => [key, { content, visible: true }])
-    );
+    return hiddenSections();
   }
 }
 

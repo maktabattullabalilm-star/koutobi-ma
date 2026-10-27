@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect width="64" height="64" rx="14" fill="#35724E"/>
-  <path d="M32 14l16 4v18c0 9-7 13-16 17-9-4-16-8-16-17V18l16-4z" fill="#faf6ea"/>
-  <text x="32" y="38" text-anchor="middle" font-family="serif" font-size="20" font-weight="bold" fill="#35724E">ك</text>
+  <path d="M15 19.5c5.4-1.9 11-1.7 16.2 1.4V46c-5.2-3.1-10.8-3.3-16.2-1.4z" fill="#faf6ea"/>
+  <path d="M49 19.5c-5.4-1.9-11-1.7-16.2 1.4V46c5.2-3.1 10.8-3.3 16.2-1.4z" fill="#f6efdd"/>
+  <path d="M32.8 21.4v24.4" fill="none" stroke="#35724E" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20 25.5c2.6-.6 4.9-.4 7.2.7M20 30c2.6-.6 4.9-.4 7.2.7M20 34.5c2.6-.6 4.9-.4 7.2.7" fill="none" stroke="#35724E" stroke-width="1.4" stroke-linecap="round" opacity=".55"/>
+  <path d="M44 25.5c-2.6-.6-4.9-.4-7.2.7M44 30c-2.6-.6-4.9-.4-7.2.7M44 34.5c-2.6-.6-4.9-.4-7.2.7" fill="none" stroke="#35724E" stroke-width="1.4" stroke-linecap="round" opacity=".55"/>
 </svg>

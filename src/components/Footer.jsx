@@ -5,7 +5,6 @@ import { buildCategoryTree } from '../lib/catalog';
 import { getVisibleStorePages } from '../lib/storePages';
 import { useSiteContact } from '../hooks/useSiteContact';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
-import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
 import { generalInquiryLink } from '../lib/whatsapp';
 import HashLink from './HashLink';
 import { mailtoHref, verifyEmail } from '../lib/email';
@@ -91,10 +90,17 @@ export default function Footer() {
   const [pages, setPages] = useState([]);
   const tree = useMemo(() => buildCategoryTree(categories), [categories]);
   const { phoneDisplay, phoneHref, whatsapp } = useSiteContact();
-  const content = useStorefrontContent()?.footer || { content: CONTENT_DEFAULTS.footer, visible: true };
-  const brand = useStorefrontContent()?.brand?.content || CONTENT_DEFAULTS.brand;
-  const socials = (brand.socials || []).filter((social) => social.url);
-  const contactEmailHref = mailtoHref(brand.contact_email);
+  const content = useStorefrontContent()?.footer;
+  const brand = useStorefrontContent()?.brand?.content;
+  const socials = (brand?.socials || []).filter((social) => social.url);
+  const contactEmailHref = mailtoHref(brand?.contact_email);
+  const storeName = [brand?.logo_name, brand?.logo_suffix]
+    .map((part) => String(part || '').trim())
+    .filter(Boolean)
+    .join(' ');
+  const hasContact = Boolean(whatsapp || phoneHref || contactEmailHref);
+  const contactStrip =
+    content?.visible && (content.content.contact_title || content.content.contact_description || hasContact);
 
   useEffect(() => {
     getCategories()
@@ -107,32 +113,46 @@ export default function Footer() {
   return (
     <footer className="mt-16 border-t border-line bg-gray-50">
       {/* contact strip */}
-      {content.visible && (
+      {contactStrip && (
         <div className="border-b border-line bg-brand-pale">
           <div className="container-x flex flex-col items-center gap-4 py-6 text-center sm:flex-row sm:justify-between sm:text-start">
             <div>
-              <h3 dir="auto" className="text-lg font-bold text-ink">
-                {content.content.contact_title}
-              </h3>
-              <p dir="auto" className="text-sm text-soft">
-                {content.content.contact_description}
-              </p>
+              {content.content.contact_title && (
+                <h3 dir="auto" className="text-lg font-bold text-ink">
+                  {content.content.contact_title}
+                </h3>
+              )}
+              {content.content.contact_description && (
+                <p dir="auto" className="text-sm text-soft">
+                  {content.content.contact_description}
+                </p>
+              )}
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Button asChild className="bg-brand">
-                <a href={generalInquiryLink('order', whatsapp)} target="_blank" rel="noreferrer noopener">
-                  <IconWhatsApp /> واتساب
-                </a>
-              </Button>
-              <Button asChild variant="outline">
-                <a href={phoneHref}>
-                  <IconPhone />{' '}
-                  <span dir="ltr" className="inline-block tabular-nums" style={{ unicodeBidi: 'isolate' }}>
-                    {phoneDisplay}
-                  </span>
-                </a>
-              </Button>
-            </div>
+            {hasContact && (
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {whatsapp && (
+                  <Button asChild className="bg-brand">
+                    <a href={generalInquiryLink('order', whatsapp)} target="_blank" rel="noreferrer noopener">
+                      <IconWhatsApp /> واتساب
+                    </a>
+                  </Button>
+                )}
+                {phoneHref && (
+                  <Button asChild variant="outline">
+                    <a href={phoneHref}>
+                      <IconPhone />{' '}
+                      <span
+                        dir="ltr"
+                        className="inline-block tabular-nums"
+                        style={{ unicodeBidi: 'isolate' }}
+                      >
+                        {phoneDisplay}
+                      </span>
+                    </a>
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -140,12 +160,11 @@ export default function Footer() {
       <div className="container-x grid grid-cols-1 gap-8 py-10 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <StoreBrand compact />
-          <p className="mt-3 text-sm leading-6 text-soft">
-            <span dir="auto">{content.content.about}</span>
-          </p>
-          <div className="mt-4 flex items-center gap-1.5 rounded-md border border-line bg-white px-3 py-2 text-xs text-soft">
-            🚚 شحن متاح لجميع المدن المغربية — الدفع نقداً عند التسليم
-          </div>
+          {content?.visible && content.content.about && (
+            <p className="mt-3 text-sm leading-6 text-soft">
+              <span dir="auto">{content.content.about}</span>
+            </p>
+          )}
           {socials.length > 0 && (
             <div className="mt-5">
               <p className="mb-2 text-xs font-bold text-ink">تابعنا</p>
@@ -210,44 +229,52 @@ export default function Footer() {
           </div>
         )}
 
-        <div>
-          <h4 className="mb-3 text-sm font-bold text-ink">تواصل معنا</h4>
-          <ul className="space-y-2.5 text-sm text-soft">
-            <li>
-              <a
-                href={generalInquiryLink('question', whatsapp)}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="flex items-center gap-2 hover:text-brand"
-              >
-                <IconWhatsApp width={16} height={16} /> واتساب
-              </a>
-            </li>
-            <li>
-              <a href={phoneHref} className="flex items-center gap-2 hover:text-brand">
-                <IconPhone width={16} height={16} />{' '}
-                <span dir="ltr" className="inline-block tabular-nums" style={{ unicodeBidi: 'isolate' }}>
-                  {phoneDisplay}
-                </span>
-              </a>
-            </li>
-            {contactEmailHref && (
-              <li>
-                <a href={contactEmailHref} className="flex items-center gap-2 hover:text-brand">
-                  <IconMail width={16} height={16} />{' '}
-                  <bdi dir="ltr">{verifyEmail(brand.contact_email).email}</bdi>
-                </a>
-              </li>
-            )}
-          </ul>
-        </div>
+        {hasContact && (
+          <div>
+            <h4 className="mb-3 text-sm font-bold text-ink">تواصل معنا</h4>
+            <ul className="space-y-2.5 text-sm text-soft">
+              {whatsapp && (
+                <li>
+                  <a
+                    href={generalInquiryLink('question', whatsapp)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="flex items-center gap-2 hover:text-brand"
+                  >
+                    <IconWhatsApp width={16} height={16} /> واتساب
+                  </a>
+                </li>
+              )}
+              {phoneHref && (
+                <li>
+                  <a href={phoneHref} className="flex items-center gap-2 hover:text-brand">
+                    <IconPhone width={16} height={16} />{' '}
+                    <span dir="ltr" className="inline-block tabular-nums" style={{ unicodeBidi: 'isolate' }}>
+                      {phoneDisplay}
+                    </span>
+                  </a>
+                </li>
+              )}
+              {contactEmailHref && (
+                <li>
+                  <a href={contactEmailHref} className="flex items-center gap-2 hover:text-brand">
+                    <IconMail width={16} height={16} />{' '}
+                    <bdi dir="ltr">{verifyEmail(brand?.contact_email).email}</bdi>
+                  </a>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-line">
         <div className="container-x flex flex-col items-center justify-between gap-3 py-5 text-center text-xs text-gray-500 sm:flex-row">
-          <span>© {new Date().getFullYear()} مكتبة كُتُبِي.ما — جميع الحقوق محفوظة</span>
+          <span>
+            © {new Date().getFullYear()}
+            {storeName ? ` ${storeName}` : ''} — جميع الحقوق محفوظة
+          </span>
           <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <span>الدفع عند الاستلام · توصيل لجميع المدن</span>
             <button
               type="button"
               onClick={openCookiePreferences}

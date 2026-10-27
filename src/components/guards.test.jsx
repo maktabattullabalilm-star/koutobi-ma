@@ -30,7 +30,7 @@ function guard() {
   );
 }
 
-describe('ProtectedRoute (docs/backlog/21)', () => {
+describe('ProtectedRoute (backlog 21)', () => {
   it('shows a spinner while auth loads', () => {
     globalThis.__authState = { session: null, loading: true, isAdmin: false };
     const { container } = guard();
@@ -61,7 +61,7 @@ function Boom() {
   throw new Error('render crash');
 }
 
-describe('ErrorBoundary (docs/backlog/21)', () => {
+describe('ErrorBoundary (backlog 21)', () => {
   it('renders the Arabic fallback instead of crashing', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     render(

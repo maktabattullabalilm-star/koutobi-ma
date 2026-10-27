@@ -3,6 +3,7 @@ import { adminGetOrders, adminUpdateOrderStatus } from '../../lib/admin';
 import { formatPrice, formatDate } from '../../lib/format';
 import { ORDER_STATUS } from '../../lib/constants';
 import { orderWhatsApp } from '../../lib/whatsapp';
+import { useSiteContact } from '../../hooks/useSiteContact';
 import { maskPhone, sanitizeTelHref } from '../../lib/validators';
 import { useToast } from '../../components/Toast';
 import { IconWhatsApp } from '../../components/icons';
@@ -43,6 +44,7 @@ export default function OrdersAdmin() {
   const [filter, setFilter] = useState('all');
   const [error, setError] = useState('');
   const { show } = useToast();
+  const { whatsapp } = useSiteContact();
 
   const load = () => {
     setError('');
@@ -205,15 +207,17 @@ export default function OrdersAdmin() {
                   الإجمالي: <span className="text-lg font-bold text-brand">{formatPrice(o.total)}</span>
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="border-[#25D366]/40 bg-[#25D366]/10 hover:bg-[#25D366]/20"
-                  >
-                    <a href={orderWhatsApp(o)} target="_blank" rel="noreferrer noopener">
-                      <IconWhatsApp width={16} height={16} /> اتصال واتساب
-                    </a>
-                  </Button>
+                  {whatsapp && (
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="border-[#25D366]/40 bg-[#25D366]/10 hover:bg-[#25D366]/20"
+                    >
+                      <a href={orderWhatsApp(o, whatsapp)} target="_blank" rel="noreferrer noopener">
+                        <IconWhatsApp width={16} height={16} /> اتصال واتساب
+                      </a>
+                    </Button>
+                  )}
                   {['new', 'contacted'].includes(o.status) ? (
                     <Select value={o.status} onValueChange={(v) => setStatus(o.id, v)}>
                       <SelectTrigger className="w-auto" aria-label="حالة الطلب">

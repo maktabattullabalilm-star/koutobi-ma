@@ -1,22 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { ar, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
-import { CONTENT_DEFAULTS } from '../lib/storefrontContent';
-
-const MESSAGES = ar.announcement.messages;
 
 export default function AnnouncementBar() {
   const [idx, setIdx] = useState(0);
   const [active, setActive] = useState(true);
   const timer = useRef(null);
-  const saved = useStorefrontContent()?.announcement || {
-    content: CONTENT_DEFAULTS.announcement,
-    visible: true,
-  };
-  const messages = saved.content.messages?.filter(Boolean) || MESSAGES;
+  const saved = useStorefrontContent()?.announcement;
+  const messages = saved?.content?.messages?.filter(Boolean) || [];
 
   useEffect(() => {
-    if (!active) return undefined;
+    if (!active || !messages.length) return undefined;
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
     timer.current = setInterval(() => {
       if (!document.hidden) setIdx((i) => (i + 1) % messages.length);
@@ -24,7 +18,7 @@ export default function AnnouncementBar() {
     return () => clearInterval(timer.current);
   }, [active, messages.length]);
 
-  if (!active || !saved.visible || !messages.length) return null;
+  if (!active || !saved?.visible || !messages.length) return null;
   return (
     <div className="relative overflow-hidden bg-brand text-white">
       <div className="container-x flex h-10 items-center justify-center text-center text-[13px] font-medium sm:text-sm">

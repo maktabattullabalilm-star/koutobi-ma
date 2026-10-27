@@ -83,10 +83,12 @@ vi.mock('../../lib/supabase', () => ({
     },
   },
   SUPABASE_ENABLED: true,
+  supabaseErrorHint: () => 'mock hint',
 }));
 
 vi.mock('../../context/AuthContext', () => ({
   useAuth: vi.fn(() => ({
+    supabaseEnabled: true,
     session: { access_token: 'test-token' },
     profile: { email: 'admin@test.ma' },
     loading: false,
@@ -182,7 +184,7 @@ describe('Settings (sensitive area, separate page)', () => {
 describe('AdminLogin', () => {
   it('renders the login form for logged-out admins', async () => {
     const { useAuth } = await import('../../context/AuthContext');
-    useAuth.mockReturnValueOnce({
+    useAuth.mockReturnValue({
       supabaseEnabled: true,
       session: null,
       profile: null,
@@ -199,7 +201,7 @@ describe('AdminLogin', () => {
 
   it('renders a logout button for logged-in non-admins', async () => {
     const { useAuth } = await import('../../context/AuthContext');
-    useAuth.mockReturnValueOnce({
+    useAuth.mockReturnValue({
       supabaseEnabled: true,
       session: { access_token: 't' },
       profile: { email: 'user@test.ma' },

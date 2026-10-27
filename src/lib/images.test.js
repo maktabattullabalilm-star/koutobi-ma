@@ -156,7 +156,7 @@ describe('resizeImageToLimit', () => {
   });
 });
 
-describe('coverSrcSet (docs/backlog/18)', () => {
+describe('coverSrcSet (backlog 18)', () => {
   it('returns undefined without a CDN (single-file R2 origin)', () => {
     expect(coverSrcSet('https://pub-xxx.r2.dev/covers/a.webp')).toBeUndefined();
     expect(coverSrcSet('')).toBeUndefined();

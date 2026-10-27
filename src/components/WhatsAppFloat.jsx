@@ -4,6 +4,7 @@ import { IconWhatsApp } from './icons';
 
 export default function WhatsAppFloat() {
   const { whatsapp } = useSiteContact();
+  if (!whatsapp) return null;
   return (
     <a
       href={generalInquiryLink('question', whatsapp)}

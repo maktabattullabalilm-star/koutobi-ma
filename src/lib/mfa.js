@@ -1,7 +1,7 @@
 /**
  * Supabase native TOTP two-factor helpers.
  * Every function takes the supabase client explicitly → unit-testable,
- * and safe when the client is null (demo mode: callers guard first).
+ * and safe when the client is null (unconfigured: callers guard first).
  */
 
 export async function getVerifiedTotpFactor(client) {

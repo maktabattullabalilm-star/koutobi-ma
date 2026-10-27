@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Monthly R2 orphan sweep (docs/backlog/30, docs/ops.md).
+# Monthly R2 orphan sweep (backlog 30, docs/ops.md).
 # Lists R2 keys under covers/ and compares with DB references
 # (book_images.r2_key + books.cover_image). Unreferenced keys are
 # PRINTED ONLY — pass --delete to remove them after human review.

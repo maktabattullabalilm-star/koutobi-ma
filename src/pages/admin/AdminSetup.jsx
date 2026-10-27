@@ -130,13 +130,7 @@ export default function AdminSetup() {
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <span className="inline-flex items-center gap-2">
-            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-white">
-              ك
-            </span>
-            <span className="text-2xl font-bold">
-              <span className="text-brand">كُتُبِي</span>
-              <span className="text-ink">.ما</span>
-            </span>
+            <span className="text-2xl font-bold text-brand">لوحة التحكم</span>
           </span>
           <p className="mt-2 text-sm text-soft">إعداد حساب المدير — رابط لمرة واحدة 🔑</p>
         </div>

@@ -10,7 +10,7 @@ export const IMAGE_MAX_DIM = 1600;
 export const IMAGE_MAX_COUNT = 5;
 
 /**
- * Optional image-CDN base for responsive variants (docs/backlog/18).
+ * Optional image-CDN base for responsive variants (backlog 18).
  * Empty = R2 origin serves single-size files; `coverSrcSet` then returns
  * undefined and browsers download `src` only. Set VITE_IMAGE_CDN to a
  * transform endpoint (e.g. Cloudflare Images or /cdn-cgi/image on a custom

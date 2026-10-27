@@ -391,10 +391,14 @@ export default function Settings() {
               >
                 {formatPhoneDisplay(phone || whatsapp)}
               </span>{' '}
-              ·{' '}
-              <a href={telHref(phone || whatsapp)} className="text-brand hover:underline" dir="ltr">
-                تجربة الاتصال
-              </a>
+              {telHref(phone || whatsapp) && (
+                <>
+                  ·{' '}
+                  <a href={telHref(phone || whatsapp)} className="text-brand hover:underline" dir="ltr">
+                    تجربة الاتصال
+                  </a>
+                </>
+              )}
             </p>
           )}
           <Button type="submit" variant="outline" disabled={contactBusy} className="mt-3 px-4 py-2 text-xs">

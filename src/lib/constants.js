@@ -1,4 +1,4 @@
-/** Shared domain constants — single source of truth (see docs/backlog/22). */
+/** Shared domain constants — single source of truth (see backlog 22). */
 
 export const PASSWORD_MIN = 12;
 

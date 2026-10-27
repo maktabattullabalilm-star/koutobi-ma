@@ -1,5 +1,5 @@
 /**
- * Admin data layer — barrel (docs/backlog/21).
+ * Admin data layer — barrel (backlog 21).
  * Domain modules live in `src/lib/admin/`; this file re-exports the full
  * public surface so existing imports keep working unchanged.
  */

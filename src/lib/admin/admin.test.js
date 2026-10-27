@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * Behavior tests for the admin domain modules (docs/backlog/21+26).
+ * Behavior tests for the admin domain modules (backlog 21+26).
  * Supabase is mocked at the client level; these guard the query shapes
  * (limits, ordering, error mapping) — not the database itself.
  */

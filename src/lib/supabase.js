@@ -4,7 +4,7 @@ const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Scaffolded .env files ship with placeholder values (YOUR_...).
-// Treat those as "not configured" so the app falls back to DEMO_MODE
+// Treat those as "not configured" so the app reports a clear connection error
 // instead of querying a dead host.
 const looksPlaceholder = (v) => !v || /your_|example|placeholder|changeme|xxx+/i.test(v);
 

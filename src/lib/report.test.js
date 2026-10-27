@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { reportError } from './report';
 
-describe('reportError (docs/backlog/30)', () => {
+describe('reportError (backlog 30)', () => {
   it('scrubs phones and emails, never throws', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() =>

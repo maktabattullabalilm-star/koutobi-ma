@@ -15,7 +15,7 @@ vi.mock('../../lib/storefrontContent', async (importOriginal) => {
     ...actual,
     getStorefrontContent: vi.fn(async () =>
       Object.fromEntries(
-        Object.entries(actual.CONTENT_DEFAULTS).map(([key, content]) => [key, { content, visible: true }])
+        Object.entries(actual.CONTENT_SHAPES).map(([key, content]) => [key, { content, visible: true }])
       )
     ),
     adminSaveStorefrontContent: mockSave,
@@ -42,19 +42,19 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Storefront content — contact e-mail', () => {
-  it('is editable from روابط مواقع التواصل and starts at the store address', async () => {
+  it('is editable from روابط مواقع التواصل and starts empty (no bundled address)', async () => {
     const input = await openBrandEditor();
-    expect(input.value).toBe('salam@koutobi.ma');
+    expect(input.value).toBe('');
   });
 
   it('saves the edited address into the brand section', async () => {
     const input = await openBrandEditor();
-    fireEvent.change(input, { target: { value: 'contact@koutobi.ma' } });
+    fireEvent.change(input, { target: { value: 'contact@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: /حفظ هذا القسم/ }));
 
     await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
     expect(mockSave.mock.calls[0][0]).toBe('brand');
-    expect(mockSave.mock.calls[0][1].contact_email).toBe('contact@koutobi.ma');
+    expect(mockSave.mock.calls[0][1].contact_email).toBe('contact@example.com');
   });
 
   it('blocks saving a malformed address', async () => {
@@ -74,5 +74,55 @@ describe('Storefront content — contact e-mail', () => {
 
     await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
     expect(mockSave.mock.calls[0][1].contact_email).toBe('');
+  });
+});
+
+describe('Storefront content — customer reviews', () => {
+  const openReviewsEditor = async () => {
+    render(
+      <MemoryRouter>
+        <StorefrontContent initialSection="home_testimonials" />
+      </MemoryRouter>
+    );
+    return screen.findByRole('button', { name: /إضافة عنصر/ });
+  };
+
+  it('opens directly on the reviews section', async () => {
+    await openReviewsEditor();
+    expect(screen.getByRole('heading', { name: 'آراء العملاء', level: 1 })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /إضافة عنصر/ })).toBeTruthy();
+  });
+
+  it('adds a review with name, rating, text and verified badge', async () => {
+    const add = await openReviewsEditor();
+    fireEvent.click(add);
+
+    fireEvent.change(screen.getByLabelText('اسم العميل'), { target: { value: 'أم يوسف' } });
+    fireEvent.change(screen.getByLabelText('نص الرأي'), {
+      target: { value: 'خدمة ممتازة وتوصيل سريع' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '4 من 5' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'شراء موثّق' }));
+    fireEvent.click(screen.getByRole('button', { name: /حفظ هذا القسم/ }));
+
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+    const [key, content] = mockSave.mock.calls[0];
+    expect(key).toBe('home_testimonials');
+    expect(content.items).toEqual([
+      {
+        name: 'أم يوسف',
+        rating: 4,
+        text: 'خدمة ممتازة وتوصيل سريع',
+        verified: true,
+      },
+    ]);
+  });
+
+  it('starts a new review with five stars and no verified badge', async () => {
+    const add = await openReviewsEditor();
+    fireEvent.click(add);
+
+    expect(screen.getByRole('button', { name: '5 من 5' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('switch', { name: 'شراء موثّق' }).getAttribute('aria-checked')).toBe('false');
   });
 });
