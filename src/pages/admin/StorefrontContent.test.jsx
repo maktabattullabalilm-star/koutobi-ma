@@ -49,6 +49,13 @@ describe('Storefront content — contact e-mail', () => {
     expect(input.value).toBe('');
   });
 
+  it('keeps Arabic copy RTL and URL fields LTR', async () => {
+    const email = await openBrandEditor();
+    expect(email.getAttribute('dir')).toBe('ltr');
+    expect(screen.getByLabelText('اللاحقة بجانب الاسم').getAttribute('dir')).toBe('rtl');
+    expect(screen.getByLabelText('رابط صورة الشعار').getAttribute('dir')).toBe('ltr');
+  });
+
   it('saves the edited address into the brand section', async () => {
     const input = await openBrandEditor();
     fireEvent.change(input, { target: { value: 'contact@example.com' } });

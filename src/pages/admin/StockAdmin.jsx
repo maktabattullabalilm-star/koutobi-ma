@@ -459,6 +459,7 @@ export default function StockAdmin() {
             <label className="text-xs font-semibold text-ink">
               كمية لكل كتاب
               <Input
+                dir="ltr"
                 type="number"
                 min="1"
                 max="1000000"
@@ -636,6 +637,7 @@ export default function StockAdmin() {
                         <label className="text-xs font-semibold text-ink">
                           {adjustMode === 'set' ? 'الرصيد الفعلي بعد الجرد' : 'الكمية'}
                           <Input
+                            dir="ltr"
                             type="number"
                             min={adjustMode === 'set' ? 0 : 1}
                             max="1000000"

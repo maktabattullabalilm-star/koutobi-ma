@@ -103,7 +103,7 @@ function CopyField({ name, value, onChange }) {
   const isUrl = name === 'logo_url';
   const props = {
     value: value || '',
-    dir: isUrl ? 'ltr' : 'auto',
+    dir: isUrl ? 'ltr' : 'rtl',
     onChange: (event) => onChange(event.target.value),
     className: `mt-1.5 bg-white ${isUrl ? 'text-left' : ''}`,
   };
@@ -233,7 +233,7 @@ function ListEditor({ sectionKey, listKey, value, onChange }) {
                     <span className="text-xs font-semibold text-soft">{label}</span>
                     {isLong(key, item[key]) ? (
                       <Textarea
-                        dir="auto"
+                        dir={listKey === 'stats' && key === 'value' ? 'ltr' : 'rtl'}
                         value={item[key] || ''}
                         onChange={(e) => {
                           const next = [...items];
@@ -245,7 +245,7 @@ function ListEditor({ sectionKey, listKey, value, onChange }) {
                       />
                     ) : (
                       <Input
-                        dir="auto"
+                        dir={listKey === 'stats' && key === 'value' ? 'ltr' : 'rtl'}
                         value={item[key] || ''}
                         onChange={(e) => {
                           const next = [...items];

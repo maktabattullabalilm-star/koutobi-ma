@@ -20,13 +20,13 @@ const STATUS = Object.entries(ORDER_STATUS).map(([id, { label, tone }]) => ({ id
 function PhoneReveal({ phone }) {
   const [open, setOpen] = useState(false);
   return (
-    <span className="inline-flex items-center gap-1.5" dir="ltr">
+    <span className="inline-flex items-center gap-1.5">
       <a
         href={sanitizeTelHref(phone)}
         className="text-sm font-medium text-brand hover:text-brand-dark"
         title={open ? phone : undefined}
       >
-        ☎ {open ? phone : maskPhone(phone)}
+        ☎ <bdi dir="ltr">{open ? phone : maskPhone(phone)}</bdi>
       </a>
       <button
         type="button"

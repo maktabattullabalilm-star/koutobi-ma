@@ -327,13 +327,16 @@ export default function BookForm() {
     </label>
   );
 
-  const field = (label, name, extra = {}) => (
-    <Field>
-      <FieldLabel htmlFor={name}>{label}</FieldLabel>
-      <Input id={name} dir="auto" value={form[name]} onChange={set(name)} {...extra} />
-      {errors[name] && <FieldError>{errors[name][0]}</FieldError>}
-    </Field>
-  );
+  const field = (label, name, extra = {}) => {
+    const dir = extra.dir || (extra.type === 'number' ? 'ltr' : 'rtl');
+    return (
+      <Field>
+        <FieldLabel htmlFor={name}>{label}</FieldLabel>
+        <Input id={name} dir={dir} value={form[name]} onChange={set(name)} {...extra} />
+        {errors[name] && <FieldError>{errors[name][0]}</FieldError>}
+      </Field>
+    );
+  };
 
   const selectField = (label, name, options) => (
     <div>
@@ -360,7 +363,7 @@ export default function BookForm() {
       <FieldLabel htmlFor={name}>{label}</FieldLabel>
       <Input
         id={name}
-        dir="auto"
+        dir="rtl"
         value={form[name]}
         onChange={set(name)}
         list={listId}
@@ -579,7 +582,7 @@ export default function BookForm() {
                       >
                         <IconStar filled={img.is_primary} width={16} height={16} />
                       </button>
-                      <div className="flex items-center gap-0.5" dir="ltr">
+                      <div className="flex items-center gap-0.5">
                         <button
                           type="button"
                           onClick={() => moveImage(img.uid, -1)}
@@ -588,7 +591,7 @@ export default function BookForm() {
                           className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"
                           aria-label="تقديم"
                         >
-                          <IconChevronLeft width={14} height={14} />
+                          <IconChevronRight width={14} height={14} />
                         </button>
                         <button
                           type="button"
@@ -598,7 +601,7 @@ export default function BookForm() {
                           className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-ink disabled:opacity-30"
                           aria-label="تأخير"
                         >
-                          <IconChevronRight width={14} height={14} />
+                          <IconChevronLeft width={14} height={14} />
                         </button>
                       </div>
                       <button

@@ -44,6 +44,8 @@ describe('MarkdownPreview', () => {
       </MemoryRouter>
     );
     expect(await screen.findByLabelText('محرر محتوى الصفحة')).toBeTruthy();
+    expect(screen.getByLabelText('محرر محتوى الصفحة').getAttribute('dir')).toBe('rtl');
+    expect(screen.getByDisplayValue('معلومات الشحن').getAttribute('dir')).toBe('rtl');
     expect(screen.getByRole('button', { name: 'مساعدة تنسيق المحتوى' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'معاينة' }));
     expect(screen.queryByLabelText('محرر محتوى الصفحة')).toBeNull();

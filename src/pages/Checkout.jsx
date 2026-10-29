@@ -82,7 +82,7 @@ export default function Checkout() {
         id={name}
         name={name}
         type={type}
-        dir={opts.dir || (name === 'phone' ? 'ltr' : 'auto')}
+        dir={opts.dir || (name === 'phone' ? 'ltr' : 'rtl')}
         placeholder={placeholder}
         value={form[name]}
         onChange={set(name)}

@@ -41,6 +41,14 @@ describe('Checkout (backlog 26)', () => {
     expect(createOrder).not.toHaveBeenCalled();
   });
 
+  it('renders Arabic fields RTL and identifier fields LTR', () => {
+    page();
+    expect(screen.getByPlaceholderText('مثال: محمد الأحمدي').getAttribute('dir')).toBe('rtl');
+    expect(screen.getByPlaceholderText('مثال: الدار البيضاء').getAttribute('dir')).toBe('rtl');
+    expect(screen.getByPlaceholderText('مثال: 0612345678').getAttribute('dir')).toBe('ltr');
+    expect(screen.getByPlaceholderText('مثال: KOUTOBI-10').getAttribute('dir')).toBe('ltr');
+  });
+
   it('rejects garbage phones without calling the server', async () => {
     const { createOrder } = await import('../lib/api');
     page();

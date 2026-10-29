@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -16,7 +16,14 @@ import {
 import { formatPrice, isSoldOut } from '../../lib/format';
 import { LOW_STOCK_AT } from '../../lib/constants';
 import { useToast } from '../../components/Toast';
-import { IconCart, IconClose, IconEdit, IconStar } from '../../components/icons';
+import {
+  IconCart,
+  IconChevronLeft,
+  IconChevronRight,
+  IconClose,
+  IconEdit,
+  IconStar,
+} from '../../components/icons';
 import BookCover from '../../components/BookCover';
 import PageHeader from '../../components/admin/PageHeader';
 import StatusPill from '../../components/admin/StatusPill';
@@ -90,6 +97,8 @@ export default function BooksAdmin() {
   const [error, setError] = useState('');
   const [pendingDelete, setPendingDelete] = useState(null);
   const { show } = useToast();
+  const tableScrollRef = useRef(null);
+  const [tableScroll, setTableScroll] = useState({ start: false, end: false });
 
   const load = () => {
     setError('');
@@ -132,6 +141,31 @@ export default function BooksAdmin() {
       return true;
     });
   }, [books, query, statusFilter, stockFilter, catFilter, catScope]);
+
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return undefined;
+    const sync = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const position = Math.abs(el.scrollLeft);
+      const next = { start: position > 2, end: position < max - 2 };
+      setTableScroll((prev) => (prev.start === next.start && prev.end === next.end ? prev : next));
+    };
+    sync();
+    el.addEventListener('scroll', sync, { passive: true });
+    window.addEventListener('resize', sync);
+    return () => {
+      el.removeEventListener('scroll', sync);
+      window.removeEventListener('resize', sync);
+    };
+  }, [books, filtered.length]);
+
+  const scrollTable = (direction) => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const amount = Math.max(Math.round(el.clientWidth * 0.75), 240);
+    el.scrollBy({ left: direction * amount, behavior: 'smooth' });
+  };
 
   const isFiltered = query.trim() || statusFilter !== 'all' || stockFilter !== 'all' || catFilter !== 'all';
   const clearFilters = () => {
@@ -310,8 +344,42 @@ export default function BooksAdmin() {
       </div>
 
       {/* desktop table */}
-      <div className="mt-3 hidden overflow-x-auto rounded-card border border-line/70 bg-white md:block">
-        <Table className="min-w-[720px]">
+      <div className="mt-3 hidden overflow-hidden rounded-card border border-line/70 bg-white md:block">
+        <div className="flex items-center justify-between gap-3 border-b border-line/70 px-3 py-2">
+          <p className="text-[11px] text-soft">اسحب الجدول أفقياً أو استخدم الأسهم لعرض كل الأعمدة.</p>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="عرض الأعمدة التالية"
+              onClick={() => scrollTable(-1)}
+              disabled={!tableScroll.end}
+            >
+              <IconChevronLeft />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="عرض الأعمدة السابقة"
+              onClick={() => scrollTable(1)}
+              disabled={!tableScroll.start}
+            >
+              <IconChevronRight />
+            </Button>
+          </div>
+        </div>
+        <Table
+          containerRef={tableScrollRef}
+          containerClassName="table-scroll"
+          containerProps={{
+            tabIndex: 0,
+            role: 'region',
+            'aria-label': 'جدول الكتب — مرّر أفقياً لعرض كل الأعمدة',
+          }}
+          className="min-w-[720px]"
+        >
           <TableHeader className="sticky top-0">
             <TableRow className="border-b border-line bg-gray-50 text-xs text-soft hover:bg-gray-50">
               <TableHead className="px-4 py-3 text-start font-semibold">الكتاب</TableHead>

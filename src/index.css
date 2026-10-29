@@ -76,6 +76,30 @@
   @apply rounded-card bg-white;
 }
 
+/* Always-visible horizontal scrollbar for wide admin tables. */
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-brand) var(--color-gray-100);
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  background: var(--color-gray-100);
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-brand) 55%, white);
+  border-radius: 999px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand);
+}
+
 @utility section-title {
   @apply mb-6 text-xl font-bold text-ink sm:text-2xl;
 }

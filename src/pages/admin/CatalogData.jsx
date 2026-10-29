@@ -59,7 +59,7 @@ const indent = (depth) => (depth > 0 ? `${'— '.repeat(depth)}` : '');
 
 function MoveButtons({ onUp, onDown, upDisabled, downDisabled }) {
   return (
-    <div className="flex items-center gap-0.5" dir="ltr">
+    <div className="flex items-center gap-0.5">
       <button
         type="button"
         onClick={onUp}

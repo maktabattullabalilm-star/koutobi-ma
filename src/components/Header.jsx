@@ -112,7 +112,7 @@ export default function Header() {
             <div className="flex items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line focus-within:ring-brand">
               <IconSearch className="shrink-0 text-soft" width={18} height={18} />
               <input
-                dir="auto"
+                dir="rtl"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="ابحث عن كتاب، مؤلف، تصنيف…"
@@ -212,7 +212,7 @@ export default function Header() {
             <div className="flex flex-1 items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line">
               <IconSearch className="text-soft" width={18} height={18} />
               <Input
-                dir="auto"
+                dir="rtl"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="ابحث…"

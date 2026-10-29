@@ -189,7 +189,7 @@ export default function PagesAdmin() {
                   <label className="block">
                     <span className="text-sm font-semibold text-ink">عنوان الصفحة</span>
                     <Input
-                      dir="auto"
+                      dir="rtl"
                       maxLength={160}
                       value={draft.title || ''}
                       onChange={(event) => update({ title: event.target.value })}
@@ -277,7 +277,7 @@ export default function PagesAdmin() {
                   </div>
                   {editorMode === 'edit' ? (
                     <Textarea
-                      dir="auto"
+                      dir="rtl"
                       value={draft.content_markdown || ''}
                       onChange={(event) => update({ content_markdown: event.target.value })}
                       className="min-h-[420px] resize-y border-line bg-white p-4 font-mono text-sm leading-7"

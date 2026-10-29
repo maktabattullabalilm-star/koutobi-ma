@@ -87,14 +87,14 @@ function StatsEditor({ stats, onChange }) {
             className="grid gap-2 rounded-md border border-line bg-white p-3 sm:grid-cols-[1fr_2fr_auto]"
           >
             <Input
-              dir="auto"
+              dir="ltr"
               aria-label={`قيمة الرقم ${index + 1}`}
               placeholder="+2000"
               value={stat.value || ''}
               onChange={(event) => update(index, 'value', event.target.value)}
             />
             <Input
-              dir="auto"
+              dir="rtl"
               aria-label={`وصف الرقم ${index + 1}`}
               placeholder="عميل سعيد"
               value={stat.label || ''}
@@ -264,7 +264,7 @@ function BookPicker({ books, loading, error, bookIds, onChange }) {
               className="pointer-events-none absolute inset-y-0 end-3 my-auto text-soft"
             />
             <Input
-              dir="auto"
+              dir="rtl"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="اسم الكتاب أو المؤلف"
@@ -361,7 +361,7 @@ function SlideEditor({ slide, books, booksLoading, booksError, onChange }) {
             <span className="text-sm font-semibold text-ink">{label}</span>
             {key === 'description' || key === 'title' ? (
               <Textarea
-                dir="auto"
+                dir="rtl"
                 rows={key === 'title' ? 2 : 3}
                 placeholder={placeholder}
                 value={slide[key] || ''}
@@ -370,7 +370,7 @@ function SlideEditor({ slide, books, booksLoading, booksError, onChange }) {
               />
             ) : (
               <Input
-                dir="auto"
+                dir="rtl"
                 placeholder={placeholder}
                 value={slide[key] || ''}
                 onChange={(event) => set(key, event.target.value)}

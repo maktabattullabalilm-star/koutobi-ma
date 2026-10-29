@@ -173,6 +173,19 @@ describe('HeroEditor', () => {
     expect(screen.getByText('أدخل لوناً مثل #35724e.')).toBeTruthy();
   });
 
+  it('keeps Arabic fields RTL and numeric or code fields LTR', async () => {
+    renderEditor({ slides: [baseSlide()] });
+    await screen.findByDisplayValue('عنوان الشريحة');
+
+    expect(screen.getByLabelText('ابحث عن كتاب').getAttribute('dir')).toBe('rtl');
+    expect(screen.getByDisplayValue('عنوان الشريحة').getAttribute('dir')).toBe('rtl');
+    expect(screen.getByLabelText('رمز لون الخلفية').getAttribute('dir')).toBe('ltr');
+
+    fireEvent.click(screen.getByRole('button', { name: /إضافة رقم/ }));
+    expect(screen.getByLabelText('قيمة الرقم 1').getAttribute('dir')).toBe('ltr');
+    expect(screen.getByLabelText('وصف الرقم 1').getAttribute('dir')).toBe('rtl');
+  });
+
   it('shows an empty state before the first slide is added', () => {
     renderEditor({ slides: [] });
     expect(screen.getByText('لا توجد شرائح بعد')).toBeTruthy();

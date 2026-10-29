@@ -38,7 +38,7 @@ export default function StoreBrand({ compact = false, onClick }) {
           {name}
         </bdi>
         {suffix ? ' ' : ''}
-        <bdi dir="ltr" className="text-ink">
+        <bdi dir="rtl" className="text-ink">
           {suffix}
         </bdi>
       </span>

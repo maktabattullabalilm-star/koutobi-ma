@@ -144,7 +144,7 @@ export default function OffersAdmin() {
               الكتب نفسها.
             </p>
           </div>
-          <div className="flex gap-3 md:text-left" dir="ltr">
+          <div className="flex gap-3">
             <div className="rounded-xl border border-sky-200 bg-white px-5 py-3 text-center dark:border-sky-900 dark:bg-background">
               <strong className="block text-2xl text-ink">
                 {bundles.filter((row) => row.is_active).length}
@@ -188,6 +188,7 @@ export default function OffersAdmin() {
               <div className="space-y-2">
                 <Label htmlFor="bundle-price">السعر (درهم)</Label>
                 <Input
+                  dir="ltr"
                   id="bundle-price"
                   type="number"
                   min="1"
@@ -326,6 +327,7 @@ export default function OffersAdmin() {
                 <div className="space-y-2">
                   <Label>قيمة الخصم {coupon.discount_type === 'percent' ? '(%)' : '(درهم)'}</Label>
                   <Input
+                    dir="ltr"
                     type="number"
                     min="1"
                     value={coupon.discount_value}
@@ -335,6 +337,7 @@ export default function OffersAdmin() {
                 <div className="space-y-2">
                   <Label>الحد الأدنى للطلب (درهم)</Label>
                   <Input
+                    dir="ltr"
                     type="number"
                     min="0"
                     value={coupon.minimum_subtotal}
@@ -344,6 +347,7 @@ export default function OffersAdmin() {
                 <div className="space-y-2">
                   <Label>سقف الخصم (درهم)</Label>
                   <Input
+                    dir="ltr"
                     type="number"
                     min="1"
                     value={coupon.max_discount}
@@ -360,6 +364,7 @@ export default function OffersAdmin() {
                 <div className="space-y-2">
                   <Label>إجمالي مرات الاستخدام</Label>
                   <Input
+                    dir="ltr"
                     type="number"
                     min="1"
                     value={coupon.max_uses}
@@ -370,6 +375,7 @@ export default function OffersAdmin() {
                 <div className="space-y-2">
                   <Label>الحد لكل رقم هاتف</Label>
                   <Input
+                    dir="ltr"
                     type="number"
                     min="1"
                     value={coupon.max_uses_per_phone}
