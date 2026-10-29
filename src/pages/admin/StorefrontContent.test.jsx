@@ -9,6 +9,8 @@ const { mockShow, mockSave } = vi.hoisted(() => ({
 
 vi.mock('../../components/Toast', () => ({ useToast: () => ({ show: mockShow }) }));
 
+vi.mock('../../lib/admin', () => ({ adminGetBooks: vi.fn(async () => []) }));
+
 vi.mock('../../lib/storefrontContent', async (importOriginal) => {
   const actual = await importOriginal();
   return {
@@ -74,6 +76,42 @@ describe('Storefront content — contact e-mail', () => {
 
     await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
     expect(mockSave.mock.calls[0][1].contact_email).toBe('');
+  });
+});
+
+describe('Storefront content — hero slides', () => {
+  const openHeroEditor = async () => {
+    render(
+      <MemoryRouter>
+        <StorefrontContent />
+      </MemoryRouter>
+    );
+    return screen.findByRole('button', { name: /إضافة شريحة/ });
+  };
+
+  it('blocks saving a slide without a title or badge', async () => {
+    const add = await openHeroEditor();
+    fireEvent.click(add);
+    fireEvent.click(screen.getByRole('button', { name: /حفظ هذا القسم/ }));
+
+    await waitFor(() => expect(mockShow).toHaveBeenCalled());
+    expect(mockShow.mock.calls[0][0]).toContain('أضف عنواناً أو شارة');
+    expect(mockSave).not.toHaveBeenCalled();
+  });
+
+  it('saves the edited slides under home_hero', async () => {
+    const add = await openHeroEditor();
+    fireEvent.click(add);
+    fireEvent.change(await screen.findByPlaceholderText('اكتب عنوان الشريحة'), {
+      target: { value: 'شريحة جديدة' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /حفظ هذا القسم/ }));
+
+    await waitFor(() => expect(mockSave).toHaveBeenCalledTimes(1));
+    const [key, content] = mockSave.mock.calls[0];
+    expect(key).toBe('home_hero');
+    expect(content.slides).toHaveLength(1);
+    expect(content.slides[0].title).toBe('شريحة جديدة');
   });
 });
 

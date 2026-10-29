@@ -14,10 +14,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import { adminSaveStorefrontContent, getStorefrontContent } from '../../lib/storefrontContent';
+import { normalizeHeroSlides, validateHeroContent } from '../../lib/hero';
 import { verifySocialUrl } from '../../lib/socialLinks';
 import { verifyEmail } from '../../lib/email';
 import { useToast } from '../../components/Toast';
 import PageHeader from '../../components/admin/PageHeader';
+import HeroEditor from '../../components/admin/HeroEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -44,7 +46,10 @@ const PAGES = [
 ];
 
 const META = {
-  home_hero: { title: 'واجهة الصفحة', hint: 'أول قسم يراه الزائر: العنوان والأزرار والأرقام الثلاثة.' },
+  home_hero: {
+    title: 'واجهة الصفحة',
+    hint: 'شرائح متعددة تتبدّل تلقائياً: النصوص والألوان والكتب المختارة لكل شريحة.',
+  },
   home_categories: { title: 'التصنيفات الشائعة', hint: 'العنوان والوصف فوق بطاقات التصنيفات.' },
   home_newest: { title: 'أحدث الإصدارات', hint: 'عنوان ووصف قسم الكتب الجديدة.' },
   home_featured: { title: 'الأكثر مبيعاً', hint: 'عنوان ووصف قسم الكتب المميزة.' },
@@ -495,6 +500,13 @@ export default function StorefrontContent({ initialSection = '' }) {
     setActiveKey(PAGES[index].keys[0]);
   };
   const save = async () => {
+    if (activeKey === 'home_hero') {
+      const heroError = validateHeroContent(section.content);
+      if (heroError) {
+        show(heroError, 'error');
+        return;
+      }
+    }
     if (activeKey === 'brand') {
       const emailCheck = verifyEmail(section.content.contact_email);
       if (!emailCheck.valid) {
@@ -510,7 +522,9 @@ export default function StorefrontContent({ initialSection = '' }) {
     }
     setSaving(true);
     try {
-      await adminSaveStorefrontContent(activeKey, section.content, section.visible);
+      const payload =
+        activeKey === 'home_hero' ? { slides: normalizeHeroSlides(section.content) } : section.content;
+      await adminSaveStorefrontContent(activeKey, payload, section.visible);
       show('تم حفظ هذا القسم — التغيير ظاهر في المتجر الآن ✓');
     } catch (error) {
       show(error.message, 'error');
@@ -608,6 +622,8 @@ export default function StorefrontContent({ initialSection = '' }) {
             <div className="mt-6 space-y-5">
               {activeKey === 'brand' ? (
                 <BrandEditor brand={section.content} onChange={(content) => change({ content })} />
+              ) : activeKey === 'home_hero' ? (
+                <HeroEditor content={section.content} onChange={(content) => change({ content })} />
               ) : (
                 <>
                   {Object.entries(section.content)

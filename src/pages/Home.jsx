@@ -2,14 +2,13 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useBooks, useBundles, useCategories } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
-import BookCover from '../components/BookCover';
-import HashLink from '../components/HashLink';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { useSiteContact } from '../hooks/useSiteContact';
 import { useStorefrontContent } from '../hooks/useStorefrontContent';
 import { useBooksPerRow } from '../hooks/useBooksPerRow';
 import { booksGridClass } from '../lib/booksGrid';
-import { isSoldOut } from '../lib/format';
+import { normalizeHeroSlides } from '../lib/hero';
+import HeroCarousel from '../components/HeroCarousel';
 import ProductCard from '../components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -61,6 +60,7 @@ export default function Home() {
   const savedContent = useStorefrontContent();
   const section = (key) => savedContent?.[key];
   const hero = section('home_hero');
+  const heroSlides = normalizeHeroSlides(hero?.content);
   const categoriesCopy = section('home_categories');
   const newestCopy = section('home_newest');
   const featuredCopy = section('home_featured');
@@ -89,97 +89,7 @@ export default function Home() {
   return (
     <div>
       {/* ================= HERO ================= */}
-      {hero?.visible && (hero.content.title || hero.content.badge) && (
-        <section className="bg-linear-to-bl from-brand-dark via-brand to-brand-dark text-white">
-          <div className="container-x grid gap-8 py-12 sm:py-16 lg:grid-cols-2 lg:items-center">
-            <div>
-              {hero.content.badge && (
-                <span
-                  dir="auto"
-                  className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-medium"
-                >
-                  {hero.content.badge}
-                </span>
-              )}
-              {hero.content.title && (
-                <h1 dir="auto" className="mt-4 text-3xl font-bold leading-tight sm:text-4xl lg:text-[42px]">
-                  {hero.content.title.split('\n').map((line, index) => (
-                    <span key={`${line}-${index}`}>
-                      {index > 0 && <br />}
-                      {line}
-                    </span>
-                  ))}
-                </h1>
-              )}
-              {hero.content.description && (
-                <p dir="auto" className="mt-4 max-w-xl text-sm leading-7 text-white/85 sm:text-base">
-                  {hero.content.description}
-                </p>
-              )}
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                {hero.content.shop_label && (
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-amber-400 px-6 py-3 text-sm font-bold text-brand-dark shadow-sm hover:bg-amber-300"
-                  >
-                    <Link to="/catalog">
-                      {hero.content.shop_label} <span aria-hidden>←</span>
-                    </Link>
-                  </Button>
-                )}
-                {hero.content.how_label && (
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="border-white/30 bg-transparent px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
-                  >
-                    <HashLink to="/#how">{hero.content.how_label}</HashLink>
-                  </Button>
-                )}
-              </div>
-
-              {hero.content.stats?.length > 0 && (
-                <div className="mt-8 flex gap-6 text-center">
-                  {hero.content.stats.map((s) => (
-                    <div key={s.value} className="border-e border-white/20 pe-6 last:border-0 last:pe-0">
-                      <div className="text-xl font-bold text-amber-300">
-                        <bdi dir="ltr">{s.value}</bdi>
-                      </div>
-                      <div dir="auto" className="mt-0.5 text-xs text-white/75">
-                        {s.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* hero books collage (desktop only — lazy covers never fetch on mobile) */}
-            <div className="hidden lg:grid grid-cols-3 gap-4">
-              {books.slice(0, 3).map((b, ix) => (
-                <Link
-                  key={b.id}
-                  to={`/book/${b.id}`}
-                  className={`overflow-hidden rounded-card shadow-xl ring-1 ring-white/20 transition hover:-translate-y-1 ${b.is_out_of_stock ? 'opacity-95' : ''}`}
-                >
-                  <BookCover
-                    src={b.cover_image}
-                    alt={b.title_ar}
-                    eager={ix === 0}
-                    fetchPriority={ix === 0 ? 'high' : undefined}
-                    className="w-full"
-                    imgClassName="h-full w-full object-cover"
-                    soldOut={isSoldOut(b)}
-                  />
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {hero?.visible && <HeroCarousel slides={heroSlides} books={books} />}
 
       {error && (
         <div className="container-x mt-4 rounded-md bg-rose-50 px-4 py-2 text-sm text-danger">{error}</div>

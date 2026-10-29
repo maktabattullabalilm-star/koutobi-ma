@@ -13,12 +13,7 @@ import { supabase } from './supabase';
  */
 export const CONTENT_SHAPES = {
   home_hero: {
-    badge: '',
-    title: '',
-    description: '',
-    shop_label: '',
-    how_label: '',
-    stats: [],
+    slides: [],
   },
   home_categories: {
     title: '',
