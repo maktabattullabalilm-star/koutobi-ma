@@ -62,23 +62,18 @@ function socialHoverColor(network) {
   return 'var(--color-brand)';
 }
 
-function FooterCategoryList({ nodes = [], depth = 0 }) {
+function FooterCategoryList({ nodes = [] }) {
   return (
-    <ul
-      className={
-        depth ? 'mt-1 space-y-1 border-s border-line/70 ps-3 text-[13px]' : 'space-y-2 text-sm text-soft'
-      }
-    >
+    <ul className="space-y-2 text-sm text-soft">
       {nodes.map((node) => (
         <li key={node.id || node.name}>
           <Link
             to={`/catalog?category=${encodeURIComponent(node.name)}`}
             dir="auto"
-            className={`hover:text-brand ${depth ? 'text-[13px]' : ''}`}
+            className="hover:text-brand"
           >
             {node.name}
           </Link>
-          {node.children?.length > 0 && <FooterCategoryList nodes={node.children} depth={depth + 1} />}
         </li>
       ))}
     </ul>

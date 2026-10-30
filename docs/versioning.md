@@ -76,6 +76,7 @@ as the version bump — `changelog.test.js` fails if `APP_VERSION` has no entry.
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| `1.3.1` | 2026-10-30 | Remove the duplicate clear «×» in search fields; footer «التصنيفات» lists main categories only |
 | `1.3.0` | 2026-10-30 | Admin-only «سجل التغييرات» page: every release grouped by version with date, type, notes and the current version highlighted |
 | `1.2.2` | 2026-10-30 | Arabic-aware storefront search (normalization, multi-word AND, metadata fields, relevance ranking), packs in results, and a catalog search field |
 | `1.2.1` | 2026-10-29 | RTL form direction across the app; horizontal scroll controls for the admin books table |

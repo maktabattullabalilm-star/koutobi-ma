@@ -56,6 +56,14 @@
   }
 }
 
+/* SearchBox renders its own clear button — hide the browser's native one so
+   the field never shows two «×» controls. */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 @utility container-x {
   @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
 }
