@@ -32,6 +32,7 @@ const StorefrontContent = lazy(() => import('./pages/admin/StorefrontContent'));
 const PagesAdmin = lazy(() => import('./pages/admin/PagesAdmin'));
 const StockAdmin = lazy(() => import('./pages/admin/StockAdmin'));
 const OffersAdmin = lazy(() => import('./pages/admin/OffersAdmin'));
+const Changelog = lazy(() => import('./pages/admin/Changelog'));
 
 function RouteFallback() {
   return (
@@ -90,6 +91,7 @@ export default function App() {
               <Route path="pages" element={<PagesAdmin />} />
               <Route path="stock" element={<StockAdmin />} />
               <Route path="offers" element={<OffersAdmin />} />
+              <Route path="changelog" element={<Changelog />} />
             </Route>
           </Route>
         </Routes>

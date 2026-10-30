@@ -19,7 +19,7 @@ import {
   IconEdit,
   IconStar,
 } from '../../components/icons';
-import { Boxes, FileText, Tags } from 'lucide-react';
+import { Boxes, FileText, History, Tags } from 'lucide-react';
 
 const LINKS = [
   { to: '/admin/dashboard', label: 'نظرة عامة', Icon: IconInbox, end: true },
@@ -32,6 +32,7 @@ const LINKS = [
   { to: '/admin/pages', label: 'صفحات المتجر', Icon: FileText },
   { to: '/admin/stock', label: 'إدارة المخزون', Icon: Boxes },
   { to: '/admin/offers', label: 'العروض والخصومات', Icon: Tags },
+  { to: '/admin/changelog', label: 'سجل التغييرات', Icon: History },
 ];
 
 export default function AdminLayout() {
@@ -98,9 +99,14 @@ export default function AdminLayout() {
         <span className="mt-0.5 block rounded-sm bg-brand-pale px-1.5 py-0.5 text-[10px] font-bold text-brand">
           مدير المتجر
         </span>
-        <span dir="ltr" className="mt-1 block text-start text-[10px] tabular-nums text-soft">
+        <NavLink
+          to="/admin/changelog"
+          dir="ltr"
+          title="سجل التغييرات"
+          className="mt-1 block text-start text-[10px] tabular-nums text-soft hover:text-brand"
+        >
           v{APP_VERSION}
-        </span>
+        </NavLink>
       </div>
       <button
         onClick={doSignOut}

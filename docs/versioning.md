@@ -65,10 +65,24 @@ CI runs the same `verify` on every push and pull request.
    precaches the shell: a stale service worker can mask a release, so check the
    visible version, not just the deploy log.
 
+## Changelog in the admin console
+
+`src/lib/changelog.js` holds one entry per deployed version (newest first).
+It powers **لوحة التحكم → سجل التغييرات** (`/admin/changelog`), which only
+signed-in admins can open. Add the new release's entry there in the same commit
+as the version bump — `changelog.test.js` fails if `APP_VERSION` has no entry.
+
 ## History
 
 | Version | Date | Summary |
 | --- | --- | --- |
+| `1.3.0` | 2026-10-30 | Admin-only «سجل التغييرات» page: every release grouped by version with date, type, notes and the current version highlighted |
+| `1.2.2` | 2026-10-30 | Arabic-aware storefront search (normalization, multi-word AND, metadata fields, relevance ranking), packs in results, and a catalog search field |
+| `1.2.1` | 2026-10-29 | RTL form direction across the app; horizontal scroll controls for the admin books table |
+| `1.2.0` | 2026-10-29 | Admin-managed homepage hero slides with per-slide colour and up to nine books |
+| `1.1.12` | 2026-10-27 | Remove the legacy PWA service worker from returning browsers |
+| `1.1.11` | 2026-10-27 | Show الباقات everywhere: dedicated page, homepage, catalog filter and categories |
+| `1.1.10` | 2026-10-27 | Admin-managed customer reviews; online-only storefront |
 | `1.1.8` | 2026-10-26 | Admin setting for books per row (4/6/8) on desktop grids; phones/tablets scale proportionally (2/3–4 columns); most-recent row follows the setting |
 | `1.1.7` | 2026-10-26 | «كيف أطلب؟» scrolls to the how-it-works section on every click, not just the first one |
 | `1.1.6` | 2026-10-25 | CI on GitHub Actions (`verify` + `build` on push/PR); `verify` now enforces `format:check` and coverage and the test scripts pin `NODE_ENV=test`; Prettier pass over the admin/storefront components; `cf:deploy` runs `verify` first |
