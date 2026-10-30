@@ -20,3 +20,6 @@ supabase/.temp
 # Wrangler local state + generated per-client deploy config
 .wrangler/
 .wrangler.client.jsonc
+
+# Local agent settings
+.commandcode/
