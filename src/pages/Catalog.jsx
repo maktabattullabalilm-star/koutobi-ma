@@ -1,15 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useBooks, useBundles, useCategories } from '../hooks/useCatalog';
 import { useHead } from '../hooks/useHead';
 import { categoryPath, categoryScopeNames } from '../lib/catalog';
 import { filterBundles } from '../lib/bundles';
+import { searchCatalog } from '../lib/search';
 import { formatPrice } from '../lib/format';
 import { generalInquiryLink } from '../lib/whatsapp';
 import { useSiteContact } from '../hooks/useSiteContact';
 import { useBooksPerRow } from '../hooks/useBooksPerRow';
 import { booksGridClass } from '../lib/booksGrid';
 import ProductCard from '../components/ProductCard';
+import SearchBox from '../components/SearchBox';
 import { IconSearch } from '../components/icons';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -65,8 +67,17 @@ export default function Catalog() {
     [categories, selected]
   );
   const activeRoot = trail[0]?.name;
-  const { books, error: booksError, loading: booksLoading } = useBooks({ category, categories: scope, q });
+  const { books, error: booksError, loading: booksLoading } = useBooks({ category, categories: scope });
   const { bundles, error: bundlesError, loading: bundlesLoading } = useBundles();
+  const [search, setSearch] = useState(q);
+  useEffect(() => {
+    setSearch((current) => (current.trim() === q ? current : q));
+  }, [q]);
+  const scopedBundles = useMemo(() => filterBundles(bundles, { type: 'packs', scope }), [bundles, scope]);
+  const searchResults = useMemo(
+    () => (q.trim() ? searchCatalog({ books, bundles: scopedBundles, query: q, type }) : null),
+    [books, scopedBundles, q, type]
+  );
   const heading = q
     ? 'نتائج البحث'
     : type === 'packs'
@@ -90,18 +101,25 @@ export default function Catalog() {
     path: `/catalog${params.toString() ? `?${params.toString()}` : ''}`,
   });
   const loading = booksLoading || bundlesLoading || catsLoading;
-  const [sort, setSort] = useState('newest');
+  const [sort, setSort] = useState(null);
   const error = booksError || bundlesError || catsError;
+  const effectiveSort = q ? sort || 'relevance' : sort === 'relevance' ? 'newest' : sort || 'newest';
+  const sortOptions = q ? [{ id: 'relevance', label: 'الأكثر صلة' }, ...SORTS] : SORTS;
 
   const sorted = useMemo(() => {
-    const scopedBundles = filterBundles(bundles, { type, scope, q });
-    const list = [...(type === 'packs' ? [] : books), ...scopedBundles];
-    if (sort === 'price_asc') list.sort((a, b) => a.price - b.price);
-    else if (sort === 'price_desc') list.sort((a, b) => b.price - a.price);
-    else if (sort === 'title') list.sort((a, b) => (a.title_ar || '').localeCompare(b.title_ar || '', 'ar'));
-    else list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    return list;
-  }, [books, bundles, type, scope, q, sort]);
+    const list = searchResults ?? [
+      ...(type === 'packs' ? [] : books),
+      ...filterBundles(bundles, { type, scope }),
+    ];
+    if (effectiveSort === 'relevance') return list;
+    const next = [...list];
+    if (effectiveSort === 'price_asc') next.sort((a, b) => a.price - b.price);
+    else if (effectiveSort === 'price_desc') next.sort((a, b) => b.price - a.price);
+    else if (effectiveSort === 'title')
+      next.sort((a, b) => (a.title_ar || '').localeCompare(b.title_ar || '', 'ar'));
+    else next.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return next;
+  }, [searchResults, books, bundles, type, scope, effectiveSort]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
@@ -117,6 +135,17 @@ export default function Catalog() {
       if (value == null || value === '') next.delete(key);
       else next.set(key, String(value));
     }
+    setParams(next, { replace: true });
+  };
+
+  const changeSearch = (value) => {
+    setSearch(value);
+    const next = new URLSearchParams(params);
+    const trimmed = value.trim();
+    if (trimmed) next.set('q', trimmed);
+    else next.delete('q');
+    next.delete('page');
+    next.delete('all');
     setParams(next, { replace: true });
   };
 
@@ -171,8 +200,29 @@ export default function Catalog() {
               نتائج البحث عن: «<bdi>{q}</bdi>» —{' '}
             </>
           )}
-          <bdi dir="ltr">{sorted.length}</bdi> منتج متاح · الدفع عند الاستلام
+          {loading ? (
+            'جارٍ التحميل…'
+          ) : (
+            <>
+              <bdi dir="ltr">{sorted.length}</bdi> منتج متاح · الدفع عند الاستلام
+            </>
+          )}
         </p>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            changeSearch(search);
+          }}
+          role="search"
+          className="mt-4 max-w-xl"
+        >
+          <SearchBox
+            value={search}
+            onChange={changeSearch}
+            placeholder="ابحث بالعنوان، المؤلف، التصنيف…"
+            ariaLabel="البحث في المكتبة"
+          />
+        </form>
       </div>
 
       {/* product type tabs */}
@@ -279,7 +329,7 @@ export default function Catalog() {
             ترتيب حسب:
           </span>
           <Select
-            value={sort}
+            value={effectiveSort}
             onValueChange={(value) => {
               setSort(value);
               updateParams({ page: null });
@@ -289,7 +339,7 @@ export default function Catalog() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {SORTS.map((s) => (
+              {sortOptions.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.label}
                 </SelectItem>
@@ -314,9 +364,15 @@ export default function Catalog() {
             <EmptyMedia variant="icon">
               <IconSearch width={20} height={20} />
             </EmptyMedia>
-            <EmptyTitle>{type === 'packs' ? 'لا توجد باقات مطابقة' : 'لا توجد كتب مطابقة'}</EmptyTitle>
+            <EmptyTitle>
+              {q ? 'لا توجد نتائج مطابقة' : type === 'packs' ? 'لا توجد باقات مطابقة' : 'لا توجد كتب مطابقة'}
+            </EmptyTitle>
             <EmptyDescription>
-              {whatsapp ? 'جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.' : 'جرّب تصنيفاً آخر.'}
+              {q
+                ? `لم نجد نتائج لـ «${q}». جرّب كلمة أقصر أو ابحث باسم المؤلف أو التصنيف.`
+                : whatsapp
+                  ? 'جرّب تصنيفاً آخر أو تواصل معنا عبر واتساب لطلب كتاب معيّن.'
+                  : 'جرّب تصنيفاً آخر.'}
             </EmptyDescription>
           </EmptyHeader>
           {whatsapp && (

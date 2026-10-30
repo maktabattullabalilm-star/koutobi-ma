@@ -110,10 +110,10 @@ describe('Catalog product types', () => {
     expect(screen.queryByText('باقة الحديث')).toBeNull();
   });
 
-  it('keeps search results books-only in the mixed view', () => {
+  it('includes matching packs in the mixed search view', () => {
     renderCatalog('/catalog?q=%D8%A8%D8%A7%D9%82%D8%A9');
     const cards = screen.getAllByTestId('product-card');
     expect(cards).toHaveLength(2);
-    expect(cards.every((card) => card.dataset.type === 'book')).toBe(true);
+    expect(cards.every((card) => card.dataset.type === 'bundle')).toBe(true);
   });
 });

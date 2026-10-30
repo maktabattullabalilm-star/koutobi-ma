@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { getCategories } from '../lib/api';
 import { buildCategoryTree } from '../lib/catalog';
-import { IconCart, IconChevronDown, IconClose, IconMenu, IconSearch } from './icons';
+import { IconCart, IconChevronDown, IconClose, IconMenu } from './icons';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import SearchBox from './SearchBox';
 import StoreBrand from './StoreBrand';
 import HashLink from './HashLink';
 
@@ -75,6 +75,7 @@ export default function Header() {
   const [q, setQ] = useState('');
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const tree = useMemo(() => buildCategoryTree(categories), [categories]);
 
   useEffect(() => {
@@ -82,6 +83,12 @@ export default function Header() {
       .then(setCategories)
       .catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    if (location.pathname !== '/catalog') return;
+    const next = new URLSearchParams(location.search).get('q') || '';
+    setQ((current) => (current === next ? current : next));
+  }, [location.pathname, location.search]);
 
   const submitSearch = (e) => {
     e.preventDefault();
@@ -109,18 +116,12 @@ export default function Header() {
           <StoreBrand compact />
 
           <form onSubmit={submitSearch} role="search" className="mx-auto hidden w-full max-w-md lg:block">
-            <div className="flex items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line focus-within:ring-brand">
-              <IconSearch className="shrink-0 text-soft" width={18} height={18} />
-              <input
-                dir="rtl"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحث عن كتاب، مؤلف، تصنيف…"
-                aria-label="البحث في المكتبة"
-                type="search"
-                className="w-full bg-transparent py-2.5 text-sm text-ink outline-hidden placeholder:text-gray-500"
-              />
-            </div>
+            <SearchBox
+              value={q}
+              onChange={setQ}
+              placeholder="ابحث عن كتاب، مؤلف، تصنيف…"
+              ariaLabel="البحث في المكتبة"
+            />
           </form>
 
           <div className="ms-auto flex items-center gap-1.5 lg:ms-0">
@@ -209,18 +210,13 @@ export default function Header() {
             role="search"
             className="flex items-center gap-2 border-b border-line px-4 py-3"
           >
-            <div className="flex flex-1 items-center gap-2 rounded-md bg-gray-50 px-3 ring-1 ring-inset ring-line">
-              <IconSearch className="text-soft" width={18} height={18} />
-              <Input
-                dir="rtl"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="ابحث…"
-                aria-label="البحث في المكتبة"
-                type="search"
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0"
-              />
-            </div>
+            <SearchBox
+              value={q}
+              onChange={setQ}
+              placeholder="ابحث…"
+              ariaLabel="البحث في المكتبة"
+              className="flex-1"
+            />
             <Button type="submit" className="px-4 py-2">
               بحث
             </Button>
